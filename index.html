@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <title>호남센터 은행 지도</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div>
+      <h1>호남센터 은행 지도</h1>
+      <p id="status">지도를 준비하고 있습니다.</p>
+    </div>
+    <button id="locateBtn" class="locate" type="button">내 위치</button>
+  </header>
+
+  <section class="controls">
+    <div class="quarters" role="group" aria-label="분기 선택">
+      <button class="qbtn active" data-quarter="all">전체 <span id="countAll"></span></button>
+      <button class="qbtn" data-quarter="1">1분기 <span id="count1"></span></button>
+      <button class="qbtn" data-quarter="2">2분기 <span id="count2"></span></button>
+      <button class="qbtn" data-quarter="3">3분기 <span id="count3"></span></button>
+    </div>
+    <div class="search-wrap">
+      <input id="searchInput" type="search" placeholder="지점명 검색" autocomplete="off">
+      <button id="clearSearch" type="button" aria-label="검색어 지우기">×</button>
+      <div id="searchResults" class="results hidden"></div>
+    </div>
+  </section>
+
+  <div id="map"></div>
+
+  <div id="errorPanel" class="error hidden"></div>
+
+  <script src="config.js"></script>
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
