@@ -4,7 +4,48 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <title>순천센터 공용 업무보드</title>
-  <link rel="stylesheet" href="./style.css">
+  <style>
+*{box-sizing:border-box}
+:root{
+  --blue:#1769e0;--blue2:#eaf2ff;--green:#158a56;--green2:#e8f7ef;
+  --orange:#f59e0b;--orange2:#fff4db;--red:#cb3a31;--red2:#fdebea;
+  --ink:#172033;--muted:#667085;--line:#dfe5eb;--bg:#f5f7f9;--white:#fff
+}
+html,body{margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans KR",sans-serif;background:var(--bg);color:var(--ink)}
+button,input,select,textarea{font:inherit}.hidden{display:none!important}
+.topbar{position:sticky;top:0;z-index:30;display:flex;justify-content:space-between;align-items:center;padding:12px 18px;background:#fff;border-bottom:1px solid var(--line)}
+.titlebox h1{margin:0;font-size:20px}.sync{margin-top:3px;font-size:11px;color:var(--green)}
+.map-btn{text-decoration:none;background:var(--blue2);color:#1452a3;padding:8px 12px;border-radius:9px;font-weight:900}
+.page{max-width:1700px;margin:auto;padding:12px}
+.summary-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.summary-card{appearance:none;border:1px solid var(--line);background:#fff;border-radius:11px;padding:11px 13px;text-align:left;cursor:pointer}
+.summary-card span{font-size:11px;color:var(--muted)}.summary-card b{display:block;font-size:23px;margin-top:2px}.summary-card.active{border-color:var(--blue);box-shadow:0 0 0 2px rgba(23,105,224,.08)}
+.controls{display:flex;gap:8px;margin:9px 0}.search-wrap{flex:1}.controls input,.controls select{height:40px;border:1px solid #cfd6de;border-radius:8px;background:#fff;padding:0 10px}.controls input{width:100%}
+.staff-tabs{display:flex;gap:6px;overflow:auto;padding-bottom:9px}.staff-tab{border:0;background:#e9eef4;color:#344054;border-radius:999px;padding:8px 12px;font-weight:900;white-space:nowrap}.staff-tab.active{background:var(--blue);color:#fff}
+.workspace{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(360px,.8fr);gap:10px;align-items:start}
+.list-panel,.detail-panel{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.list-head{display:grid;grid-template-columns:minmax(220px,.8fr) minmax(280px,1.4fr) 120px;background:#f2f4f7;border-bottom:1px solid var(--line);font-size:12px;font-weight:900;padding:9px 12px}
+.branch-row{display:grid;grid-template-columns:minmax(220px,.8fr) minmax(280px,1.4fr) 120px;align-items:center;border-bottom:1px solid #edf0f3;padding:10px 12px;cursor:pointer;min-height:62px}
+.branch-row:hover{background:#fafcff}.branch-row.selected{background:#eef5ff}
+.branch-title{font-size:14px;font-weight:900}.branch-sub{font-size:10px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.recent{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.recent.none{color:#98a2b3}.recent-meta{font-size:10px;color:var(--muted);margin-top:3px}
+.status-wrap{display:flex;flex-direction:column;align-items:flex-start;gap:4px}.pill{display:inline-block;border-radius:999px;padding:4px 8px;font-size:10px;font-weight:900}.pill.todo{background:var(--orange2);color:#9a6700}.pill.done{background:var(--green2);color:#11623f}.pill.none{background:#f2f4f7;color:#667085}
+.detail-panel{position:sticky;top:72px;max-height:calc(100vh - 86px);overflow:auto}.detail-empty{padding:50px 20px;text-align:center;color:#98a2b3;line-height:1.6}
+.detail-head{padding:14px;border-bottom:1px solid var(--line);background:#fff;position:sticky;top:0;z-index:3}.detail-head-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.detail-name{font-size:19px;font-weight:900}.detail-sub{font-size:11px;color:var(--muted);margin-top:4px}.add-btn{border:0;background:var(--blue);color:#fff;border-radius:8px;padding:9px 11px;font-weight:900}
+.memo-list{padding:10px;display:flex;flex-direction:column;gap:8px}.memo-card{border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff}.memo-card.done{background:#f2fbf6;border-color:#b8e4cd}
+.memo-top{display:flex;justify-content:space-between;gap:8px;font-size:11px;font-weight:900}.memo-text{font-size:14px;line-height:1.5;white-space:pre-wrap;margin:7px 0}.memo-meta{font-size:10px;color:var(--muted)}.memo-actions{display:flex;gap:6px;margin-top:8px}.memo-actions button{border:0;border-radius:7px;padding:6px 9px;font-size:11px;font-weight:900}.complete{background:#dcfce7;color:#166534}.undo{background:#ffedd5;color:#9a3412}.delete{background:#fee2e2;color:#991b1b}.empty{padding:35px;text-align:center;color:#98a2b3}
+.modal{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.48);display:flex;align-items:center;justify-content:center;padding:18px}.modal-card{width:min(520px,100%);background:#fff;border-radius:15px;padding:17px}.modal-card h2{margin:0 0 10px;font-size:18px}.modal-card textarea{width:100%;min-height:150px;border:1px solid #ccd3db;border-radius:9px;padding:10px;resize:vertical}.modal-buttons{display:flex;justify-content:flex-end;gap:7px;margin-top:9px}.btn{border-radius:8px;padding:8px 11px;font-weight:900}.primary{border:0;background:var(--blue);color:#fff}.secondary{border:1px solid #d0d5dd;background:#fff}
+@media(max-width:980px){
+  .workspace{grid-template-columns:1fr}.detail-panel{position:static;max-height:none}
+}
+@media(max-width:700px){
+  .page{padding:8px}.topbar{padding:10px 12px}.titlebox h1{font-size:17px}
+  .summary-row{grid-template-columns:repeat(2,1fr)}
+  .controls{display:grid;grid-template-columns:1fr 1fr}.search-wrap{grid-column:1/-1}
+  .list-head{display:none}.branch-row{grid-template-columns:1fr 90px;gap:6px}.branch-row>div:nth-child(2){grid-column:1/2}.branch-row>div:nth-child(3){grid-column:2/3;grid-row:1/3}
+}
+
+</style>
 </head>
 <body>
 <header class="topbar">
@@ -86,6 +127,211 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
-<script src="./app.js"></script>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const sync = $("sync");
+
+  function firstDefined(candidates){
+    for(const fn of candidates){
+      try{const v=fn();if(v!==undefined&&v!==null)return v}catch(e){}
+    }
+    return null;
+  }
+
+  const rawData = firstDefined([
+    () => window.BANK_BRANCHES,
+    () => typeof BANK_BRANCHES!=="undefined" ? BANK_BRANCHES : undefined
+  ]);
+
+  if(!Array.isArray(rawData)){
+    sync.textContent="data.js 연결 실패";
+    alert("기존 data.js의 BANK_BRANCHES를 읽지 못했습니다.");
+    return;
+  }
+
+  function stableMemoId(bank,name){
+    const s=`${bank||""}|${name||""}`;let h=5381;
+    for(let i=0;i<s.length;i++) h=(h*33+s.charCodeAt(i))%2147483647;
+    return "m_"+Math.trunc(h).toString(16).toUpperCase();
+  }
+
+  const branches=rawData.map((x,i)=>({
+    id:x.id||x.branchId||String(i),
+    memoId:x.memoId||x.memoID||x.memo_id||stableMemoId(x.bank,x.name),
+    name:x.name||"(지점명 없음)",
+    staff:x.staff||x.manager||x.assignee||x.담당직원||x.staffName||"미지정",
+    bank:x.bank||"",center:x.center||"",quarter:x.quarter||"",
+    address:x.address||"",phone:x.phone||""
+  }));
+
+  async function loadFirebaseFromRootIndex(){
+    const html=await fetch("../index.html",{cache:"no-store"}).then(r=>r.text());
+    const cfgMatch=html.match(/const\s+fbCfg\s*=\s*(\{[\s\S]*?\})\s*;/);
+    if(!cfgMatch) throw new Error("기존 index.html에서 fbCfg를 찾지 못했습니다.");
+    const cfg=Function('"use strict";return ('+cfgMatch[1]+')')();
+    let memoPath="bankMap/memos";
+    const memoMatch=html.match(/const\s+memoBasePath\s*=\s*['"]([^'"]+)['"]/);
+    if(memoMatch&&memoMatch[1]) memoPath=memoMatch[1];
+    return {cfg,memoPath};
+  }
+
+  let db=null,auth=null,memoPath="bankMap/memos";
+  const state={memos:{},staff:"전체",summary:"all",search:"",sort:"todoFirst",selected:null};
+
+  const esc=s=>String(s??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
+  const fmt=ms=>{if(!ms)return "";try{return new Intl.DateTimeFormat("ko-KR",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}).format(new Date(ms))}catch{return ""}};
+
+  function memosFor(b){
+    const o=state.memos[b.memoId]||{};
+    return Object.entries(o).map(([key,v])=>({key,...(v||{})}))
+      .sort((a,b)=>(Number(a.no)||0)-(Number(b.no)||0));
+  }
+  function latestMemo(b){
+    const ms=memosFor(b);if(!ms.length)return null;
+    return [...ms].sort((a,b)=>(Number(b.createdAt)||0)-(Number(a.createdAt)||0))[0];
+  }
+  function nextNo(b){return memosFor(b).reduce((m,x)=>Math.max(m,Number(x.no)||0),0)+1}
+  function uniqueStaff(){const seen=new Set(),out=[];branches.forEach(b=>{const s=b.staff||"미지정";if(!seen.has(s)){seen.add(s);out.push(s)}});return out}
+
+  function branchStats(b){
+    const ms=memosFor(b);
+    const todo=ms.filter(x=>!x.done).length,done=ms.length-todo;
+    return {count:ms.length,todo,done};
+  }
+
+  function match(b){
+    if(state.staff!=="전체"&&b.staff!==state.staff)return false;
+    const st=branchStats(b);
+    if(state.summary==="memo"&&st.count===0)return false;
+    if(state.summary==="todo"&&st.todo===0)return false;
+    if(state.summary==="done"&&st.done===0)return false;
+    const q=state.search.trim().toLowerCase();
+    if(q&&!([b.name,b.address,b.bank,b.center,...memosFor(b).map(m=>m.text)].join(" ").toLowerCase().includes(q)))return false;
+    return true;
+  }
+
+  function sortedBranches(){
+    const list=branches.filter(match);
+    return list.sort((a,b)=>{
+      if(state.sort==="name")return a.name.localeCompare(b.name,"ko");
+      if(state.sort==="latest")return (latestMemo(b)?.createdAt||0)-(latestMemo(a)?.createdAt||0);
+      const sa=branchStats(a),sb=branchStats(b);
+      if(sa.todo!==sb.todo)return sb.todo-sa.todo;
+      if(sa.count!==sb.count)return sb.count-sa.count;
+      return a.name.localeCompare(b.name,"ko");
+    });
+  }
+
+  function renderSummary(){
+    let memoBranches=0,todo=0,done=0;
+    branches.forEach(b=>{const s=branchStats(b);if(s.count)memoBranches++;todo+=s.todo;done+=s.done});
+    $("cBranches").textContent=branches.length;$("cMemoBranches").textContent=memoBranches;$("cTodo").textContent=todo;$("cDone").textContent=done;
+    document.querySelectorAll(".summary-card").forEach(x=>x.classList.toggle("active",x.dataset.summary===state.summary));
+  }
+
+  function renderTabs(){
+    const el=$("staffTabs");el.innerHTML="";
+    ["전체",...uniqueStaff()].forEach(s=>{
+      const b=document.createElement("button");b.className="staff-tab"+(state.staff===s?" active":"");b.textContent=s;
+      b.onclick=()=>{state.staff=s;render()};el.appendChild(b);
+    });
+  }
+
+  function renderList(){
+    const list=sortedBranches(),el=$("branchList");el.innerHTML="";
+    $("empty").classList.toggle("hidden",list.length>0);
+    list.forEach(b=>{
+      const st=branchStats(b),latest=latestMemo(b);
+      const row=document.createElement("div");
+      row.className="branch-row"+(state.selected?.memoId===b.memoId?" selected":"");
+      let pill='<span class="pill none">메모없음</span>';
+      if(st.todo>0)pill=`<span class="pill todo">진행중 ${st.todo}</span>`;
+      else if(st.done>0)pill=`<span class="pill done">완료 ${st.done}</span>`;
+      row.innerHTML=`
+        <div><div class="branch-title">${esc(b.name)}</div><div class="branch-sub">${esc([b.bank,b.center,b.quarter?b.quarter+"분기":"",b.address].filter(Boolean).join(" · "))}</div></div>
+        <div>${latest?`<div class="recent">${esc(latest.text||"")}</div><div class="recent-meta">${esc(fmt(latest.createdAt))}</div>`:`<div class="recent none">등록된 메모 없음</div>`}</div>
+        <div class="status-wrap">${pill}${st.count?`<span class="recent-meta">전체 ${st.count}</span>`:""}</div>`;
+      row.onclick=()=>{state.selected=b;renderList();renderDetail()};
+      el.appendChild(row);
+    });
+  }
+
+  function renderDetail(){
+    const panel=$("detailPanel"),b=state.selected;
+    if(!b){panel.innerHTML='<div class="detail-empty">왼쪽에서 지점을 선택하면<br>메모 전체 내용을 볼 수 있습니다.</div>';return}
+    const ms=memosFor(b);
+    panel.innerHTML=`
+      <div class="detail-head">
+        <div class="detail-head-top">
+          <div><div class="detail-name">${esc(b.name)}</div><div class="detail-sub">${esc([b.bank,b.center,b.quarter?b.quarter+"분기":"",b.address].filter(Boolean).join(" · "))}</div></div>
+          <button class="add-btn">메모 추가</button>
+        </div>
+      </div>
+      <div class="memo-list"></div>`;
+    panel.querySelector(".add-btn").onclick=()=>openModal(b);
+    const list=panel.querySelector(".memo-list");
+    if(!ms.length){list.innerHTML='<div class="detail-empty">등록된 메모가 없습니다.</div>';return}
+    ms.forEach(m=>list.appendChild(renderMemoCard(b,m)));
+  }
+
+  function renderMemoCard(b,m){
+    const el=document.createElement("div");el.className="memo-card"+(m.done?" done":"");
+    const writer=m.writer||m.createdBy||"";
+    el.innerHTML=`
+      <div class="memo-top"><span>${esc(m.no||"")}번 메모</span><span>${m.done?"완료":"진행중"}</span></div>
+      <div class="memo-text">${esc(m.text||"")}</div>
+      <div class="memo-meta">${esc(fmt(m.createdAt))}${writer?" · "+esc(writer):""}${m.done&&m.completedAt?" · 완료 "+esc(fmt(m.completedAt)):""}</div>
+      <div class="memo-actions">
+        <button class="${m.done?"undo":"complete"}">${m.done?"완료 해제":"완료"}</button>
+        <button class="delete">삭제</button>
+      </div>`;
+    el.querySelector(m.done?".undo":".complete").onclick=async()=>{
+      const ref=db.ref(`${memoPath}/${b.memoId}/${m.key}`);
+      if(m.done)await ref.update({done:false,completedAt:null,completedBy:null});
+      else await ref.update({done:true,completedAt:firebase.database.ServerValue.TIMESTAMP,completedBy:$("writer").value||null});
+    };
+    el.querySelector(".delete").onclick=async()=>{
+      if(confirm(`${b.name}의 ${m.no||""}번 메모를 삭제할까요?`))await db.ref(`${memoPath}/${b.memoId}/${m.key}`).remove();
+    };
+    return el;
+  }
+
+  function render(){renderSummary();renderTabs();renderList();renderDetail()}
+
+  function openModal(b){state.selected=b;$("modalTitle").textContent=b.name+" · 메모 추가";$("memoText").value="";$("modal").classList.remove("hidden")}
+  function closeModal(){$("modal").classList.add("hidden")}
+  $("cancel").onclick=closeModal;$("modal").onclick=e=>{if(e.target.id==="modal")closeModal()};
+  $("save").onclick=async()=>{
+    const b=state.selected,text=$("memoText").value.trim();if(!b||!text)return;
+    await db.ref(`${memoPath}/${b.memoId}`).push().set({
+      no:nextNo(b),text,done:false,writer:$("writer").value||null,
+      createdAt:firebase.database.ServerValue.TIMESTAMP,completedAt:null
+    });
+    closeModal();
+  };
+
+  document.querySelectorAll(".summary-card").forEach(x=>x.onclick=()=>{state.summary=x.dataset.summary;render()});
+  $("search").oninput=e=>{state.search=e.target.value;render()};
+  $("sort").onchange=e=>{state.sort=e.target.value;render()};
+  $("writer").value=localStorage.getItem("bankBoardWriter")||"";
+  $("writer").onchange=e=>localStorage.setItem("bankBoardWriter",e.target.value);
+
+  (async()=>{
+    try{
+      const loaded=await loadFirebaseFromRootIndex();memoPath=loaded.memoPath;
+      const app=firebase.initializeApp(loaded.cfg,"bankWorkBoard");
+      auth=app.auth();db=app.database();
+      await auth.signInAnonymously();
+      db.ref(memoPath).on("value",snap=>{
+        state.memos=snap.val()||{};
+        sync.textContent="실시간 연결 · "+new Date().toLocaleTimeString("ko-KR");
+        render();
+      });
+      render();
+    }catch(e){console.error(e);sync.textContent="연결 실패";alert("Firebase 연결 실패: "+e.message)}
+  })();
+})();
+</script>
 </body>
 </html>
