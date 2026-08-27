@@ -80,6 +80,15 @@ button{cursor:pointer}
 .memo-card{border:1px solid var(--line);border-radius:10px;padding:11px;background:#fff}.memo-top{display:flex;justify-content:space-between;gap:8px;font-size:11px;font-weight:900}
 .memo-text{font-size:14px;line-height:1.5;white-space:pre-wrap;margin:7px 0}.memo-meta{font-size:10px;color:var(--muted)}
 .memo-actions{display:flex;gap:6px;margin-top:8px}.memo-actions button{border:0;border-radius:7px;padding:7px 10px;font-size:11px;font-weight:900}
+.detail-actions{gap:7px;flex-wrap:wrap}
+.detail-select-btn{border:0;background:#eef2f6;color:#344054;border-radius:8px;padding:9px 12px;font-weight:900}
+.detail-delete-selected{border:0;background:#fee2e2;color:#991b1b;border-radius:8px;padding:9px 12px;font-weight:900}
+.detail-delete-selected:disabled{opacity:.45}
+.memo-card-select{display:flex;gap:9px;align-items:flex-start}
+.memo-card-check{width:18px;height:18px;margin-top:2px;accent-color:#d92d20;flex:0 0 auto}
+.memo-card-body{flex:1;min-width:0}
+.memo-actions .edit{background:#e8f0fe;color:#174ea6}
+
 .bulk-btn{border:1px solid #f2b8b5;background:#fff;color:#b42318;border-radius:9px;height:42px;padding:0 14px;font-weight:900;white-space:nowrap}
 .bulk-btn:hover{background:#fff3f2}
 .bulk-modal-card{width:min(980px,96vw);max-height:88vh;display:flex;flex-direction:column;background:#fff;border-radius:16px;box-shadow:0 18px 60px rgba(0,0,0,.25)}
@@ -236,6 +245,8 @@ button{cursor:pointer}
     </div>
     <div class="detail-actions">
       <button id="detailAdd" class="add-btn">메모 추가</button>
+      <button id="detailSelectAll" class="detail-select-btn">전체 선택</button>
+      <button id="detailDeleteSelected" class="detail-delete-selected" disabled>선택 삭제 (0)</button>
     </div>
     <div id="detailMemos" class="memo-list"></div>
   </div>
@@ -342,7 +353,7 @@ button{cursor:pointer}
   }
 
   let db,memoPath="bankMap/memos",historyPath="bankMap/memoHistory",officeMemoPath="bankMap/officeMemos";
-  const state={memos:{},todayHistory:{},officeMemos:{},view:"all",staff:null,bank:"전체",bankStaff:null,writerFilter:"",search:"",selected:null,bulkSelected:new Set(),bulkSearch:""};
+  const state={memos:{},todayHistory:{},officeMemos:{},view:"all",staff:null,bank:"전체",bankStaff:null,writerFilter:"",search:"",selected:null,bulkSelected:new Set(),bulkSearch:"",detailSelected:new Set(),editMemo:null};
 
   const esc=s=>String(s??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
   const fmt=ms=>{if(!ms)return "";try{return new Intl.DateTimeFormat("ko-KR",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}).format(new Date(ms))}catch{return ""}};
@@ -691,7 +702,8 @@ button{cursor:pointer}
 
   function setActiveNav(){
     document.querySelectorAll('[data-view]').forEach(btn=>{
-      btn.classList.toggle("active",!state.staff && btn.dataset.view===state.view);
+      const topOnly=!state.staff && state.bank==="전체" && !state.bankStaff;
+      btn.classList.toggle("active",topOnly && btn.dataset.view===state.view);
     });
   }
 
@@ -749,35 +761,86 @@ button{cursor:pointer}
 
   function openDetail(b){
     state.selected=b;
+    state.detailSelected.clear();
     $("detailTitle").textContent=b.name;
     $("detailSub").textContent=[b.bank,b.center,b.quarter?b.quarter+"분기":"",b.branchNo?`점번 ${b.branchNo}`:"",b.address].filter(Boolean).join(" · ");
     $("detailModal").classList.remove("hidden");
     renderDetail();
   }
-  function closeDetail(){$("detailModal").classList.add("hidden")}
+  function closeDetail(){
+    $("detailModal").classList.add("hidden");
+    state.detailSelected.clear();
+  }
+
+  function updateDetailSelection(ms){
+    const valid=new Set(ms.map(m=>m.key));
+    [...state.detailSelected].forEach(k=>{if(!valid.has(k))state.detailSelected.delete(k)});
+    const count=state.detailSelected.size;
+    $("detailDeleteSelected").disabled=count===0;
+    $("detailDeleteSelected").textContent=`선택 삭제 (${count})`;
+    $("detailSelectAll").textContent=ms.length&&count===ms.length?"전체 해제":"전체 선택";
+  }
 
   function renderDetail(){
     const b=state.selected,el=$("detailMemos");el.innerHTML="";
     if(!b)return;
     const ms=state.writerFilter?filteredMemosFor(b):memosFor(b);
+    updateDetailSelection(ms);
     if(!ms.length){el.innerHTML='<div class="empty">현재 조건에 맞는 진행중 메모가 없습니다.</div>';return}
     ms.forEach(m=>{
       const card=document.createElement("div");card.className="memo-card";
       card.innerHTML=`
-        <div class="memo-top"><span>${esc(m.no||"")}번 메모</span><span>진행중</span></div>
-        <div class="memo-text">${esc(m.text||"")}</div>
-        <div class="memo-meta">${esc(fmt(m.createdAt))}${m.writer?" · "+esc(m.writer):""}</div>
-        <div class="memo-actions">
-          <button class="complete">완료</button>
-          <button class="delete">삭제</button>
+        <div class="memo-card-select">
+          <input type="checkbox" class="memo-card-check" ${state.detailSelected.has(m.key)?"checked":""}>
+          <div class="memo-card-body">
+            <div class="memo-top"><span>${esc(m.no||"")}번 메모</span><span>진행중</span></div>
+            <div class="memo-text">${esc(m.text||"")}</div>
+            <div class="memo-meta">${esc(fmt(m.createdAt))}${m.writer?" · "+esc(m.writer):""}${m.editedAt?" · 수정 "+esc(fmt(m.editedAt)):""}</div>
+            <div class="memo-actions">
+              <button class="complete">완료</button>
+              <button class="edit">수정</button>
+              <button class="delete">삭제</button>
+            </div>
+          </div>
         </div>`;
+
+      const cb=card.querySelector(".memo-card-check");
+      cb.onchange=()=>{
+        if(cb.checked)state.detailSelected.add(m.key);
+        else state.detailSelected.delete(m.key);
+        updateDetailSelection(ms);
+      };
+
       card.querySelector(".complete").onclick=()=>completeMemo(b,m);
+      card.querySelector(".edit").onclick=()=>openEditMemoModal(b,m);
       card.querySelector(".delete").onclick=async()=>{
         if(confirm(`${b.name}의 ${m.no||""}번 메모를 삭제할까요?`))
           await db.ref(`${memoPath}/${b.memoId}/${m.key}`).remove();
       };
       el.appendChild(card);
     });
+  }
+
+  async function deleteDetailSelected(){
+    const b=state.selected;
+    if(!b||!state.detailSelected.size)return;
+    const count=state.detailSelected.size;
+    if(!confirm(`${b.name}의 선택한 메모 ${count}개를 한 번에 삭제할까요?`))return;
+
+    const updates={};
+    state.detailSelected.forEach(key=>updates[`${memoPath}/${b.memoId}/${key}`]=null);
+
+    try{
+      $("detailDeleteSelected").disabled=true;
+      $("detailDeleteSelected").textContent=`삭제 중... (${count})`;
+      await db.ref().update(updates);
+      state.detailSelected.clear();
+      renderDetail();
+    }catch(e){
+      console.error(e);
+      alert("선택 삭제에 실패했습니다.");
+      renderDetail();
+    }
   }
 
   async function completeMemo(b,m){
@@ -886,12 +949,29 @@ button{cursor:pointer}
 
   function openMemoModal(){
     const b=state.selected;if(!b)return;
+    state.editMemo=null;
     $("memoModalTitle").textContent=`${b.name} · 메모 추가`;
+    $("memoSave").textContent="추가";
     $("memoWriter").value=localStorage.getItem("bankBoardWriter")||"";
     $("memoText").value="";
     $("memoModal").classList.remove("hidden");
   }
-  function closeMemoModal(){$("memoModal").classList.add("hidden")}
+
+  function openEditMemoModal(b,m){
+    state.selected=b;
+    state.editMemo={branchMemoId:b.memoId,key:m.key};
+    $("memoModalTitle").textContent=`${b.name} · ${m.no||""}번 메모 수정`;
+    $("memoSave").textContent="수정 저장";
+    $("memoWriter").value=m.writer||localStorage.getItem("bankBoardWriter")||"";
+    $("memoText").value=m.text||"";
+    $("memoModal").classList.remove("hidden");
+  }
+
+  function closeMemoModal(){
+    $("memoModal").classList.add("hidden");
+    state.editMemo=null;
+    $("memoSave").textContent="추가";
+  }
 
   function isDesktop(){return window.matchMedia("(min-width:901px)").matches}
 
@@ -963,6 +1043,15 @@ button{cursor:pointer}
 
   $("detailClose").onclick=closeDetail;$("detailModal").onclick=e=>{if(e.target.id==="detailModal")closeDetail()};
   $("detailAdd").onclick=openMemoModal;
+  $("detailSelectAll").onclick=()=>{
+    const b=state.selected;if(!b)return;
+    const ms=state.writerFilter?filteredMemosFor(b):memosFor(b);
+    const allSelected=ms.length&&ms.every(m=>state.detailSelected.has(m.key));
+    if(allSelected)ms.forEach(m=>state.detailSelected.delete(m.key));
+    else ms.forEach(m=>state.detailSelected.add(m.key));
+    renderDetail();
+  };
+  $("detailDeleteSelected").onclick=deleteDetailSelected;
   $("bulkMemoOpen").onclick=openBulkMemoModal;
   $("bulkMemoClose").onclick=closeBulkMemoModal;
   $("bulkMemoModal").onclick=e=>{if(e.target.id==="bulkMemoModal")closeBulkMemoModal()};
@@ -978,10 +1067,21 @@ button{cursor:pointer}
   $("memoCancel").onclick=closeMemoModal;$("memoModal").onclick=e=>{if(e.target.id==="memoModal")closeMemoModal()};
   $("memoSave").onclick=async()=>{
     const b=state.selected,text=$("memoText").value.trim();if(!b||!text)return;
-    await db.ref(`${memoPath}/${b.memoId}`).push().set({
-      no:nextNo(b),text,writer:$("memoWriter").value||null,
-      createdAt:firebase.database.ServerValue.TIMESTAMP
-    });
+    const writer=$("memoWriter").value||null;
+    if(writer)localStorage.setItem("bankBoardWriter",writer);
+
+    if(state.editMemo){
+      await db.ref(`${memoPath}/${state.editMemo.branchMemoId}/${state.editMemo.key}`).update({
+        text,
+        writer,
+        editedAt:firebase.database.ServerValue.TIMESTAMP
+      });
+    }else{
+      await db.ref(`${memoPath}/${b.memoId}`).push().set({
+        no:nextNo(b),text,writer,
+        createdAt:firebase.database.ServerValue.TIMESTAMP
+      });
+    }
     closeMemoModal();
   };
 
