@@ -156,6 +156,7 @@ button{cursor:pointer}
 
 <script src="../config.js"></script>
 <script src="../data.js"></script>
+<script src="./staff.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
@@ -172,29 +173,21 @@ button{cursor:pointer}
     return "m_"+Math.trunc(h).toString(16).toUpperCase();
   }
 
+  const staffMap = window.BANK_STAFF_MAP || {};
   const branches=rawData.map((x,i)=>{
     const bank=x.bank||"";
     const name=x.name||"(지점명 없음)";
+    const key=`${bank}|${name}`;
     return {
       id:x.id||String(i),
       memoId:x.memoId||stableMemoId(bank,name),
       name,
-      staff:x.staff||x.manager||x.assignee||x.담당직원||x.staffName||"미지정",
+      staff:x.staff||x.manager||x.assignee||x.담당직원||x.staffName||staffMap[key]||staffMap[name]||"미지정",
       bank,center:x.center||"",quarter:x.quarter||"",
       address:x.address||"",phone:x.phone||""
     };
   });
-
-  function applyStaffFromGeneratedMap(mapRows){
-    if(!Array.isArray(mapRows))return;
-    const byMemoId=new Map();
-    const byName=new Map();
-    mapRows.forEach(x=>{
-      const staff=String(x?.staff||"").trim();
-      if(!staff)return;
-      if(x.memoId)byMemoId.set(String(x.memoId),staff);
-      if(x.name)byName.set(String(x.name),staff);
-    });
+);
     branches.forEach(b=>{
       const s=byMemoId.get(String(b.memoId))||byName.get(String(b.name));
       if(s)b.staff=s;
@@ -459,7 +452,6 @@ button{cursor:pointer}
   (async()=>{
     try{
       const loaded=await loadFirebaseFromRoot();
-      applyStaffFromGeneratedMap(loaded.generatedMapData);
       memoPath=loaded.memoPath;
       historyPath=memoPath.replace(/\/memos\/?$/,"/memoHistory");
       if(historyPath===memoPath)historyPath="bankMap/memoHistory";
