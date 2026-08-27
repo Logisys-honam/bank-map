@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>순천센터 공용 업무보드</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<header class="top">
+  <div>
+    <h1>순천센터 공용 업무보드</h1>
+    <div id="sync" class="sync">기존 bank-map 설정 불러오는 중...</div>
+  </div>
+  <a class="map-link" href="../">은행 지도</a>
+</header>
+
+<main>
+  <section class="toolbar panel">
+    <select id="writer">
+      <option value="">작성자 선택</option>
+      <option>김준호</option>
+      <option>장창형</option>
+      <option>김대한</option>
+      <option>관리자</option>
+    </select>
+    <input id="search" type="search" placeholder="지점명 / 메모내용 검색">
+    <select id="status">
+      <option value="all">전체 상태</option>
+      <option value="todo">진행중</option>
+      <option value="done">완료</option>
+    </select>
+  </section>
+
+  <section class="counts">
+    <div class="count"><span>지점</span><b id="cBranches">0</b></div>
+    <div class="count"><span>메모</span><b id="cMemos">0</b></div>
+    <div class="count"><span>진행중</span><b id="cTodo">0</b></div>
+    <div class="count"><span>완료</span><b id="cDone">0</b></div>
+  </section>
+
+  <nav id="tabs" class="tabs panel"></nav>
+  <section id="board" class="board"></section>
+  <section id="empty" class="panel empty hidden">표시할 지점이 없습니다.</section>
+</main>
+
+<div id="modal" class="modal hidden">
+  <div class="modal-card">
+    <h2 id="modalTitle">메모 추가</h2>
+    <textarea id="memoText" placeholder="공유할 메모를 입력하세요."></textarea>
+    <div class="modal-buttons">
+      <button id="cancel" class="secondary">취소</button>
+      <button id="save" class="primary">추가</button>
+    </div>
+  </div>
+</div>
+
+<!-- 기존 bank-map의 설정/지점 데이터를 그대로 재사용 -->
+<script src="../config.js"></script>
+<script src="../data.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>
