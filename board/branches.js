@@ -147,8 +147,8 @@ window.BANK_BOARD_BRANCHES = [
   {"quarter":"매월","bank":"기업은행","center":"순천","branchNo":"","name":"여수","address":"전남광주통합특별시 여수시 통제영5길 6","phone":"","staff":"김준호","memoId":"m_668AF741"},
   {"quarter":"매월","bank":"기업은행","center":"순천","branchNo":"","name":"남원","address":"전북특별자치도 남원시 남문로 462","phone":"","staff":"김대한","memoId":"m_66883E35"},
   {"quarter":"GA_대리점","bank":"메리츠","center":"순천","branchNo":"S041840","name":"에이비에이금융서비스 유한회사(프로)","address":"전남 고흥군 고흥읍 백련장전길21,","phone":"전화 010-6889-6621","staff":"김대한","memoId":"m_7AE2D166"},
-  {"quarter":"TA_본부","bank":"메리츠","center":"순천","branchNo":"S013501","name":"전남동부권본부(광양)","address":"전남 고흥군 고흥읍 봉동주공길38-1,","phone":"전화 010-5253-0075","staff":"순천","memoId":"m_934221F"},
-  {"quarter":"GA_대리점","bank":"메리츠","center":"순천","branchNo":"S035014","name":"한솔금융서비스 주식회사","address":"전남 고흥군 고흥읍 봉황길9,","phone":"전화 010-6646-4387","staff":"순천","memoId":"m_6DBB2E85"},
+  {"quarter":"TA_본부","bank":"메리츠","center":"순천","branchNo":"S013501","name":"전남동부권본부(광양)","address":"전남 고흥군 고흥읍 봉동주공길38-1,","phone":"전화 010-5253-0075","staff":"김대한","memoId":"m_934221F"},
+  {"quarter":"GA_대리점","bank":"메리츠","center":"순천","branchNo":"S035014","name":"한솔금융서비스 주식회사","address":"전남 고흥군 고흥읍 봉황길9,","phone":"전화 010-6646-4387","staff":"김대한","memoId":"m_6DBB2E85"},
   {"quarter":"GA_대리점","bank":"메리츠","center":"순천","branchNo":"S030528","name":"(주)드림라이프(고흥)","address":"전남 고흥군 고흥읍 터미널길3,","phone":"전화 061-832-8853","staff":"김대한","memoId":"m_3FEB2594"},
   {"quarter":"GA_대리점","bank":"메리츠","center":"순천","branchNo":"S001002","name":"유퍼스트보험마케팅(주)(광양지사)","address":"전남 광양시 공영로 65 (중동)","phone":"전화 061-795-0021","staff":"김대한","memoId":"m_381D5707"},
   {"quarter":"GA_대리점","bank":"메리츠","center":"순천","branchNo":"S005373","name":"주식회사 더금융서비스(동행지점)","address":"전남 광양시 광양읍 희양현로11-1,","phone":"전화 061-762-6501","staff":"김대한","memoId":"m_485A38C7"},
@@ -318,12 +318,5 @@ window.BANK_BOARD_BRANCHES = [
   {"quarter":"GA_대리점","bank":"메리츠","center":"순천","branchNo":"S019958","name":"케이지에이에셋(주)(하누리)","address":"전남 장흥군 장흥읍 동교1길40,","phone":"전화 010-9601-7545","staff":"김대한","memoId":"m_7990942C"},
   {"quarter":"GA_대리점","bank":"메리츠","center":"순천","branchNo":"S021281","name":"(주)엠금융서비스(장흥)","address":"전남 장흥군 장흥읍 동교1길47,","phone":"전화 061-864-4800","staff":"김대한","memoId":"m_58F92C00"},
   {"quarter":"GA_대리점","bank":"메리츠","center":"순천","branchNo":"S016948","name":"(주)글로벌금융판매(케이엘인슈장흥)","address":"전남 장흥군 장흥읍 동교3길5,","phone":"전화 010-9887-3051","staff":"김대한","memoId":"m_3152DEA"},
-  {"quarter":"GA_대리점","bank":"메리츠","center":"순천","branchNo":"S031089","name":"주식회사 삼성금융파트너스(장흥보성)","address":"전남 장흥군 장흥읍 흥성로3,","phone":"전화 061-862-4831","staff":"김대한","memoId":"m_4DB08C54"},
-  {"quarter":"1~3,4~6,7~9,10~12","bank":"신한은행","center":"순천","branchNo":"","name":"순천법원","address":"전남광주 순천시 왕지로 21","phone":"","staff":"장창형","memoId":"m_383A14E1"},
-  {"quarter":"1~3,4~6,7~9,10~12","bank":"신한은행","center":"순천","branchNo":"","name":"여수금융센터","address":"전남광주 여수시 시청로 6","phone":"","staff":"김준호","memoId":"m_4D94D47F"},
-  {"quarter":"1~6,7~12","bank":"전북은행","center":"순천","branchNo":"","name":"남원","address":"전북특별자치도 남원시 시청로 50","phone":"","staff":"김대한","memoId":"m_4DCDA3A7"},
-  {"quarter":"1~3,4~6,7~9,10~12","bank":"우리은행","center":"순천","branchNo":"","name":"광양 POSCO금융센터","address":"전남광주통합특별시 광양시 희망길 12-7","phone":"","staff":"김준호","memoId":"m_21D2532C"},
-  {"quarter":"매월","bank":"하나은행","center":"순천","branchNo":"","name":"순천신대","address":"전남광주통합특별시 순천시 해룡면 향매로 59","phone":"","staff":"김준호","memoId":"m_6E57A0AA"},
-  {"quarter":"매월","bank":"하나은행","center":"순천","branchNo":"","name":"여수","address":"전남광주 여수시 통제영4길 3","phone":"","staff":"김준호","memoId":"m_27989A46"},
-  {"quarter":"매월","bank":"하나은행","center":"순천","branchNo":"","name":"광양","address":"전남광주 광양시 중마중앙로 118","phone":"","staff":"김준호","memoId":"m_27956984"}
+  {"quarter":"GA_대리점","bank":"메리츠","center":"순천","branchNo":"S031089","name":"주식회사 삼성금융파트너스(장흥보성)","address":"전남 장흥군 장흥읍 흥성로3,","phone":"전화 061-862-4831","staff":"김대한","memoId":"m_4DB08C54"}
 ];
