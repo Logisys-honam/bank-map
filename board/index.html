@@ -1,81 +1,108 @@
 <!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <title>순천센터 공용 업무보드</title>
-  <style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>순천센터 공용 업무보드</title>
+<style>
 *{box-sizing:border-box}
 :root{
-  --blue:#1769e0;--blue2:#eaf2ff;--green:#158a56;--green2:#e8f7ef;
-  --orange:#f59e0b;--orange2:#fff4db;--red:#cb3a31;--red2:#fdebea;
-  --ink:#172033;--muted:#667085;--line:#dfe5eb;--bg:#f5f7f9;--white:#fff
+  --blue:#1769e0;--blue2:#eaf2ff;--green:#148a57;--green2:#eaf8f0;
+  --orange:#f59e0b;--orange2:#fff4db;--red:#ca4139;--red2:#fdeceb;
+  --ink:#172033;--muted:#667085;--line:#e1e6eb;--bg:#f5f7f9;--white:#fff;
+  --drawer:280px;
 }
 html,body{margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans KR",sans-serif;background:var(--bg);color:var(--ink)}
 button,input,select,textarea{font:inherit}.hidden{display:none!important}
-.topbar{position:sticky;top:0;z-index:30;display:flex;justify-content:space-between;align-items:center;padding:12px 18px;background:#fff;border-bottom:1px solid var(--line)}
-.titlebox h1{margin:0;font-size:20px}.sync{margin-top:3px;font-size:11px;color:var(--green)}
-.map-btn{text-decoration:none;background:var(--blue2);color:#1452a3;padding:8px 12px;border-radius:9px;font-weight:900}
-.page{max-width:1700px;margin:auto;padding:12px}
-.summary-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.summary-card{appearance:none;border:1px solid var(--line);background:#fff;border-radius:11px;padding:11px 13px;text-align:left;cursor:pointer}
-.summary-card span{font-size:11px;color:var(--muted)}.summary-card b{display:block;font-size:23px;margin-top:2px}.summary-card.active{border-color:var(--blue);box-shadow:0 0 0 2px rgba(23,105,224,.08)}
-.controls{display:flex;gap:8px;margin:9px 0}.search-wrap{flex:1}.controls input,.controls select{height:40px;border:1px solid #cfd6de;border-radius:8px;background:#fff;padding:0 10px}.controls input{width:100%}
-.staff-tabs{display:flex;gap:6px;overflow:auto;padding-bottom:9px}.staff-tab{border:0;background:#e9eef4;color:#344054;border-radius:999px;padding:8px 12px;font-weight:900;white-space:nowrap}.staff-tab.active{background:var(--blue);color:#fff}
-.workspace{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(360px,.8fr);gap:10px;align-items:start}
-.list-panel,.detail-panel{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
-.list-head{display:grid;grid-template-columns:minmax(220px,.8fr) minmax(280px,1.4fr) 120px;background:#f2f4f7;border-bottom:1px solid var(--line);font-size:12px;font-weight:900;padding:9px 12px}
-.branch-row{display:grid;grid-template-columns:minmax(220px,.8fr) minmax(280px,1.4fr) 120px;align-items:center;border-bottom:1px solid #edf0f3;padding:10px 12px;cursor:pointer;min-height:62px}
-.branch-row:hover{background:#fafcff}.branch-row.selected{background:#eef5ff}
-.branch-title{font-size:14px;font-weight:900}.branch-sub{font-size:10px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.recent{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.recent.none{color:#98a2b3}.recent-meta{font-size:10px;color:var(--muted);margin-top:3px}
-.status-wrap{display:flex;flex-direction:column;align-items:flex-start;gap:4px}.pill{display:inline-block;border-radius:999px;padding:4px 8px;font-size:10px;font-weight:900}.pill.todo{background:var(--orange2);color:#9a6700}.pill.done{background:var(--green2);color:#11623f}.pill.none{background:#f2f4f7;color:#667085}
-.detail-panel{position:sticky;top:72px;max-height:calc(100vh - 86px);overflow:auto}.detail-empty{padding:50px 20px;text-align:center;color:#98a2b3;line-height:1.6}
-.detail-head{padding:14px;border-bottom:1px solid var(--line);background:#fff;position:sticky;top:0;z-index:3}.detail-head-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.detail-name{font-size:19px;font-weight:900}.detail-sub{font-size:11px;color:var(--muted);margin-top:4px}.add-btn{border:0;background:var(--blue);color:#fff;border-radius:8px;padding:9px 11px;font-weight:900}
-.memo-list{padding:10px;display:flex;flex-direction:column;gap:8px}.memo-card{border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff}.memo-card.done{background:#f2fbf6;border-color:#b8e4cd}
-.memo-top{display:flex;justify-content:space-between;gap:8px;font-size:11px;font-weight:900}.memo-text{font-size:14px;line-height:1.5;white-space:pre-wrap;margin:7px 0}.memo-meta{font-size:10px;color:var(--muted)}.memo-actions{display:flex;gap:6px;margin-top:8px}.memo-actions button{border:0;border-radius:7px;padding:6px 9px;font-size:11px;font-weight:900}.complete{background:#dcfce7;color:#166534}.undo{background:#ffedd5;color:#9a3412}.delete{background:#fee2e2;color:#991b1b}.empty{padding:35px;text-align:center;color:#98a2b3}
-.modal{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.48);display:flex;align-items:center;justify-content:center;padding:18px}.modal-card{width:min(520px,100%);background:#fff;border-radius:15px;padding:17px}.modal-card h2{margin:0 0 10px;font-size:18px}.modal-card textarea{width:100%;min-height:150px;border:1px solid #ccd3db;border-radius:9px;padding:10px;resize:vertical}.modal-buttons{display:flex;justify-content:flex-end;gap:7px;margin-top:9px}.btn{border-radius:8px;padding:8px 11px;font-weight:900}.primary{border:0;background:var(--blue);color:#fff}.secondary{border:1px solid #d0d5dd;background:#fff}
-@media(max-width:980px){
-  .workspace{grid-template-columns:1fr}.detail-panel{position:static;max-height:none}
-}
-@media(max-width:700px){
-  .page{padding:8px}.topbar{padding:10px 12px}.titlebox h1{font-size:17px}
-  .summary-row{grid-template-columns:repeat(2,1fr)}
-  .controls{display:grid;grid-template-columns:1fr 1fr}.search-wrap{grid-column:1/-1}
-  .list-head{display:none}.branch-row{grid-template-columns:1fr 90px;gap:6px}.branch-row>div:nth-child(2){grid-column:1/2}.branch-row>div:nth-child(3){grid-column:2/3;grid-row:1/3}
-}
+button{cursor:pointer}
 
+.topbar{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:10px;background:#fff;border-bottom:1px solid var(--line);padding:10px 12px}
+.menu-btn{width:42px;height:42px;border:0;border-radius:10px;background:#f2f4f7;font-size:25px;font-weight:900;line-height:1}
+.titlebox{min-width:0;flex:1}.titlebox h1{margin:0;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sync{font-size:10px;color:var(--green);margin-top:2px}
+.header-stat{font-size:11px;color:#475467;white-space:nowrap}
+.map-btn{text-decoration:none;background:var(--blue2);color:#1452a3;font-weight:900;padding:8px 10px;border-radius:9px;white-space:nowrap}
+
+.drawer-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.32);z-index:70}
+.drawer{position:fixed;left:0;top:0;bottom:0;width:min(var(--drawer),84vw);z-index:80;background:#fff;box-shadow:12px 0 35px rgba(0,0,0,.18);transform:translateX(-105%);transition:transform .18s ease;display:flex;flex-direction:column}
+.drawer.open{transform:translateX(0)}
+.drawer-head{display:flex;align-items:center;justify-content:space-between;padding:16px;border-bottom:1px solid var(--line)}
+.drawer-head strong{font-size:18px}.drawer-close{border:0;background:#f2f4f7;border-radius:9px;width:36px;height:36px;font-size:22px}
+.drawer-body{padding:10px;overflow:auto}.drawer-section{font-size:10px;font-weight:900;color:#98a2b3;padding:12px 8px 5px}
+.nav-btn{width:100%;border:0;background:transparent;border-radius:9px;padding:11px 12px;text-align:left;font-weight:900;color:#344054;display:flex;justify-content:space-between;gap:8px}
+.nav-btn:hover{background:#f5f7fa}.nav-btn.active{background:var(--blue2);color:#1452a3}
+.nav-count{font-size:11px;color:#667085}.nav-btn.active .nav-count{color:#1452a3}
+
+.page{max-width:1200px;margin:auto;padding:10px}
+.toolbar{display:flex;gap:7px;margin-bottom:9px}
+.toolbar input{flex:1;height:42px;border:1px solid #cfd6de;border-radius:9px;background:#fff;padding:0 11px}
+.toolbar select{height:42px;border:1px solid #cfd6de;border-radius:9px;background:#fff;padding:0 10px}
+.view-title{display:flex;align-items:end;justify-content:space-between;gap:10px;margin:6px 2px 8px}
+.view-title h2{font-size:16px;margin:0}.view-title span{font-size:11px;color:var(--muted)}
+
+.list{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.row{display:grid;grid-template-columns:minmax(230px,.85fr) minmax(260px,1.35fr) 105px;gap:8px;align-items:center;padding:11px 12px;border-bottom:1px solid #edf0f3;cursor:pointer}
+.row:last-child{border-bottom:0}.row:hover{background:#fafcff}
+.branch-name{font-size:14px;font-weight:900}.branch-sub{font-size:10px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.latest{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.latest.none{color:#98a2b3}.latest-meta{font-size:10px;color:var(--muted);margin-top:3px}
+.pill{display:inline-block;border-radius:999px;padding:4px 8px;font-size:10px;font-weight:900}
+.pill.todo{background:var(--orange2);color:#956400}.pill.none{background:#f2f4f7;color:#667085}.pill.done{background:var(--green2);color:#11623f}
+.empty{padding:40px;text-align:center;color:#98a2b3}
+
+.modal{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.48);display:flex;align-items:center;justify-content:center;padding:15px}
+.detail-card,.memo-modal-card{width:min(680px,100%);max-height:86vh;overflow:auto;background:#fff;border-radius:16px;box-shadow:0 18px 60px rgba(0,0,0,.25)}
+.detail-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:2}
+.detail-head h2{font-size:20px;margin:0}.detail-sub{font-size:11px;color:var(--muted);margin-top:4px}
+.close-x{border:0;background:#f2f4f7;border-radius:9px;width:38px;height:38px;font-size:25px;line-height:1}
+.detail-actions{display:flex;justify-content:flex-end;padding:10px 14px 0}.add-btn{border:0;background:var(--blue);color:#fff;border-radius:8px;padding:9px 12px;font-weight:900}
+.memo-list{padding:10px;display:flex;flex-direction:column;gap:8px}
+.memo-card{border:1px solid var(--line);border-radius:10px;padding:11px;background:#fff}.memo-top{display:flex;justify-content:space-between;gap:8px;font-size:11px;font-weight:900}
+.memo-text{font-size:14px;line-height:1.5;white-space:pre-wrap;margin:7px 0}.memo-meta{font-size:10px;color:var(--muted)}
+.memo-actions{display:flex;gap:6px;margin-top:8px}.memo-actions button{border:0;border-radius:7px;padding:7px 10px;font-size:11px;font-weight:900}
+.complete{background:#dcfce7;color:#166534}.delete{background:#fee2e2;color:#991b1b}
+.memo-modal-card{padding:17px}.memo-modal-card h2{margin:0 0 10px;font-size:18px}.memo-modal-card textarea{width:100%;min-height:150px;border:1px solid #ccd3db;border-radius:9px;padding:10px;resize:vertical}
+.modal-buttons{display:flex;justify-content:flex-end;gap:7px;margin-top:9px}.btn{border-radius:8px;padding:8px 11px;font-weight:900}.primary{border:0;background:var(--blue);color:#fff}.secondary{border:1px solid #d0d5dd;background:#fff}
+
+.history-row{display:grid;grid-template-columns:minmax(190px,.7fr) minmax(260px,1.3fr) 115px;gap:8px;padding:11px 12px;border-bottom:1px solid #edf0f3;align-items:center}
+.history-row:last-child{border-bottom:0}.history-name{font-weight:900;font-size:13px}.history-text{font-size:13px}.history-time{font-size:11px;color:var(--green);font-weight:900}
+
+@media(max-width:700px){
+  .header-stat{display:none}.page{padding:8px}.toolbar{display:grid;grid-template-columns:1fr 120px}.toolbar input{grid-column:1/-1}
+  .row{grid-template-columns:1fr 88px;gap:5px}.row>div:nth-child(2){grid-column:1/2}.row>div:nth-child(3){grid-column:2/3;grid-row:1/3}
+  .history-row{grid-template-columns:1fr 90px}.history-row>div:nth-child(2){grid-column:1/2}.history-row>div:nth-child(3){grid-column:2/3;grid-row:1/3}
+}
 </style>
 </head>
 <body>
+
 <header class="topbar">
+  <button id="menuBtn" class="menu-btn" aria-label="메뉴">☰</button>
   <div class="titlebox">
     <h1>순천센터 공용 업무보드</h1>
     <div id="sync" class="sync">연결 중...</div>
   </div>
+  <div id="headerStat" class="header-stat"></div>
   <a class="map-btn" href="../">은행 지도</a>
 </header>
 
-<main class="page">
-  <section class="summary-row">
-    <button class="summary-card active" data-summary="all">
-      <span>전체 지점</span><b id="cBranches">0</b>
-    </button>
-    <button class="summary-card" data-summary="memo">
-      <span>메모 있는 곳</span><b id="cMemoBranches">0</b>
-    </button>
-    <button class="summary-card" data-summary="todo">
-      <span>진행중 메모</span><b id="cTodo">0</b>
-    </button>
-    <button class="summary-card" data-summary="done">
-      <span>완료 메모</span><b id="cDone">0</b>
-    </button>
-  </section>
+<div id="drawerBackdrop" class="drawer-backdrop hidden"></div>
+<aside id="drawer" class="drawer">
+  <div class="drawer-head">
+    <strong>업무 메뉴</strong>
+    <button id="drawerClose" class="drawer-close">×</button>
+  </div>
+  <div class="drawer-body">
+    <div class="drawer-section">업무현황</div>
+    <button class="nav-btn active" data-view="all"><span>전체 지점</span><span id="navAll" class="nav-count">0</span></button>
+    <button class="nav-btn" data-view="todo"><span>진행중</span><span id="navTodo" class="nav-count">0</span></button>
+    <button class="nav-btn" data-view="todayDone"><span>오늘 완료</span><span id="navDone" class="nav-count">0</span></button>
+    <div class="drawer-section">담당자</div>
+    <div id="staffNav"></div>
+  </div>
+</aside>
 
-  <section class="controls">
-    <div class="search-wrap">
-      <input id="search" type="search" placeholder="지점명 또는 메모내용 검색">
-    </div>
+<main class="page">
+  <section class="toolbar">
+    <input id="search" type="search" placeholder="지점명 또는 메모내용 검색">
     <select id="writer">
       <option value="">작성자 선택</option>
       <option>김준호</option>
@@ -83,41 +110,39 @@ button,input,select,textarea{font:inherit}.hidden{display:none!important}
       <option>김대한</option>
       <option>관리자</option>
     </select>
-    <select id="sort">
-      <option value="todoFirst">진행중 우선</option>
-      <option value="name">지점명순</option>
-      <option value="latest">최근 메모순</option>
-    </select>
   </section>
 
-  <nav id="staffTabs" class="staff-tabs"></nav>
+  <div class="view-title">
+    <h2 id="viewTitle">전체 지점</h2>
+    <span id="viewCount"></span>
+  </div>
 
-  <section class="workspace">
-    <div class="list-panel">
-      <div class="list-head">
-        <div>지점</div>
-        <div>최근 메모</div>
-        <div>상태</div>
-      </div>
-      <div id="branchList" class="branch-list"></div>
-      <div id="empty" class="empty hidden">표시할 지점이 없습니다.</div>
-    </div>
-
-    <aside id="detailPanel" class="detail-panel">
-      <div class="detail-empty">
-        왼쪽에서 지점을 선택하면<br>메모 전체 내용을 볼 수 있습니다.
-      </div>
-    </aside>
-  </section>
+  <section id="list" class="list"></section>
 </main>
 
-<div id="modal" class="modal hidden">
-  <div class="modal-card">
-    <h2 id="modalTitle">메모 추가</h2>
+<div id="detailModal" class="modal hidden">
+  <div class="detail-card">
+    <div class="detail-head">
+      <div>
+        <h2 id="detailTitle"></h2>
+        <div id="detailSub" class="detail-sub"></div>
+      </div>
+      <button id="detailClose" class="close-x">×</button>
+    </div>
+    <div class="detail-actions">
+      <button id="detailAdd" class="add-btn">메모 추가</button>
+    </div>
+    <div id="detailMemos" class="memo-list"></div>
+  </div>
+</div>
+
+<div id="memoModal" class="modal hidden">
+  <div class="memo-modal-card">
+    <h2 id="memoModalTitle">메모 추가</h2>
     <textarea id="memoText" placeholder="공유할 업무 메모를 입력하세요."></textarea>
     <div class="modal-buttons">
-      <button id="cancel" class="btn secondary">취소</button>
-      <button id="save" class="btn primary">추가</button>
+      <button id="memoCancel" class="btn secondary">취소</button>
+      <button id="memoSave" class="btn primary">추가</button>
     </div>
   </div>
 </div>
@@ -127,209 +152,264 @@ button,input,select,textarea{font:inherit}.hidden{display:none!important}
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+
 <script>
 (() => {
-  const $ = id => document.getElementById(id);
-  const sync = $("sync");
-
-  function firstDefined(candidates){
-    for(const fn of candidates){
-      try{const v=fn();if(v!==undefined&&v!==null)return v}catch(e){}
-    }
-    return null;
-  }
-
-  const rawData = firstDefined([
-    () => window.BANK_BRANCHES,
-    () => typeof BANK_BRANCHES!=="undefined" ? BANK_BRANCHES : undefined
-  ]);
-
-  if(!Array.isArray(rawData)){
-    sync.textContent="data.js 연결 실패";
-    alert("기존 data.js의 BANK_BRANCHES를 읽지 못했습니다.");
-    return;
-  }
+  const $=id=>document.getElementById(id);
+  const rawData=window.BANK_BRANCHES;
+  if(!Array.isArray(rawData)){alert("BANK_BRANCHES를 읽지 못했습니다.");return;}
 
   function stableMemoId(bank,name){
     const s=`${bank||""}|${name||""}`;let h=5381;
-    for(let i=0;i<s.length;i++) h=(h*33+s.charCodeAt(i))%2147483647;
+    for(let i=0;i<s.length;i++)h=(h*33+s.charCodeAt(i))%2147483647;
     return "m_"+Math.trunc(h).toString(16).toUpperCase();
   }
 
   const branches=rawData.map((x,i)=>({
-    id:x.id||x.branchId||String(i),
-    memoId:x.memoId||x.memoID||x.memo_id||stableMemoId(x.bank,x.name),
+    id:x.id||String(i),
+    memoId:x.memoId||stableMemoId(x.bank,x.name),
     name:x.name||"(지점명 없음)",
     staff:x.staff||x.manager||x.assignee||x.담당직원||x.staffName||"미지정",
     bank:x.bank||"",center:x.center||"",quarter:x.quarter||"",
     address:x.address||"",phone:x.phone||""
   }));
 
-  async function loadFirebaseFromRootIndex(){
+  async function loadFirebaseFromRoot(){
     const html=await fetch("../index.html",{cache:"no-store"}).then(r=>r.text());
-    const cfgMatch=html.match(/const\s+fbCfg\s*=\s*(\{[\s\S]*?\})\s*;/);
-    if(!cfgMatch) throw new Error("기존 index.html에서 fbCfg를 찾지 못했습니다.");
-    const cfg=Function('"use strict";return ('+cfgMatch[1]+')')();
+    const m=html.match(/const\s+fbCfg\s*=\s*(\{[\s\S]*?\})\s*;/);
+    if(!m)throw new Error("기존 index.html에서 Firebase 설정을 찾지 못했습니다.");
+    const cfg=Function('"use strict";return ('+m[1]+')')();
     let memoPath="bankMap/memos";
-    const memoMatch=html.match(/const\s+memoBasePath\s*=\s*['"]([^'"]+)['"]/);
-    if(memoMatch&&memoMatch[1]) memoPath=memoMatch[1];
+    const mm=html.match(/const\s+memoBasePath\s*=\s*['"]([^'"]+)['"]/);
+    if(mm&&mm[1])memoPath=mm[1];
     return {cfg,memoPath};
   }
 
-  let db=null,auth=null,memoPath="bankMap/memos";
-  const state={memos:{},staff:"전체",summary:"all",search:"",sort:"todoFirst",selected:null};
+  let db,memoPath="bankMap/memos",historyPath="bankMap/memoHistory";
+  const state={memos:{},todayHistory:{},view:"all",staff:null,search:"",selected:null};
 
   const esc=s=>String(s??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
   const fmt=ms=>{if(!ms)return "";try{return new Intl.DateTimeFormat("ko-KR",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}).format(new Date(ms))}catch{return ""}};
+  function todayKey(){
+    const p=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Seoul",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
+    const o={};p.forEach(x=>o[x.type]=x.value);return `${o.year}-${o.month}-${o.day}`;
+  }
 
   function memosFor(b){
     const o=state.memos[b.memoId]||{};
-    return Object.entries(o).map(([key,v])=>({key,...(v||{})}))
-      .sort((a,b)=>(Number(a.no)||0)-(Number(b.no)||0));
+    return Object.entries(o).map(([key,v])=>({key,...(v||{})})).sort((a,b)=>(Number(a.no)||0)-(Number(b.no)||0));
   }
   function latestMemo(b){
-    const ms=memosFor(b);if(!ms.length)return null;
-    return [...ms].sort((a,b)=>(Number(b.createdAt)||0)-(Number(a.createdAt)||0))[0];
+    const a=memosFor(b);if(!a.length)return null;
+    return [...a].sort((x,y)=>(Number(y.createdAt)||0)-(Number(x.createdAt)||0))[0];
   }
   function nextNo(b){return memosFor(b).reduce((m,x)=>Math.max(m,Number(x.no)||0),0)+1}
-  function uniqueStaff(){const seen=new Set(),out=[];branches.forEach(b=>{const s=b.staff||"미지정";if(!seen.has(s)){seen.add(s);out.push(s)}});return out}
-
-  function branchStats(b){
-    const ms=memosFor(b);
-    const todo=ms.filter(x=>!x.done).length,done=ms.length-todo;
-    return {count:ms.length,todo,done};
+  function uniqueStaff(){
+    const seen=new Set(),out=[];
+    ["김준호","장창형","김대한"].forEach(s=>{seen.add(s);out.push(s)});
+    branches.forEach(b=>{const s=b.staff||"미지정";if(!seen.has(s)){seen.add(s);out.push(s)}});
+    return out;
   }
 
-  function match(b){
-    if(state.staff!=="전체"&&b.staff!==state.staff)return false;
-    const st=branchStats(b);
-    if(state.summary==="memo"&&st.count===0)return false;
-    if(state.summary==="todo"&&st.todo===0)return false;
-    if(state.summary==="done"&&st.done===0)return false;
+  function branchVisible(b){
+    if(state.staff && b.staff!==state.staff)return false;
+    const ms=memosFor(b);
+    if(state.view==="todo" && ms.length===0)return false;
     const q=state.search.trim().toLowerCase();
-    if(q&&!([b.name,b.address,b.bank,b.center,...memosFor(b).map(m=>m.text)].join(" ").toLowerCase().includes(q)))return false;
+    if(q && ![b.name,b.address,b.bank,b.center,...ms.map(x=>x.text)].join(" ").toLowerCase().includes(q))return false;
     return true;
   }
 
-  function sortedBranches(){
-    const list=branches.filter(match);
-    return list.sort((a,b)=>{
-      if(state.sort==="name")return a.name.localeCompare(b.name,"ko");
-      if(state.sort==="latest")return (latestMemo(b)?.createdAt||0)-(latestMemo(a)?.createdAt||0);
-      const sa=branchStats(a),sb=branchStats(b);
-      if(sa.todo!==sb.todo)return sb.todo-sa.todo;
-      if(sa.count!==sb.count)return sb.count-sa.count;
+  function currentBranches(){
+    return branches.filter(branchVisible).sort((a,b)=>{
+      if(state.view==="todo"){
+        const da=memosFor(a).length,dbb=memosFor(b).length;
+        if(da!==dbb)return dbb-da;
+      }
       return a.name.localeCompare(b.name,"ko");
     });
   }
 
-  function renderSummary(){
-    let memoBranches=0,todo=0,done=0;
-    branches.forEach(b=>{const s=branchStats(b);if(s.count)memoBranches++;todo+=s.todo;done+=s.done});
-    $("cBranches").textContent=branches.length;$("cMemoBranches").textContent=memoBranches;$("cTodo").textContent=todo;$("cDone").textContent=done;
-    document.querySelectorAll(".summary-card").forEach(x=>x.classList.toggle("active",x.dataset.summary===state.summary));
+  function historyItems(){
+    return Object.values(state.todayHistory||{}).sort((a,b)=>(Number(b.completedAt)||0)-(Number(a.completedAt)||0));
   }
 
-  function renderTabs(){
-    const el=$("staffTabs");el.innerHTML="";
-    ["전체",...uniqueStaff()].forEach(s=>{
-      const b=document.createElement("button");b.className="staff-tab"+(state.staff===s?" active":"");b.textContent=s;
-      b.onclick=()=>{state.staff=s;render()};el.appendChild(b);
+  function renderDrawer(){
+    const todoBranches=branches.filter(b=>memosFor(b).length>0).length;
+    $("navAll").textContent=branches.length;
+    $("navTodo").textContent=todoBranches;
+    $("navDone").textContent=historyItems().length;
+    $("headerStat").textContent=`진행중 ${todoBranches}곳 · 오늘완료 ${historyItems().length}건`;
+
+    const nav=$("staffNav");nav.innerHTML="";
+    uniqueStaff().forEach(s=>{
+      const count=branches.filter(b=>b.staff===s).length;
+      const btn=document.createElement("button");
+      btn.className="nav-btn"+(state.staff===s?" active":"");
+      btn.innerHTML=`<span>${esc(s)}</span><span class="nav-count">${count}</span>`;
+      btn.onclick=()=>{state.staff=s;state.view="all";setActiveNav();closeDrawer();render()};
+      nav.appendChild(btn);
+    });
+    setActiveNav();
+  }
+
+  function setActiveNav(){
+    document.querySelectorAll('[data-view]').forEach(btn=>{
+      btn.classList.toggle("active",!state.staff && btn.dataset.view===state.view);
     });
   }
 
-  function renderList(){
-    const list=sortedBranches(),el=$("branchList");el.innerHTML="";
-    $("empty").classList.toggle("hidden",list.length>0);
+  function render(){
+    renderDrawer();
+    if(state.view==="todayDone" && !state.staff)renderHistory();
+    else renderBranches();
+  }
+
+  function renderBranches(){
+    const list=currentBranches();
+    $("viewTitle").textContent=state.staff?`${state.staff} 담당 지점`:(state.view==="todo"?"진행중 업무":"전체 지점");
+    $("viewCount").textContent=`${list.length}곳`;
+    const el=$("list");el.innerHTML="";
+    if(!list.length){el.innerHTML='<div class="empty">표시할 지점이 없습니다.</div>';return}
+
     list.forEach(b=>{
-      const st=branchStats(b),latest=latestMemo(b);
-      const row=document.createElement("div");
-      row.className="branch-row"+(state.selected?.memoId===b.memoId?" selected":"");
-      let pill='<span class="pill none">메모없음</span>';
-      if(st.todo>0)pill=`<span class="pill todo">진행중 ${st.todo}</span>`;
-      else if(st.done>0)pill=`<span class="pill done">완료 ${st.done}</span>`;
+      const ms=memosFor(b),latest=latestMemo(b);
+      const row=document.createElement("div");row.className="row";
       row.innerHTML=`
-        <div><div class="branch-title">${esc(b.name)}</div><div class="branch-sub">${esc([b.bank,b.center,b.quarter?b.quarter+"분기":"",b.address].filter(Boolean).join(" · "))}</div></div>
-        <div>${latest?`<div class="recent">${esc(latest.text||"")}</div><div class="recent-meta">${esc(fmt(latest.createdAt))}</div>`:`<div class="recent none">등록된 메모 없음</div>`}</div>
-        <div class="status-wrap">${pill}${st.count?`<span class="recent-meta">전체 ${st.count}</span>`:""}</div>`;
-      row.onclick=()=>{state.selected=b;renderList();renderDetail()};
+        <div><div class="branch-name">${esc(b.name)}</div><div class="branch-sub">${esc([b.bank,b.center,b.quarter?b.quarter+"분기":"",b.address].filter(Boolean).join(" · "))}</div></div>
+        <div>${latest?`<div class="latest">${esc(latest.text||"")}</div><div class="latest-meta">${esc(fmt(latest.createdAt))}</div>`:'<div class="latest none">등록된 진행중 메모 없음</div>'}</div>
+        <div>${ms.length?`<span class="pill todo">진행중 ${ms.length}</span>`:'<span class="pill none">업무없음</span>'}</div>`;
+      row.onclick=()=>openDetail(b);
       el.appendChild(row);
     });
   }
 
+  function renderHistory(){
+    const items=historyItems();
+    $("viewTitle").textContent="오늘 완료";
+    $("viewCount").textContent=`${items.length}건`;
+    const el=$("list");el.innerHTML="";
+    if(!items.length){el.innerHTML='<div class="empty">오늘 완료한 메모가 없습니다.</div>';return}
+    items.forEach(h=>{
+      const row=document.createElement("div");row.className="history-row";
+      row.innerHTML=`
+        <div><div class="history-name">${esc(h.branchName||"")}</div><div class="branch-sub">${esc([h.bank,h.center].filter(Boolean).join(" · "))}</div></div>
+        <div class="history-text">${esc(h.text||"")}</div>
+        <div class="history-time">${esc(fmt(h.completedAt))}</div>`;
+      el.appendChild(row);
+    });
+  }
+
+  function openDetail(b){
+    state.selected=b;
+    $("detailTitle").textContent=b.name;
+    $("detailSub").textContent=[b.bank,b.center,b.quarter?b.quarter+"분기":"",b.address].filter(Boolean).join(" · ");
+    $("detailModal").classList.remove("hidden");
+    renderDetail();
+  }
+  function closeDetail(){$("detailModal").classList.add("hidden")}
+
   function renderDetail(){
-    const panel=$("detailPanel"),b=state.selected;
-    if(!b){panel.innerHTML='<div class="detail-empty">왼쪽에서 지점을 선택하면<br>메모 전체 내용을 볼 수 있습니다.</div>';return}
+    const b=state.selected,el=$("detailMemos");el.innerHTML="";
+    if(!b)return;
     const ms=memosFor(b);
-    panel.innerHTML=`
-      <div class="detail-head">
-        <div class="detail-head-top">
-          <div><div class="detail-name">${esc(b.name)}</div><div class="detail-sub">${esc([b.bank,b.center,b.quarter?b.quarter+"분기":"",b.address].filter(Boolean).join(" · "))}</div></div>
-          <button class="add-btn">메모 추가</button>
-        </div>
-      </div>
-      <div class="memo-list"></div>`;
-    panel.querySelector(".add-btn").onclick=()=>openModal(b);
-    const list=panel.querySelector(".memo-list");
-    if(!ms.length){list.innerHTML='<div class="detail-empty">등록된 메모가 없습니다.</div>';return}
-    ms.forEach(m=>list.appendChild(renderMemoCard(b,m)));
+    if(!ms.length){el.innerHTML='<div class="empty">현재 진행중인 메모가 없습니다.</div>';return}
+    ms.forEach(m=>{
+      const card=document.createElement("div");card.className="memo-card";
+      card.innerHTML=`
+        <div class="memo-top"><span>${esc(m.no||"")}번 메모</span><span>진행중</span></div>
+        <div class="memo-text">${esc(m.text||"")}</div>
+        <div class="memo-meta">${esc(fmt(m.createdAt))}${m.writer?" · "+esc(m.writer):""}</div>
+        <div class="memo-actions">
+          <button class="complete">완료</button>
+          <button class="delete">삭제</button>
+        </div>`;
+      card.querySelector(".complete").onclick=()=>completeMemo(b,m);
+      card.querySelector(".delete").onclick=async()=>{
+        if(confirm(`${b.name}의 ${m.no||""}번 메모를 삭제할까요?`))
+          await db.ref(`${memoPath}/${b.memoId}/${m.key}`).remove();
+      };
+      el.appendChild(card);
+    });
   }
 
-  function renderMemoCard(b,m){
-    const el=document.createElement("div");el.className="memo-card"+(m.done?" done":"");
-    const writer=m.writer||m.createdBy||"";
-    el.innerHTML=`
-      <div class="memo-top"><span>${esc(m.no||"")}번 메모</span><span>${m.done?"완료":"진행중"}</span></div>
-      <div class="memo-text">${esc(m.text||"")}</div>
-      <div class="memo-meta">${esc(fmt(m.createdAt))}${writer?" · "+esc(writer):""}${m.done&&m.completedAt?" · 완료 "+esc(fmt(m.completedAt)):""}</div>
-      <div class="memo-actions">
-        <button class="${m.done?"undo":"complete"}">${m.done?"완료 해제":"완료"}</button>
-        <button class="delete">삭제</button>
-      </div>`;
-    el.querySelector(m.done?".undo":".complete").onclick=async()=>{
-      const ref=db.ref(`${memoPath}/${b.memoId}/${m.key}`);
-      if(m.done)await ref.update({done:false,completedAt:null,completedBy:null});
-      else await ref.update({done:true,completedAt:firebase.database.ServerValue.TIMESTAMP,completedBy:$("writer").value||null});
+  async function completeMemo(b,m){
+    if(!confirm(`${b.name}의 ${m.no||""}번 메모를 완료 처리할까요?`))return;
+    const day=todayKey();
+    const historyKey=`${b.memoId}_${m.key}_${Date.now()}`;
+    const writer=$("writer").value||null;
+    const updates={};
+
+    updates[`${historyPath}/${day}/${historyKey}`]={
+      branchMemoId:b.memoId,branchName:b.name,bank:b.bank||"",center:b.center||"",
+      quarter:b.quarter||"",memoKey:m.key,memoNo:Number(m.no)||0,text:m.text||"",
+      writer:m.writer||null,createdAt:m.createdAt||null,
+      completedAt:firebase.database.ServerValue.TIMESTAMP,completedBy:writer
     };
-    el.querySelector(".delete").onclick=async()=>{
-      if(confirm(`${b.name}의 ${m.no||""}번 메모를 삭제할까요?`))await db.ref(`${memoPath}/${b.memoId}/${m.key}`).remove();
-    };
-    return el;
+
+    // 완료된 메모는 현재 진행중 목록에서 제거한다.
+    updates[`${memoPath}/${b.memoId}/${m.key}`]=null;
+
+    await db.ref().update(updates);
   }
 
-  function render(){renderSummary();renderTabs();renderList();renderDetail()}
+  function openMemoModal(){
+    const b=state.selected;if(!b)return;
+    $("memoModalTitle").textContent=`${b.name} · 메모 추가`;
+    $("memoText").value="";
+    $("memoModal").classList.remove("hidden");
+  }
+  function closeMemoModal(){$("memoModal").classList.add("hidden")}
 
-  function openModal(b){state.selected=b;$("modalTitle").textContent=b.name+" · 메모 추가";$("memoText").value="";$("modal").classList.remove("hidden")}
-  function closeModal(){$("modal").classList.add("hidden")}
-  $("cancel").onclick=closeModal;$("modal").onclick=e=>{if(e.target.id==="modal")closeModal()};
-  $("save").onclick=async()=>{
+  function openDrawer(){$("drawer").classList.add("open");$("drawerBackdrop").classList.remove("hidden")}
+  function closeDrawer(){$("drawer").classList.remove("open");$("drawerBackdrop").classList.add("hidden")}
+
+  $("menuBtn").onclick=openDrawer;$("drawerClose").onclick=closeDrawer;$("drawerBackdrop").onclick=closeDrawer;
+  document.querySelectorAll('[data-view]').forEach(btn=>btn.onclick=()=>{
+    state.view=btn.dataset.view;state.staff=null;closeDrawer();render();
+  });
+
+  $("detailClose").onclick=closeDetail;$("detailModal").onclick=e=>{if(e.target.id==="detailModal")closeDetail()};
+  $("detailAdd").onclick=openMemoModal;
+  $("memoCancel").onclick=closeMemoModal;$("memoModal").onclick=e=>{if(e.target.id==="memoModal")closeMemoModal()};
+  $("memoSave").onclick=async()=>{
     const b=state.selected,text=$("memoText").value.trim();if(!b||!text)return;
     await db.ref(`${memoPath}/${b.memoId}`).push().set({
-      no:nextNo(b),text,done:false,writer:$("writer").value||null,
-      createdAt:firebase.database.ServerValue.TIMESTAMP,completedAt:null
+      no:nextNo(b),text,writer:$("writer").value||null,
+      createdAt:firebase.database.ServerValue.TIMESTAMP
     });
-    closeModal();
+    closeMemoModal();
   };
 
-  document.querySelectorAll(".summary-card").forEach(x=>x.onclick=()=>{state.summary=x.dataset.summary;render()});
   $("search").oninput=e=>{state.search=e.target.value;render()};
-  $("sort").onchange=e=>{state.sort=e.target.value;render()};
   $("writer").value=localStorage.getItem("bankBoardWriter")||"";
   $("writer").onchange=e=>localStorage.setItem("bankBoardWriter",e.target.value);
 
   (async()=>{
     try{
-      const loaded=await loadFirebaseFromRootIndex();memoPath=loaded.memoPath;
+      const loaded=await loadFirebaseFromRoot();
+      memoPath=loaded.memoPath;
+      historyPath=memoPath.replace(/\/memos\/?$/,"/memoHistory");
+      if(historyPath===memoPath)historyPath="bankMap/memoHistory";
+
       const app=firebase.initializeApp(loaded.cfg,"bankWorkBoard");
-      auth=app.auth();db=app.database();
-      await auth.signInAnonymously();
+      db=app.database();
+      await app.auth().signInAnonymously();
+
       db.ref(memoPath).on("value",snap=>{
         state.memos=snap.val()||{};
-        sync.textContent="실시간 연결 · "+new Date().toLocaleTimeString("ko-KR");
+        $("sync").textContent="실시간 연결 · "+new Date().toLocaleTimeString("ko-KR");
+        render();
+        if(!$("detailModal").classList.contains("hidden"))renderDetail();
+      });
+
+      db.ref(`${historyPath}/${todayKey()}`).on("value",snap=>{
+        state.todayHistory=snap.val()||{};
         render();
       });
-      render();
-    }catch(e){console.error(e);sync.textContent="연결 실패";alert("Firebase 연결 실패: "+e.message)}
+    }catch(e){
+      console.error(e);$("sync").textContent="연결 실패";alert("Firebase 연결 실패: "+e.message);
+    }
   })();
 })();
 </script>
