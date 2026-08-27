@@ -14,6 +14,8 @@
 
   // 기존 bank-map의 data.js를 최대한 자동 인식
   const rawData = firstDefined([
+    () => window.BANK_BRANCHES,
+    () => typeof BANK_BRANCHES !== "undefined" ? BANK_BRANCHES : undefined,
     () => typeof data !== "undefined" ? data : undefined,
     () => typeof BANK_DATA !== "undefined" ? BANK_DATA : undefined,
     () => typeof branchData !== "undefined" ? branchData : undefined,
@@ -54,13 +56,25 @@
     return;
   }
 
+  function stableMemoId(bank,name){
+    const s = `${bank||""}|${name||""}`;
+    let h = 5381;
+    for(let i=0;i<s.length;i++){
+      h = (h * 33 + s.charCodeAt(i)) % 2147483647;
+    }
+    return "m_" + Math.trunc(h).toString(16).toUpperCase();
+  }
+
   const branches = rawData.map((x,i) => ({
     id: x.id || x.branchId || String(i),
-    memoId: x.memoId || x.memoID || x.memo_id || x.id || x.branchId || String(i),
+    memoId: x.memoId || x.memoID || x.memo_id || stableMemoId(x.bank, x.name),
     name: x.name || x.officeName || x.branchName || x.사무소명 || "(지점명 없음)",
     staff: x.staff || x.manager || x.assignee || x.담당직원 || x.staffName || "미지정",
     bank: x.bank || x.bankType || x.은행 || "",
-    quarter: x.quarter || x.q || x.분기 || ""
+    center: x.center || x.센터 || "",
+    quarter: x.quarter || x.q || x.분기 || "",
+    address: x.address || x.주소 || "",
+    phone: x.phone || x.지점전화번호 || ""
   }));
 
   let app;
@@ -149,7 +163,7 @@
     card.innerHTML=`
       <div class="branch-head">
         <div><span class="badge">${esc(b.staff)}</span><h2>${esc(b.name)}</h2>
-        <div class="sub">${esc([b.bank,b.quarter?b.quarter+"분기":""].filter(Boolean).join(" · "))}</div></div>
+        <div class="sub">${esc([b.bank,b.center,b.quarter?b.quarter+"분기":"",b.address].filter(Boolean).join(" · "))}</div></div>
         <button class="add">메모 추가</button>
       </div><div class="memos"></div>`;
     card.querySelector(".add").onclick=()=>openModal(b);

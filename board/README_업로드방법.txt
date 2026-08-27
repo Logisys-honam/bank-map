@@ -43,3 +43,10 @@ board/index.html이 자동으로 ../config.js 와 ../data.js를 읽습니다.
 
 그 경우 GitHub에서 config.js와 data.js를 각각 열어
 첫 부분 10~20줄 정도만 캡처해서 ChatGPT에 보내면 바로 맞출 수 있습니다.
+
+
+[v2.1 수정사항]
+- 기존 data.js의 실제 변수명 window.BANK_BRANCHES 를 직접 인식합니다.
+- quarter / bank / center / name / address / phone 형식을 그대로 읽습니다.
+- 기존 Excel/VBA와 같은 방식으로 memoId를 계산해 Firebase 메모와 연결합니다.
+- GitHub에서는 board/app.js만 교체해도 됩니다.
