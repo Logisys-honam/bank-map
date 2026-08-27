@@ -27,7 +27,7 @@ button{cursor:pointer}
 .drawer.open{transform:translateX(0)}
 .drawer-head{display:flex;align-items:center;justify-content:space-between;padding:16px;border-bottom:1px solid var(--line)}
 .drawer-head strong{font-size:18px}.drawer-close{border:0;background:#f2f4f7;border-radius:9px;width:36px;height:36px;font-size:22px}
-.drawer-body{padding:10px;overflow:auto}.drawer-section{font-size:10px;font-weight:900;color:#98a2b3;padding:12px 8px 5px}
+.drawer-body{padding:10px;overflow:auto}.drawer-section{font-size:10px;font-weight:900;color:#98a2b3;padding:14px 8px 5px;border-top:1px solid #f2f4f7}.drawer-section:first-child{border-top:0;padding-top:10px}
 .nav-btn{width:100%;border:0;background:transparent;border-radius:9px;padding:11px 12px;text-align:left;font-weight:900;color:#344054;display:flex;justify-content:space-between;gap:8px}
 .nav-btn:hover{background:#f5f7fa}.nav-btn.active{background:var(--blue2);color:#1452a3}
 .nav-count{font-size:11px;color:#667085}.nav-btn.active .nav-count{color:#1452a3}
@@ -95,6 +95,10 @@ button{cursor:pointer}
     <button class="nav-btn active" data-view="all"><span>전체 지점</span><span id="navAll" class="nav-count">0</span></button>
     <button class="nav-btn" data-view="todo"><span>진행중</span><span id="navTodo" class="nav-count">0</span></button>
     <button class="nav-btn" data-view="todayDone"><span>오늘 완료</span><span id="navDone" class="nav-count">0</span></button>
+
+    <div class="drawer-section">은행 구분</div>
+    <div id="bankNav"></div>
+
     <div class="drawer-section">담당자</div>
     <div id="staffNav"></div>
   </div>
@@ -212,7 +216,7 @@ button{cursor:pointer}
   }
 
   let db,memoPath="bankMap/memos",historyPath="bankMap/memoHistory";
-  const state={memos:{},todayHistory:{},view:"all",staff:null,writerFilter:"",search:"",selected:null};
+  const state={memos:{},todayHistory:{},view:"all",staff:null,bank:"전체",writerFilter:"",search:"",selected:null};
 
   const esc=s=>String(s??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
   const fmt=ms=>{if(!ms)return "";try{return new Intl.DateTimeFormat("ko-KR",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}).format(new Date(ms))}catch{return ""}};
@@ -237,6 +241,16 @@ button{cursor:pointer}
     return out;
   }
 
+  function uniqueBanks(){
+    const seen=new Set(),out=[];
+    branches.forEach(b=>{
+      const s=String(b.bank||"미지정").trim()||"미지정";
+      if(!seen.has(s)){seen.add(s);out.push(s)}
+    });
+    return out;
+  }
+
+
   function writerMatchesMemo(m){
     if(!state.writerFilter)return true;
     return String(m.writer||m.createdBy||"")===state.writerFilter;
@@ -248,6 +262,7 @@ button{cursor:pointer}
 
   function branchVisible(b){
     if(state.staff && b.staff!==state.staff)return false;
+    if(state.bank!=="전체" && b.bank!==state.bank)return false;
 
     const allMemos=memosFor(b);
     const writerMemos=filteredMemosFor(b);
@@ -277,6 +292,8 @@ button{cursor:pointer}
   function historyItems(){
     return Object.values(state.todayHistory||{})
       .filter(h=>!state.writerFilter || String(h.writer||h.completedBy||"")===state.writerFilter)
+      .filter(h=>!state.staff || String(h.staff||"")===state.staff)
+      .filter(h=>state.bank==="전체" || String(h.bank||"")===state.bank)
       .sort((a,b)=>(Number(b.completedAt)||0)-(Number(a.completedAt)||0));
   }
 
@@ -292,9 +309,32 @@ button{cursor:pointer}
     const unassigned=branches.filter(b=>b.staff==="미지정").length;
     $("headerStat").textContent=`진행중 ${todoBranches}곳 · 오늘완료 ${historyItems().length}건${unassigned?` · 미지정 ${unassigned}`:""}`;
 
+    const bankNav=$("bankNav");bankNav.innerHTML="";
+    {
+      const btn=document.createElement("button");
+      btn.className="nav-btn"+(state.bank==="전체"?" active":"");
+      btn.innerHTML=`<span>전체 은행</span><span class="nav-count">${branches.length}</span>`;
+      btn.onclick=()=>{state.bank="전체";closeDrawer();render()};
+      bankNav.appendChild(btn);
+    }
+    uniqueBanks().forEach(bank=>{
+      const count=branches.filter(b=>{
+        if(state.staff && b.staff!==state.staff)return false;
+        return b.bank===bank;
+      }).length;
+      const btn=document.createElement("button");
+      btn.className="nav-btn"+(state.bank===bank?" active":"");
+      btn.innerHTML=`<span>${esc(bank)}</span><span class="nav-count">${count}</span>`;
+      btn.onclick=()=>{state.bank=bank;closeDrawer();render()};
+      bankNav.appendChild(btn);
+    });
+
     const nav=$("staffNav");nav.innerHTML="";
     uniqueStaff().forEach(s=>{
-      const count=branches.filter(b=>b.staff===s).length;
+      const count=branches.filter(b=>{
+        if(state.bank!=="전체" && b.bank!==state.bank)return false;
+        return b.staff===s;
+      }).length;
       const btn=document.createElement("button");
       btn.className="nav-btn"+(state.staff===s?" active":"");
       btn.innerHTML=`<span>${esc(s)}</span><span class="nav-count">${count}</span>`;
@@ -319,6 +359,7 @@ button{cursor:pointer}
   function renderBranches(){
     const list=currentBranches();
     let title=state.staff?`${state.staff} 담당 지점`:(state.view==="todo"?"진행중 업무":"전체 지점");
+    if(state.bank!=="전체")title += ` · ${state.bank}`;
     if(state.writerFilter)title += ` · 작성자 ${state.writerFilter}`;
     $("viewTitle").textContent=title;
     $("viewCount").textContent=`${list.length}곳`;
@@ -340,7 +381,11 @@ button{cursor:pointer}
 
   function renderHistory(){
     const items=historyItems();
-    $("viewTitle").textContent="오늘 완료";
+    let t="오늘 완료";
+    if(state.staff)t += ` · ${state.staff}`;
+    if(state.bank!=="전체")t += ` · ${state.bank}`;
+    if(state.writerFilter)t += ` · 작성자 ${state.writerFilter}`;
+    $("viewTitle").textContent=t;
     $("viewCount").textContent=`${items.length}건`;
     const el=$("list");el.innerHTML="";
     if(!items.length){el.innerHTML='<div class="empty">오늘 완료한 메모가 없습니다.</div>';return}
@@ -396,7 +441,7 @@ button{cursor:pointer}
 
     updates[`${historyPath}/${day}/${historyKey}`]={
       branchMemoId:b.memoId,branchName:b.name,bank:b.bank||"",center:b.center||"",
-      quarter:b.quarter||"",memoKey:m.key,memoNo:Number(m.no)||0,text:m.text||"",
+      staff:b.staff||"",quarter:b.quarter||"",memoKey:m.key,memoNo:Number(m.no)||0,text:m.text||"",
       writer:m.writer||null,createdAt:m.createdAt||null,
       completedAt:firebase.database.ServerValue.TIMESTAMP,completedBy:writer
     };
