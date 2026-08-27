@@ -110,7 +110,6 @@ button{cursor:pointer}
 
     <div class="drawer-section">은행 구분</div>
     <div id="bankNav"></div>
-    <div id="bankStaffNav" class="bank-subnav hidden"></div>
 
     <div class="drawer-section">담당자</div>
     <div id="staffNav"></div>
@@ -173,6 +172,7 @@ button{cursor:pointer}
 
 <script src="../config.js"></script>
 <script src="../data.js"></script>
+<script src="./branches.js"></script>
 <script src="./staff.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
@@ -181,7 +181,7 @@ button{cursor:pointer}
 <script>
 (() => {
   const $=id=>document.getElementById(id);
-  const rawData=window.BANK_BRANCHES;
+  const rawData=Array.isArray(window.BANK_BOARD_BRANCHES)?window.BANK_BOARD_BRANCHES:window.BANK_BRANCHES;
   if(!Array.isArray(rawData)){alert("BANK_BRANCHES를 읽지 못했습니다.");return;}
 
   function stableMemoId(bank,name){
@@ -235,6 +235,9 @@ button{cursor:pointer}
     return [...a].sort((x,y)=>(Number(y.createdAt)||0)-(Number(x.createdAt)||0))[0];
   }
   function nextNo(b){return memosFor(b).reduce((m,x)=>Math.max(m,Number(x.no)||0),0)+1}
+  function activeMemoCount(list){
+    return list.reduce((sum,b)=>sum+memosFor(b).length,0);
+  }
   function uniqueStaff(){
     const seen=new Set(),out=[];
     ["김준호","장창형","김대한"].forEach(s=>{seen.add(s);out.push(s)});
@@ -312,10 +315,13 @@ button{cursor:pointer}
     $("headerStat").textContent=`진행중 ${todoBranches}곳 · 오늘완료 ${historyItems().length}건`;
 
     const bankNav=$("bankNav");bankNav.innerHTML="";
+
     {
+      const allBranches=branches;
+      const allMemoCount=activeMemoCount(allBranches);
       const btn=document.createElement("button");
       btn.className="nav-btn"+(state.bank==="전체"?" active":"");
-      btn.innerHTML=`<span>전체 은행</span><span class="nav-count">${branches.length}</span>`;
+      btn.innerHTML=`<span>전체 은행</span><span class="nav-count">${allBranches.length}${allMemoCount?` (${allMemoCount})`:""}</span>`;
       btn.onclick=()=>{
         state.bank="전체";
         state.bankStaff=null;
@@ -327,10 +333,12 @@ button{cursor:pointer}
     }
 
     uniqueBanks().forEach(bank=>{
-      const count=branches.filter(b=>b.bank===bank).length;
+      const bankBranches=branches.filter(b=>b.bank===bank);
+      const memoCount=activeMemoCount(bankBranches);
+
       const btn=document.createElement("button");
       btn.className="nav-btn"+(state.bank===bank?" active":"");
-      btn.innerHTML=`<span>${esc(bank)}</span><span class="nav-count">${count}</span>`;
+      btn.innerHTML=`<span>${esc(bank)}</span><span class="nav-count">${bankBranches.length}${memoCount?` (${memoCount})`:""}</span>`;
       btn.onclick=()=>{
         state.bank=bank;
         state.bankStaff=null;
@@ -339,46 +347,47 @@ button{cursor:pointer}
         render();
       };
       bankNav.appendChild(btn);
-    });
 
-    const bankStaffNav=$("bankStaffNav");
-    bankStaffNav.innerHTML="";
-    if(state.bank!=="전체"){
-      bankStaffNav.classList.remove("hidden");
+      // 선택한 은행의 담당자 소분류는 해당 은행 버튼 바로 아래에 붙인다.
+      if(state.bank===bank){
+        const sub=document.createElement("div");
+        sub.className="bank-subnav";
 
-      const title=document.createElement("div");
-      title.className="bank-subnav-title";
-      title.textContent=`${state.bank} 담당자`;
-      bankStaffNav.appendChild(title);
+        const title=document.createElement("div");
+        title.className="bank-subnav-title";
+        title.textContent=`${bank} 담당자`;
+        sub.appendChild(title);
 
-      const allBtn=document.createElement("button");
-      allBtn.className="bank-sub-btn"+(!state.bankStaff?" active":"");
-      const allCount=branches.filter(b=>b.bank===state.bank).length;
-      allBtn.innerHTML=`<span>전체 담당자</span><span class="bank-sub-count">${allCount}</span>`;
-      allBtn.onclick=()=>{
-        state.bankStaff=null;
-        keepOrCloseDrawerAfterSelect();
-        render();
-      };
-      bankStaffNav.appendChild(allBtn);
-
-      uniqueStaff().forEach(s=>{
-        if(s==="미지정")return;
-        const count=branches.filter(b=>b.bank===state.bank && b.staff===s).length;
-        if(count===0)return;
-        const btn=document.createElement("button");
-        btn.className="bank-sub-btn"+(state.bankStaff===s?" active":"");
-        btn.innerHTML=`<span>${esc(s)}</span><span class="bank-sub-count">${count}</span>`;
-        btn.onclick=()=>{
-          state.bankStaff=s;
+        const allBtn=document.createElement("button");
+        allBtn.className="bank-sub-btn"+(!state.bankStaff?" active":"");
+        allBtn.innerHTML=`<span>전체 담당자</span><span class="bank-sub-count">${bankBranches.length}${memoCount?` (${memoCount})`:""}</span>`;
+        allBtn.onclick=()=>{
+          state.bankStaff=null;
           keepOrCloseDrawerAfterSelect();
           render();
         };
-        bankStaffNav.appendChild(btn);
-      });
-    }else{
-      bankStaffNav.classList.add("hidden");
-    }
+        sub.appendChild(allBtn);
+
+        uniqueStaff().forEach(s=>{
+          if(s==="미지정")return;
+          const staffBranches=bankBranches.filter(b=>b.staff===s);
+          if(staffBranches.length===0)return;
+
+          const staffMemoCount=activeMemoCount(staffBranches);
+          const subBtn=document.createElement("button");
+          subBtn.className="bank-sub-btn"+(state.bankStaff===s?" active":"");
+          subBtn.innerHTML=`<span>${esc(s)}</span><span class="bank-sub-count">${staffBranches.length}${staffMemoCount?` (${staffMemoCount})`:""}</span>`;
+          subBtn.onclick=()=>{
+            state.bankStaff=s;
+            keepOrCloseDrawerAfterSelect();
+            render();
+          };
+          sub.appendChild(subBtn);
+        });
+
+        bankNav.appendChild(sub);
+      }
+    });
 
     // 메인 담당자 영역의 숫자는 은행 필터와 무관하게 전체 담당지점 수를 항상 유지
     const nav=$("staffNav");nav.innerHTML="";
