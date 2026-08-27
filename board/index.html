@@ -141,7 +141,7 @@ button{cursor:pointer}
     <div id="sync" class="sync">연결 중...</div>
   </div>
   <div id="headerStat" class="header-stat"></div>
-  <a class="map-btn" href="../" target="_blank" rel="noopener">은행 지도</a>
+  <a class="map-btn" href="../">은행 지도</a>
 </header>
 
 <div id="drawerBackdrop" class="drawer-backdrop hidden"></div>
@@ -166,7 +166,7 @@ button{cursor:pointer}
 
 <main class="page">
   <section class="toolbar">
-    <input id="search" type="search" placeholder="지점명 · 메모 · 초성검색 (예: ㅂㅂㄴㅎ)">
+    <input id="search" type="search" placeholder="지점명 · 은행 · 센터 · 점번 · 주소 · 메모 검색">
     <select id="writerFilter">
       <option value="">작성자 전체</option>
       <option>김준호</option>
@@ -249,6 +249,7 @@ button{cursor:pointer}
       name,
       staff:x.staff||x.manager||x.assignee||x.담당직원||x.staffName||staffMap[staffKey]||staffMap[name]||"미지정",
       bank,center:x.center||"",quarter:x.quarter||"",
+      branchNo:x.branchNo||x.점번||"",
       address:x.address||"",phone:x.phone||""
     };
   });
@@ -363,7 +364,8 @@ button{cursor:pointer}
     const searchMemos=state.writerFilter?writerMemos:allMemos;
     if(q){
       const fields=[
-        b.name,b.address,b.bank,b.center,b.staff,
+        b.name,b.address,b.bank,b.center,b.staff,b.branchNo,b.quarter,b.phone,
+        b.quarter?`${b.quarter}분기`:"",
         ...searchMemos.map(x=>x.text),
         ...searchMemos.map(x=>x.writer||x.createdBy||"")
       ];
@@ -546,7 +548,7 @@ button{cursor:pointer}
       const latest=ms.length?[...ms].sort((x,y)=>(Number(y.createdAt)||0)-(Number(x.createdAt)||0))[0]:null;
       const row=document.createElement("div");row.className="row"+(ms.length?" has-memo":"");
       row.innerHTML=`
-        <div><div class="branch-name">${esc(b.name)}</div><div class="branch-sub">${esc([b.bank,b.center,b.quarter?b.quarter+"분기":"",b.address].filter(Boolean).join(" · "))}</div></div>
+        <div><div class="branch-name">${esc(b.name)}</div><div class="branch-sub">${esc([b.bank,b.center,b.quarter?b.quarter+"분기":"",b.branchNo?`점번 ${b.branchNo}`:"",b.address].filter(Boolean).join(" · "))}</div></div>
         <div>${latest?`<div class="latest">${esc(latest.text||"")}</div><div class="latest-meta">${esc(fmt(latest.createdAt))}</div>`:'<div class="latest none">등록된 진행중 메모 없음</div>'}</div>
         <div>${ms.length?`<span class="pill todo">진행중 ${ms.length}</span>`:'<span class="pill none">업무없음</span>'}</div>`;
       row.onclick=()=>openDetail(b);
@@ -578,7 +580,7 @@ button{cursor:pointer}
   function openDetail(b){
     state.selected=b;
     $("detailTitle").textContent=b.name;
-    $("detailSub").textContent=[b.bank,b.center,b.quarter?b.quarter+"분기":"",b.address].filter(Boolean).join(" · ");
+    $("detailSub").textContent=[b.bank,b.center,b.quarter?b.quarter+"분기":"",b.branchNo?`점번 ${b.branchNo}`:"",b.address].filter(Boolean).join(" · ");
     $("detailModal").classList.remove("hidden");
     renderDetail();
   }
