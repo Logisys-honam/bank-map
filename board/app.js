@@ -24,25 +24,29 @@
     () => window.branchData
   ]);
 
-  // 기존 config.js의 Firebase 설정을 최대한 자동 인식
-  const fbConfig = firstDefined([
-    () => typeof fbCfg !== "undefined" ? fbCfg : undefined,
-    () => typeof firebaseConfig !== "undefined" ? firebaseConfig : undefined,
-    () => typeof FIREBASE_CONFIG !== "undefined" ? FIREBASE_CONFIG : undefined,
-    () => typeof config !== "undefined" && config.firebase ? config.firebase : undefined,
-    () => window.fbCfg,
-    () => window.firebaseConfig,
-    () => window.FIREBASE_CONFIG,
-    () => window.BANK_BOARD_CONFIG && window.BANK_BOARD_CONFIG.firebase
-  ]);
+  async function loadFirebaseFromRootIndex(){
+    const html = await fetch("../index.html", {cache:"no-store"}).then(r=>{
+      if(!r.ok) throw new Error("기존 index.html 읽기 실패");
+      return r.text();
+    });
 
-  const memoPath = firstDefined([
-    () => typeof memoBasePath !== "undefined" ? memoBasePath : undefined,
-    () => typeof BANK_FIREBASE_PATH !== "undefined" ? String(BANK_FIREBASE_PATH).replace(/\/works\/?$/,"") + "/memos" : undefined,
-    () => window.memoBasePath,
-    () => window.BANK_MEMO_PATH,
-    () => "bankMap/memos"
-  ]);
+    // Excel VBA가 생성한 index.html 안의 const fbCfg={...}; 를 그대로 읽는다.
+    const cfgMatch = html.match(/const\s+fbCfg\s*=\s*(\{[\s\S]*?\})\s*;/);
+    if(!cfgMatch) throw new Error("기존 index.html에서 fbCfg를 찾지 못했습니다.");
+
+    let cfg;
+    try{
+      cfg = Function('"use strict";return (' + cfgMatch[1] + ')')();
+    }catch(e){
+      throw new Error("fbCfg 해석 실패: " + e.message);
+    }
+
+    let memoPath = "bankMap/memos";
+    const memoMatch = html.match(/const\s+memoBasePath\s*=\s*['"]([^'"]+)['"]/);
+    if(memoMatch && memoMatch[1]) memoPath = memoMatch[1];
+
+    return {cfg, memoPath};
+  }
 
   if(!Array.isArray(rawData)){
     sync.textContent = "data.js 지점정보를 읽지 못했습니다.";
@@ -50,11 +54,7 @@
     return;
   }
 
-  if(!fbConfig || !fbConfig.apiKey || !fbConfig.databaseURL){
-    sync.textContent = "config.js Firebase 설정을 읽지 못했습니다.";
-    alert("기존 ../config.js의 Firebase 설정 이름을 자동 인식하지 못했습니다. config.js 내용을 보여주시면 바로 맞춰드릴게요.");
-    return;
-  }
+
 
   function stableMemoId(bank,name){
     const s = `${bank||""}|${name||""}`;
@@ -77,14 +77,11 @@
     phone: x.phone || x.지점전화번호 || ""
   }));
 
-  let app;
-  try{
-    app = firebase.initializeApp(fbConfig, "bankWorkBoard");
-  }catch(e){
-    app = firebase.app("bankWorkBoard");
-  }
-  const auth = app.auth();
-  const db = app.database();
+  let fbConfig = null;
+  let memoPath = "bankMap/memos";
+  let fbApp = null;
+  let auth = null;
+  let db = null;
 
   const state = {memos:{},staff:"전체",search:"",status:"all",target:null};
 
@@ -205,17 +202,39 @@
 
   (async()=>{
     try{
-      sync.textContent=`기존 bank-map 연결 중 · 메모경로 ${memoPath}`;
+      sync.textContent = "기존 은행지도 Firebase 설정 읽는 중...";
+
+      const loaded = await loadFirebaseFromRootIndex();
+      fbConfig = loaded.cfg;
+      memoPath = loaded.memoPath;
+
+      if(!fbConfig || !fbConfig.apiKey || !fbConfig.databaseURL){
+        throw new Error("기존 index.html의 Firebase 설정이 완전하지 않습니다.");
+      }
+
+      try{
+        fbApp = firebase.initializeApp(fbConfig, "bankWorkBoard");
+      }catch(e){
+        fbApp = firebase.app("bankWorkBoard");
+      }
+
+      auth = fbApp.auth();
+      db = fbApp.database();
+
+      sync.textContent = "Firebase 익명 인증 중...";
       await auth.signInAnonymously();
+
       db.ref(memoPath).on("value",snap=>{
         state.memos=snap.val()||{};
         sync.textContent="실시간 연결 · "+new Date().toLocaleTimeString("ko-KR");
         render();
       });
+
       render();
     }catch(e){
-      console.error(e);sync.textContent="Firebase 연결 실패";
-      alert("Firebase 익명 인증 또는 Realtime Database 설정을 확인해주세요.");
+      console.error(e);
+      sync.textContent="Firebase 연결 실패";
+      alert("Firebase 연결 실패: " + e.message);
     }
   })();
 })();
