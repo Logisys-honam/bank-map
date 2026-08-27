@@ -43,6 +43,16 @@ button{cursor:pointer}
 .bank-sub-btn:hover{background:#f5f7fa}
 .bank-sub-btn.active{background:#eef5ff;color:#1452a3}
 .bank-sub-count{font-size:10px;color:#667085}
+.memo-count-badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 6px;margin-left:5px;border-radius:999px;background:#35a853;color:#fff;font-size:10px;font-weight:900;line-height:1}
+.nav-count-wrap,.bank-sub-count-wrap{display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
+.row.has-memo{background:#fffbea}
+.row.has-memo:hover{background:#fff6cf}
+.row.has-memo .branch-name{color:#6f4a00}
+.row.has-memo .latest{font-weight:800;color:#5f4500}
+.row.has-memo .pill.todo{background:#ffedba;color:#8a5a00}
+@media(max-width:700px){
+  .memo-count-badge{min-width:20px;height:20px;font-size:11px}
+}
 
 .page{max-width:1200px;margin:auto;padding:10px}
 .toolbar{display:flex;gap:7px;margin-bottom:9px}
@@ -321,7 +331,7 @@ button{cursor:pointer}
       const allMemoCount=activeMemoCount(allBranches);
       const btn=document.createElement("button");
       btn.className="nav-btn"+(state.bank==="전체"?" active":"");
-      btn.innerHTML=`<span>전체 은행</span><span class="nav-count">${allBranches.length}${allMemoCount?` (${allMemoCount})`:""}</span>`;
+      btn.innerHTML=`<span>전체 은행</span><span class="nav-count-wrap"><span class="nav-count">${allBranches.length}</span>${allMemoCount?`<span class="memo-count-badge">${allMemoCount}</span>`:""}</span>`;
       btn.onclick=()=>{
         state.bank="전체";
         state.bankStaff=null;
@@ -338,11 +348,17 @@ button{cursor:pointer}
 
       const btn=document.createElement("button");
       btn.className="nav-btn"+(state.bank===bank?" active":"");
-      btn.innerHTML=`<span>${esc(bank)}</span><span class="nav-count">${bankBranches.length}${memoCount?` (${memoCount})`:""}</span>`;
+      btn.innerHTML=`<span>${esc(bank)}</span><span class="nav-count-wrap"><span class="nav-count">${bankBranches.length}</span>${memoCount?`<span class="memo-count-badge">${memoCount}</span>`:""}</span>`;
       btn.onclick=()=>{
-        state.bank=bank;
-        state.bankStaff=null;
-        state.staff=null;
+        if(state.bank===bank){
+          state.bank="전체";
+          state.bankStaff=null;
+          state.staff=null;
+        }else{
+          state.bank=bank;
+          state.bankStaff=null;
+          state.staff=null;
+        }
         keepOrCloseDrawerAfterSelect();
         render();
       };
@@ -360,7 +376,7 @@ button{cursor:pointer}
 
         const allBtn=document.createElement("button");
         allBtn.className="bank-sub-btn"+(!state.bankStaff?" active":"");
-        allBtn.innerHTML=`<span>전체 담당자</span><span class="bank-sub-count">${bankBranches.length}${memoCount?` (${memoCount})`:""}</span>`;
+        allBtn.innerHTML=`<span>전체 담당자</span><span class="bank-sub-count-wrap"><span class="bank-sub-count">${bankBranches.length}</span>${memoCount?`<span class="memo-count-badge">${memoCount}</span>`:""}</span>`;
         allBtn.onclick=()=>{
           state.bankStaff=null;
           keepOrCloseDrawerAfterSelect();
@@ -376,7 +392,7 @@ button{cursor:pointer}
           const staffMemoCount=activeMemoCount(staffBranches);
           const subBtn=document.createElement("button");
           subBtn.className="bank-sub-btn"+(state.bankStaff===s?" active":"");
-          subBtn.innerHTML=`<span>${esc(s)}</span><span class="bank-sub-count">${staffBranches.length}${staffMemoCount?` (${staffMemoCount})`:""}</span>`;
+          subBtn.innerHTML=`<span>${esc(s)}</span><span class="bank-sub-count-wrap"><span class="bank-sub-count">${staffBranches.length}</span>${staffMemoCount?`<span class="memo-count-badge">${staffMemoCount}</span>`:""}</span>`;
           subBtn.onclick=()=>{
             state.bankStaff=s;
             keepOrCloseDrawerAfterSelect();
@@ -436,7 +452,7 @@ button{cursor:pointer}
     list.forEach(b=>{
       const ms=state.writerFilter?filteredMemosFor(b):memosFor(b);
       const latest=ms.length?[...ms].sort((x,y)=>(Number(y.createdAt)||0)-(Number(x.createdAt)||0))[0]:null;
-      const row=document.createElement("div");row.className="row";
+      const row=document.createElement("div");row.className="row"+(ms.length?" has-memo":"");
       row.innerHTML=`
         <div><div class="branch-name">${esc(b.name)}</div><div class="branch-sub">${esc([b.bank,b.center,b.quarter?b.quarter+"분기":"",b.address].filter(Boolean).join(" · "))}</div></div>
         <div>${latest?`<div class="latest">${esc(latest.text||"")}</div><div class="latest-meta">${esc(fmt(latest.createdAt))}</div>`:'<div class="latest none">등록된 진행중 메모 없음</div>'}</div>
