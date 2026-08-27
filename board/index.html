@@ -353,7 +353,7 @@ button{cursor:pointer}
   }
 
   let db,memoPath="bankMap/memos",historyPath="bankMap/memoHistory",officeMemoPath="bankMap/officeMemos";
-  const state={memos:{},todayHistory:{},officeMemos:{},view:"all",staff:null,bank:"전체",bankStaff:null,writerFilter:"",search:"",selected:null,bulkSelected:new Set(),bulkSearch:"",detailSelected:new Set(),editMemo:null};
+  const state={memos:{},todayHistory:{},officeMemos:{},view:"all",staff:null,bank:"전체",bankStaff:null,writerFilter:"",search:"",selected:null,bulkSelected:new Set(),bulkSearch:"",detailSelected:new Set(),editMemo:null,activeNav:"view:all"};
 
   const esc=s=>String(s??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
   const fmt=ms=>{if(!ms)return "";try{return new Intl.DateTimeFormat("ko-KR",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}).format(new Date(ms))}catch{return ""}};
@@ -598,13 +598,14 @@ button{cursor:pointer}
       const allBranches=branches;
       const allMemoCount=activeMemoCount(allBranches);
       const btn=document.createElement("button");
-      btn.className="nav-btn"+(state.bank==="전체"?" active":"");
+      btn.className="nav-btn"+(state.activeNav==="bank:전체"?" active":"");
       btn.innerHTML=`<span>전체 은행</span><span class="nav-count-wrap"><span class="nav-count">${allBranches.length}</span>${allMemoCount?`<span class="memo-count-badge">${allMemoCount}</span>`:""}</span>`;
       btn.onclick=()=>{
         state.view="all";
         state.bank="전체";
         state.bankStaff=null;
         state.staff=null;
+        state.activeNav="bank:전체";
         keepOrCloseDrawerAfterSelect();
         render();
       };
@@ -616,19 +617,14 @@ button{cursor:pointer}
       const memoCount=activeMemoCount(bankBranches);
 
       const btn=document.createElement("button");
-      btn.className="nav-btn"+(state.bank===bank?" active":"");
+      btn.className="nav-btn"+(state.activeNav===`bank:${bank}`?" active":"");
       btn.innerHTML=`<span>${esc(bank)}</span><span class="nav-count-wrap"><span class="nav-count">${bankBranches.length}</span>${memoCount?`<span class="memo-count-badge">${memoCount}</span>`:""}</span>`;
       btn.onclick=()=>{
         state.view="all";
-        if(state.bank===bank){
-          state.bank="전체";
-          state.bankStaff=null;
-          state.staff=null;
-        }else{
-          state.bank=bank;
-          state.bankStaff=null;
-          state.staff=null;
-        }
+        state.bank=bank;
+        state.bankStaff=null;
+        state.staff=null;
+        state.activeNav=`bank:${bank}`;
         keepOrCloseDrawerAfterSelect();
         render();
       };
@@ -645,12 +641,13 @@ button{cursor:pointer}
         sub.appendChild(title);
 
         const allBtn=document.createElement("button");
-        allBtn.className="bank-sub-btn"+(!state.bankStaff?" active":"");
+        allBtn.className="bank-sub-btn"+(state.activeNav===`bankStaff:${bank}:all`?" active":"");
         allBtn.innerHTML=`<span>전체 담당자</span><span class="bank-sub-count-wrap"><span class="bank-sub-count">${bankBranches.length}</span>${memoCount?`<span class="memo-count-badge">${memoCount}</span>`:""}</span>`;
         allBtn.onclick=()=>{
           state.view="all";
           state.staff=null;
           state.bankStaff=null;
+          state.activeNav=`bankStaff:${bank}:all`;
           keepOrCloseDrawerAfterSelect();
           render();
         };
@@ -663,12 +660,13 @@ button{cursor:pointer}
 
           const staffMemoCount=activeMemoCount(staffBranches);
           const subBtn=document.createElement("button");
-          subBtn.className="bank-sub-btn"+(state.bankStaff===s?" active":"");
+          subBtn.className="bank-sub-btn"+(state.activeNav===`bankStaff:${bank}:${s}`?" active":"");
           subBtn.innerHTML=`<span>${esc(s)}</span><span class="bank-sub-count-wrap"><span class="bank-sub-count">${staffBranches.length}</span>${staffMemoCount?`<span class="memo-count-badge">${staffMemoCount}</span>`:""}</span>`;
           subBtn.onclick=()=>{
             state.view="all";
             state.staff=null;
             state.bankStaff=s;
+            state.activeNav=`bankStaff:${bank}:${s}`;
             keepOrCloseDrawerAfterSelect();
             render();
           };
@@ -684,13 +682,14 @@ button{cursor:pointer}
     uniqueStaff().forEach(s=>{
       const count=branches.filter(b=>b.staff===s).length;
       const btn=document.createElement("button");
-      btn.className="nav-btn"+(state.staff===s?" active":"");
+      btn.className="nav-btn"+(state.activeNav===`staff:${s}`?" active":"");
       btn.innerHTML=`<span>${esc(s)}</span><span class="nav-count">${count}</span>`;
       btn.onclick=()=>{
         state.staff=s;
         state.bank="전체";
         state.bankStaff=null;
         state.view="all";
+        state.activeNav=`staff:${s}`;
         setActiveNav();
         keepOrCloseDrawerAfterSelect();
         render();
@@ -702,8 +701,7 @@ button{cursor:pointer}
 
   function setActiveNav(){
     document.querySelectorAll('[data-view]').forEach(btn=>{
-      const topOnly=!state.staff && state.bank==="전체" && !state.bankStaff;
-      btn.classList.toggle("active",topOnly && btn.dataset.view===state.view);
+      btn.classList.toggle("active",state.activeNav===`view:${btn.dataset.view}`);
     });
   }
 
@@ -1018,6 +1016,7 @@ button{cursor:pointer}
     state.staff=null;
     state.bank="전체";
     state.bankStaff=null;
+    state.activeNav=`view:${btn.dataset.view}`;
     keepOrCloseDrawerAfterSelect();
     render();
   });
