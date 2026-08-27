@@ -130,6 +130,27 @@ button{cursor:pointer}
     margin-right:6px;
   }
 }
+
+/* v2.18 순천지사메모 */
+.office-wrap{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.office-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line);background:#fafbfc}
+.office-head strong{font-size:14px}
+.office-add{border:0;background:var(--blue);color:#fff;border-radius:8px;padding:9px 12px;font-weight:900}
+.office-row{padding:13px 14px;border-bottom:1px solid #edf0f3;background:#fff}
+.office-row:last-child{border-bottom:0}
+.office-row.done{background:#f7fbf8}
+.office-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.office-writer{font-size:12px;font-weight:900;color:#344054}
+.office-state{font-size:10px;font-weight:900;border-radius:999px;padding:4px 8px}
+.office-state.todo{background:#fff1c9;color:#8a5a00}
+.office-state.done{background:#dcfce7;color:#166534}
+.office-text{font-size:14px;line-height:1.55;white-space:pre-wrap;margin-top:8px;color:#172033}
+.office-meta{font-size:10px;color:#667085;margin-top:7px}
+.office-actions{display:flex;gap:6px;margin-top:9px}
+.office-actions button{border:0;border-radius:7px;padding:7px 10px;font-size:11px;font-weight:900}
+.office-complete{background:#dcfce7;color:#166534}
+.office-delete{background:#fee2e2;color:#991b1b}
+.office-empty{padding:34px;text-align:center;color:#98a2b3}
 </style>
 </head>
 <body>
@@ -155,6 +176,7 @@ button{cursor:pointer}
     <button class="nav-btn active" data-view="all"><span>전체 지점</span><span id="navAll" class="nav-count">0</span></button>
     <button class="nav-btn" data-view="todo"><span>진행중</span><span id="navTodo" class="nav-count">0</span></button>
     <button class="nav-btn" data-view="todayDone"><span>오늘 완료</span><span id="navDone" class="nav-count">0</span></button>
+    <button class="nav-btn" data-view="officeMemo"><span>순천지사메모</span><span id="navOfficeMemo" class="nav-count">0</span></button>
 
     <div class="drawer-section">은행 구분</div>
     <div id="bankNav"></div>
@@ -197,6 +219,25 @@ button{cursor:pointer}
       <button id="detailAdd" class="add-btn">메모 추가</button>
     </div>
     <div id="detailMemos" class="memo-list"></div>
+  </div>
+</div>
+
+
+<div id="officeMemoModal" class="modal hidden">
+  <div class="memo-modal-card">
+    <h2>순천지사메모 추가</h2>
+    <select id="officeMemoWriter" style="width:100%;height:42px;border:1px solid #ccd3db;border-radius:9px;padding:0 10px;margin-bottom:8px;background:#fff">
+      <option value="">작성자 선택</option>
+      <option>김준호</option>
+      <option>장창형</option>
+      <option>김대한</option>
+      <option>관리자</option>
+    </select>
+    <textarea id="officeMemoText" placeholder="지사 공용 메모를 입력하세요."></textarea>
+    <div class="modal-buttons">
+      <button id="officeMemoCancel" class="btn secondary">취소</button>
+      <button id="officeMemoSave" class="btn primary">추가</button>
+    </div>
   </div>
 </div>
 
@@ -265,8 +306,8 @@ button{cursor:pointer}
     return {cfg,memoPath};
   }
 
-  let db,memoPath="bankMap/memos",historyPath="bankMap/memoHistory";
-  const state={memos:{},todayHistory:{},view:"all",staff:null,bank:"전체",bankStaff:null,writerFilter:"",search:"",selected:null};
+  let db,memoPath="bankMap/memos",historyPath="bankMap/memoHistory",officeMemoPath="bankMap/officeMemos";
+  const state={memos:{},todayHistory:{},officeMemos:{},view:"all",staff:null,bank:"전체",bankStaff:null,writerFilter:"",search:"",selected:null};
 
   const esc=s=>String(s??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
   const fmt=ms=>{if(!ms)return "";try{return new Intl.DateTimeFormat("ko-KR",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}).format(new Date(ms))}catch{return ""}};
@@ -407,6 +448,92 @@ button{cursor:pointer}
       .sort((a,b)=>(Number(b.completedAt)||0)-(Number(a.completedAt)||0));
   }
 
+
+  function officeMemoItems(){
+    return Object.entries(state.officeMemos||{})
+      .map(([key,v])=>({key,...(v||{})}))
+      .filter(m=>!state.writerFilter || String(m.writer||"")===state.writerFilter)
+      .filter(m=>{
+        const q=state.search.trim();
+        return !q || smartIncludes(m.text||"",q) || smartIncludes(m.writer||"",q);
+      })
+      .sort((a,b)=>{
+        if(!!a.done!==!!b.done)return a.done?1:-1;
+        return (Number(b.createdAt)||0)-(Number(a.createdAt)||0);
+      });
+  }
+
+  function renderOfficeMemos(){
+    const items=officeMemoItems();
+    $("viewTitle").textContent="순천지사메모";
+    $("viewCount").textContent=`${items.length}건`;
+
+    const el=$("list");
+    el.innerHTML=`
+      <div class="office-wrap">
+        <div class="office-head">
+          <strong>순천지사 공용 메모</strong>
+          <button id="officeAddBtn" class="office-add">메모 추가</button>
+        </div>
+        <div id="officeList"></div>
+      </div>`;
+
+    $("officeAddBtn").onclick=openOfficeMemoModal;
+    const list=$("officeList");
+
+    if(!items.length){
+      list.innerHTML='<div class="office-empty">등록된 지사메모가 없습니다.</div>';
+      return;
+    }
+
+    items.forEach(m=>{
+      const row=document.createElement("div");
+      row.className="office-row"+(m.done?" done":"");
+      row.innerHTML=`
+        <div class="office-top">
+          <span class="office-writer">${esc(m.writer||"작성자 미지정")}</span>
+          <span class="office-state ${m.done?"done":"todo"}">${m.done?"완료":"진행중"}</span>
+        </div>
+        <div class="office-text">${esc(m.text||"")}</div>
+        <div class="office-meta">
+          ${esc(fmt(m.createdAt))}
+          ${m.done&&m.completedAt?` · 완료 ${esc(fmt(m.completedAt))}`:""}
+        </div>
+        <div class="office-actions">
+          ${m.done?"":'<button class="office-complete">완료</button>'}
+          <button class="office-delete">삭제</button>
+        </div>`;
+
+      const complete=row.querySelector(".office-complete");
+      if(complete){
+        complete.onclick=async()=>{
+          await db.ref(`${officeMemoPath}/${m.key}`).update({
+            done:true,
+            completedAt:firebase.database.ServerValue.TIMESTAMP
+          });
+        };
+      }
+
+      row.querySelector(".office-delete").onclick=async()=>{
+        if(confirm("이 지사메모를 삭제할까요?")){
+          await db.ref(`${officeMemoPath}/${m.key}`).remove();
+        }
+      };
+
+      list.appendChild(row);
+    });
+  }
+
+  function openOfficeMemoModal(){
+    $("officeMemoWriter").value=localStorage.getItem("bankBoardWriter")||"";
+    $("officeMemoText").value="";
+    $("officeMemoModal").classList.remove("hidden");
+  }
+
+  function closeOfficeMemoModal(){
+    $("officeMemoModal").classList.add("hidden");
+  }
+
   function renderDrawer(){
     const visibleBase=branches.filter(b=>{
       if(!state.writerFilter)return true;
@@ -416,6 +543,7 @@ button{cursor:pointer}
     $("navAll").textContent=visibleBase.length;
     $("navTodo").textContent=todoBranches;
     $("navDone").textContent=historyItems().length;
+    $("navOfficeMemo").textContent=Object.keys(state.officeMemos||{}).length;
     $("headerStat").textContent=`진행중 ${todoBranches}곳 · 오늘완료 ${historyItems().length}건`;
 
     const bankNav=$("bankNav");bankNav.innerHTML="";
@@ -528,7 +656,8 @@ button{cursor:pointer}
 
   function render(){
     renderDrawer();
-    if(state.view==="todayDone" && !state.staff)renderHistory();
+    if(state.view==="officeMemo" && !state.staff)renderOfficeMemos();
+    else if(state.view==="todayDone" && !state.staff)renderHistory();
     else renderBranches();
   }
 
@@ -686,6 +815,25 @@ button{cursor:pointer}
     render();
   });
 
+  $("officeMemoCancel").onclick=closeOfficeMemoModal;
+  $("officeMemoModal").onclick=e=>{if(e.target.id==="officeMemoModal")closeOfficeMemoModal()};
+  $("officeMemoWriter").value=localStorage.getItem("bankBoardWriter")||"";
+  $("officeMemoWriter").onchange=e=>localStorage.setItem("bankBoardWriter",e.target.value);
+
+  $("officeMemoSave").onclick=async()=>{
+    const text=$("officeMemoText").value.trim();
+    const writer=$("officeMemoWriter").value||null;
+    if(!text)return;
+    await db.ref(officeMemoPath).push().set({
+      text,
+      writer,
+      done:false,
+      createdAt:firebase.database.ServerValue.TIMESTAMP,
+      completedAt:null
+    });
+    closeOfficeMemoModal();
+  };
+
   $("detailClose").onclick=closeDetail;$("detailModal").onclick=e=>{if(e.target.id==="detailModal")closeDetail()};
   $("detailAdd").onclick=openMemoModal;
   $("memoCancel").onclick=closeMemoModal;$("memoModal").onclick=e=>{if(e.target.id==="memoModal")closeMemoModal()};
@@ -731,6 +879,11 @@ button{cursor:pointer}
 
       db.ref(`${historyPath}/${todayKey()}`).on("value",snap=>{
         state.todayHistory=snap.val()||{};
+        render();
+      });
+
+      db.ref(officeMemoPath).on("value",snap=>{
+        state.officeMemos=snap.val()||{};
         render();
       });
     }catch(e){
