@@ -27,7 +27,7 @@ button{cursor:pointer}
 .drawer.open{transform:translateX(0)}
 .drawer-head{display:flex;align-items:center;justify-content:space-between;padding:16px;border-bottom:1px solid var(--line)}
 .drawer-head strong{font-size:18px}.drawer-close{border:0;background:#f2f4f7;border-radius:9px;width:36px;height:36px;font-size:22px}
-.drawer-body{padding:10px;overflow:auto}.drawer-section{font-size:10px;font-weight:900;color:#98a2b3;padding:14px 8px 5px;border-top:1px solid #f2f4f7}.drawer-section:first-child{border-top:0;padding-top:10px}
+.drawer-body{padding:10px;overflow:auto}.drawer-section{font-size:10px;font-weight:900;color:#98a2b3;padding:12px 8px 5px}
 .nav-btn{width:100%;border:0;background:transparent;border-radius:9px;padding:11px 12px;text-align:left;font-weight:900;color:#344054;display:flex;justify-content:space-between;gap:8px}
 .nav-btn:hover{background:#f5f7fa}.nav-btn.active{background:var(--blue2);color:#1452a3}
 .nav-count{font-size:11px;color:#667085}.nav-btn.active .nav-count{color:#1452a3}
@@ -181,22 +181,16 @@ button{cursor:pointer}
   const branches=rawData.map((x,i)=>{
     const bank=x.bank||"";
     const name=x.name||"(지점명 없음)";
-    const key=`${bank}|${name}`;
+    const staffKey=`${bank}|${name}`;
     return {
       id:x.id||String(i),
       memoId:x.memoId||stableMemoId(bank,name),
       name,
-      staff:x.staff||x.manager||x.assignee||x.담당직원||x.staffName||staffMap[key]||staffMap[name]||"미지정",
+      staff:x.staff||x.manager||x.assignee||x.담당직원||x.staffName||staffMap[staffKey]||staffMap[name]||"미지정",
       bank,center:x.center||"",quarter:x.quarter||"",
       address:x.address||"",phone:x.phone||""
     };
   });
-);
-    branches.forEach(b=>{
-      const s=byMemoId.get(String(b.memoId))||byName.get(String(b.name));
-      if(s)b.staff=s;
-    });
-  }
 
   async function loadFirebaseFromRoot(){
     const html=await fetch("../index.html",{cache:"no-store"}).then(r=>r.text());
@@ -206,13 +200,7 @@ button{cursor:pointer}
     let memoPath="bankMap/memos";
     const mm=html.match(/const\s+memoBasePath\s*=\s*['"]([^'"]+)['"]/);
     if(mm&&mm[1])memoPath=mm[1];
-
-    let generatedMapData=[];
-    const dm=html.match(/const\s+data\s*=\s*(\[[\s\S]*?\])\s*;/);
-    if(dm){
-      try{generatedMapData=JSON.parse(dm[1])}catch(e){console.warn("지도 담당직원 데이터 해석 실패",e)}
-    }
-    return {cfg,memoPath,generatedMapData};
+    return {cfg,memoPath};
   }
 
   let db,memoPath="bankMap/memos",historyPath="bankMap/memoHistory";
@@ -244,8 +232,8 @@ button{cursor:pointer}
   function uniqueBanks(){
     const seen=new Set(),out=[];
     branches.forEach(b=>{
-      const s=String(b.bank||"미지정").trim()||"미지정";
-      if(!seen.has(s)){seen.add(s);out.push(s)}
+      const bank=String(b.bank||"미지정").trim()||"미지정";
+      if(!seen.has(bank)){seen.add(bank);out.push(bank)}
     });
     return out;
   }
@@ -306,17 +294,18 @@ button{cursor:pointer}
     $("navAll").textContent=visibleBase.length;
     $("navTodo").textContent=todoBranches;
     $("navDone").textContent=historyItems().length;
-    const unassigned=branches.filter(b=>b.staff==="미지정").length;
-    $("headerStat").textContent=`진행중 ${todoBranches}곳 · 오늘완료 ${historyItems().length}건${unassigned?` · 미지정 ${unassigned}`:""}`;
+    $("headerStat").textContent=`진행중 ${todoBranches}곳 · 오늘완료 ${historyItems().length}건`;
 
     const bankNav=$("bankNav");bankNav.innerHTML="";
     {
       const btn=document.createElement("button");
+      const count=state.staff?branches.filter(b=>b.staff===state.staff).length:branches.length;
       btn.className="nav-btn"+(state.bank==="전체"?" active":"");
-      btn.innerHTML=`<span>전체 은행</span><span class="nav-count">${branches.length}</span>`;
+      btn.innerHTML=`<span>전체 은행</span><span class="nav-count">${count}</span>`;
       btn.onclick=()=>{state.bank="전체";closeDrawer();render()};
       bankNav.appendChild(btn);
     }
+
     uniqueBanks().forEach(bank=>{
       const count=branches.filter(b=>{
         if(state.staff && b.staff!==state.staff)return false;
@@ -381,11 +370,11 @@ button{cursor:pointer}
 
   function renderHistory(){
     const items=historyItems();
-    let t="오늘 완료";
-    if(state.staff)t += ` · ${state.staff}`;
-    if(state.bank!=="전체")t += ` · ${state.bank}`;
-    if(state.writerFilter)t += ` · 작성자 ${state.writerFilter}`;
-    $("viewTitle").textContent=t;
+    let title="오늘 완료";
+    if(state.staff)title += ` · ${state.staff}`;
+    if(state.bank!=="전체")title += ` · ${state.bank}`;
+    if(state.writerFilter)title += ` · 작성자 ${state.writerFilter}`;
+    $("viewTitle").textContent=title;
     $("viewCount").textContent=`${items.length}건`;
     const el=$("list");el.innerHTML="";
     if(!items.length){el.innerHTML='<div class="empty">오늘 완료한 메모가 없습니다.</div>';return}
