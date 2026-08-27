@@ -295,11 +295,24 @@ button{cursor:pointer}
 
   function currentBranches(){
     return branches.filter(branchVisible).sort((a,b)=>{
-      if(state.view==="todo"){
-        const da=(state.writerFilter?filteredMemosFor(a):memosFor(a)).length;
-        const dbb=(state.writerFilter?filteredMemosFor(b):memosFor(b)).length;
-        if(da!==dbb)return dbb-da;
+      const aMemos=state.writerFilter?filteredMemosFor(a):memosFor(a);
+      const bMemos=state.writerFilter?filteredMemosFor(b):memosFor(b);
+
+      // 1) 진행중 메모가 있는 지점을 항상 위로
+      if(aMemos.length>0 && bMemos.length===0)return -1;
+      if(aMemos.length===0 && bMemos.length>0)return 1;
+
+      // 2) 둘 다 메모가 있으면 가장 최근 등록된 메모 기준 최신순
+      if(aMemos.length>0 && bMemos.length>0){
+        const aLatest=Math.max(...aMemos.map(m=>Number(m.createdAt)||0));
+        const bLatest=Math.max(...bMemos.map(m=>Number(m.createdAt)||0));
+        if(aLatest!==bLatest)return bLatest-aLatest;
+
+        // 같은 시각이면 메모 건수가 많은 지점을 우선
+        if(aMemos.length!==bMemos.length)return bMemos.length-aMemos.length;
       }
+
+      // 3) 메모가 없는 지점은 지점명 가나다순
       return a.name.localeCompare(b.name,"ko");
     });
   }
