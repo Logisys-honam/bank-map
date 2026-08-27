@@ -29,7 +29,7 @@ window.BANK_BOARD_BRANCHES = [
   {"quarter":"2,5,8,11","bank":"농축협","center":"순천","branchNo":"","name":"여천농협 화양지점","address":"전남광주통합특별시 여수시 화양면 화양로 1385","phone":"","staff":"김준호","memoId":"m_4CF50A65"},
   {"quarter":"2,5,8,11","bank":"농축협","center":"순천","branchNo":"","name":"장흥축산농협","address":"전남광주통합특별시 장흥군 장흥읍 중앙로2길 2 장흥축산농협","phone":"","staff":"장창형","memoId":"m_34ED8F36"},
   {"quarter":"2,5,8,11","bank":"농축협","center":"순천","branchNo":"","name":"장흥축산농협 관산지점","address":"전남광주통합특별시 장흥군 관산읍 칠관로 1570","phone":"","staff":"장창형","memoId":"m_461B8161"},
-  {"quarter":"2,5,8,11","bank":"농축협","center":"순천","branchNo":"","name":"장흥축산농협 장흥<간>","address":"전남광주 장흥군 장흥읍 장흥대로 3244","phone":"","staff":"김준호","memoId":"m_74C9517E"},
+  {"quarter":"2,5,8,11","bank":"농축협","center":"순천","branchNo":"","name":"장흥축산농협 장흥<간>","address":"전남광주 장흥군 장흥읍 장흥대로 3244","phone":"","staff":"장창형","memoId":"m_74C9517E"},
   {"quarter":"2,5,8,11","bank":"농축협","center":"순천","branchNo":"","name":"남원농협 이백지점","address":"전북특별자치도 남원시 이백면 이백로 480 이백농협","phone":"","staff":"김대한","memoId":"m_107D0A78"},
   {"quarter":"2,5,8,11","bank":"농축협","center":"순천","branchNo":"","name":"남원원예농협","address":"전북특별자치도 남원시 남문로 396-1","phone":"","staff":"김대한","memoId":"m_6596AD49"},
   {"quarter":"2,5,8,11","bank":"농축협","center":"순천","branchNo":"","name":"남원원예농협 달빛지점","address":"전북특별자치도 남원시 남문로 283 상가 1층","phone":"","staff":"김대한","memoId":"m_7391CA63"},
