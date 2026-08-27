@@ -25,12 +25,24 @@ button{cursor:pointer}
 .drawer-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.32);z-index:70}
 .drawer{position:fixed;left:0;top:0;bottom:0;width:min(var(--drawer),84vw);z-index:80;background:#fff;box-shadow:12px 0 35px rgba(0,0,0,.18);transform:translateX(-105%);transition:transform .18s ease;display:flex;flex-direction:column}
 .drawer.open{transform:translateX(0)}
+@media(min-width:901px){
+  body.drawer-open-pc .topbar{margin-left:var(--drawer)}
+  body.drawer-open-pc .page{margin-left:var(--drawer);max-width:none}
+  body.drawer-open-pc .drawer-backdrop{display:none!important}
+  .topbar,.page{transition:margin-left .18s ease}
+}
 .drawer-head{display:flex;align-items:center;justify-content:space-between;padding:16px;border-bottom:1px solid var(--line)}
 .drawer-head strong{font-size:18px}.drawer-close{border:0;background:#f2f4f7;border-radius:9px;width:36px;height:36px;font-size:22px}
 .drawer-body{padding:10px;overflow:auto}.drawer-section{font-size:10px;font-weight:900;color:#98a2b3;padding:12px 8px 5px}
 .nav-btn{width:100%;border:0;background:transparent;border-radius:9px;padding:11px 12px;text-align:left;font-weight:900;color:#344054;display:flex;justify-content:space-between;gap:8px}
 .nav-btn:hover{background:#f5f7fa}.nav-btn.active{background:var(--blue2);color:#1452a3}
 .nav-count{font-size:11px;color:#667085}.nav-btn.active .nav-count{color:#1452a3}
+.bank-subnav{margin:2px 0 8px 12px;padding-left:8px;border-left:2px solid #dbe7f7}
+.bank-subnav-title{font-size:9px;font-weight:900;color:#98a2b3;padding:5px 6px 3px}
+.bank-sub-btn{width:100%;border:0;background:transparent;border-radius:8px;padding:8px 9px;text-align:left;font-size:12px;font-weight:800;color:#475467;display:flex;justify-content:space-between;gap:8px}
+.bank-sub-btn:hover{background:#f5f7fa}
+.bank-sub-btn.active{background:#eef5ff;color:#1452a3}
+.bank-sub-count{font-size:10px;color:#667085}
 
 .page{max-width:1200px;margin:auto;padding:10px}
 .toolbar{display:flex;gap:7px;margin-bottom:9px}
@@ -98,6 +110,7 @@ button{cursor:pointer}
 
     <div class="drawer-section">은행 구분</div>
     <div id="bankNav"></div>
+    <div id="bankStaffNav" class="bank-subnav hidden"></div>
 
     <div class="drawer-section">담당자</div>
     <div id="staffNav"></div>
@@ -204,7 +217,7 @@ button{cursor:pointer}
   }
 
   let db,memoPath="bankMap/memos",historyPath="bankMap/memoHistory";
-  const state={memos:{},todayHistory:{},view:"all",staff:null,bank:"전체",writerFilter:"",search:"",selected:null};
+  const state={memos:{},todayHistory:{},view:"all",staff:null,bank:"전체",bankStaff:null,writerFilter:"",search:"",selected:null};
 
   const esc=s=>String(s??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
   const fmt=ms=>{if(!ms)return "";try{return new Intl.DateTimeFormat("ko-KR",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}).format(new Date(ms))}catch{return ""}};
@@ -251,6 +264,7 @@ button{cursor:pointer}
   function branchVisible(b){
     if(state.staff && b.staff!==state.staff)return false;
     if(state.bank!=="전체" && b.bank!==state.bank)return false;
+    if(state.bank!=="전체" && state.bankStaff && b.staff!==state.bankStaff)return false;
 
     const allMemos=memosFor(b);
     const writerMemos=filteredMemosFor(b);
@@ -282,6 +296,7 @@ button{cursor:pointer}
       .filter(h=>!state.writerFilter || String(h.writer||h.completedBy||"")===state.writerFilter)
       .filter(h=>!state.staff || String(h.staff||"")===state.staff)
       .filter(h=>state.bank==="전체" || String(h.bank||"")===state.bank)
+      .filter(h=>!state.bankStaff || String(h.staff||"")===state.bankStaff)
       .sort((a,b)=>(Number(b.completedAt)||0)-(Number(a.completedAt)||0));
   }
 
@@ -299,35 +314,88 @@ button{cursor:pointer}
     const bankNav=$("bankNav");bankNav.innerHTML="";
     {
       const btn=document.createElement("button");
-      const count=state.staff?branches.filter(b=>b.staff===state.staff).length:branches.length;
       btn.className="nav-btn"+(state.bank==="전체"?" active":"");
-      btn.innerHTML=`<span>전체 은행</span><span class="nav-count">${count}</span>`;
-      btn.onclick=()=>{state.bank="전체";closeDrawer();render()};
+      btn.innerHTML=`<span>전체 은행</span><span class="nav-count">${branches.length}</span>`;
+      btn.onclick=()=>{
+        state.bank="전체";
+        state.bankStaff=null;
+        state.staff=null;
+        keepOrCloseDrawerAfterSelect();
+        render();
+      };
       bankNav.appendChild(btn);
     }
 
     uniqueBanks().forEach(bank=>{
-      const count=branches.filter(b=>{
-        if(state.staff && b.staff!==state.staff)return false;
-        return b.bank===bank;
-      }).length;
+      const count=branches.filter(b=>b.bank===bank).length;
       const btn=document.createElement("button");
       btn.className="nav-btn"+(state.bank===bank?" active":"");
       btn.innerHTML=`<span>${esc(bank)}</span><span class="nav-count">${count}</span>`;
-      btn.onclick=()=>{state.bank=bank;closeDrawer();render()};
+      btn.onclick=()=>{
+        state.bank=bank;
+        state.bankStaff=null;
+        state.staff=null;
+        keepOrCloseDrawerAfterSelect();
+        render();
+      };
       bankNav.appendChild(btn);
     });
 
+    const bankStaffNav=$("bankStaffNav");
+    bankStaffNav.innerHTML="";
+    if(state.bank!=="전체"){
+      bankStaffNav.classList.remove("hidden");
+
+      const title=document.createElement("div");
+      title.className="bank-subnav-title";
+      title.textContent=`${state.bank} 담당자`;
+      bankStaffNav.appendChild(title);
+
+      const allBtn=document.createElement("button");
+      allBtn.className="bank-sub-btn"+(!state.bankStaff?" active":"");
+      const allCount=branches.filter(b=>b.bank===state.bank).length;
+      allBtn.innerHTML=`<span>전체 담당자</span><span class="bank-sub-count">${allCount}</span>`;
+      allBtn.onclick=()=>{
+        state.bankStaff=null;
+        keepOrCloseDrawerAfterSelect();
+        render();
+      };
+      bankStaffNav.appendChild(allBtn);
+
+      uniqueStaff().forEach(s=>{
+        if(s==="미지정")return;
+        const count=branches.filter(b=>b.bank===state.bank && b.staff===s).length;
+        if(count===0)return;
+        const btn=document.createElement("button");
+        btn.className="bank-sub-btn"+(state.bankStaff===s?" active":"");
+        btn.innerHTML=`<span>${esc(s)}</span><span class="bank-sub-count">${count}</span>`;
+        btn.onclick=()=>{
+          state.bankStaff=s;
+          keepOrCloseDrawerAfterSelect();
+          render();
+        };
+        bankStaffNav.appendChild(btn);
+      });
+    }else{
+      bankStaffNav.classList.add("hidden");
+    }
+
+    // 메인 담당자 영역의 숫자는 은행 필터와 무관하게 전체 담당지점 수를 항상 유지
     const nav=$("staffNav");nav.innerHTML="";
     uniqueStaff().forEach(s=>{
-      const count=branches.filter(b=>{
-        if(state.bank!=="전체" && b.bank!==state.bank)return false;
-        return b.staff===s;
-      }).length;
+      const count=branches.filter(b=>b.staff===s).length;
       const btn=document.createElement("button");
       btn.className="nav-btn"+(state.staff===s?" active":"");
       btn.innerHTML=`<span>${esc(s)}</span><span class="nav-count">${count}</span>`;
-      btn.onclick=()=>{state.staff=s;state.view="all";setActiveNav();closeDrawer();render()};
+      btn.onclick=()=>{
+        state.staff=s;
+        state.bank="전체";
+        state.bankStaff=null;
+        state.view="all";
+        setActiveNav();
+        keepOrCloseDrawerAfterSelect();
+        render();
+      };
       nav.appendChild(btn);
     });
     setActiveNav();
@@ -349,6 +417,7 @@ button{cursor:pointer}
     const list=currentBranches();
     let title=state.staff?`${state.staff} 담당 지점`:(state.view==="todo"?"진행중 업무":"전체 지점");
     if(state.bank!=="전체")title += ` · ${state.bank}`;
+    if(state.bankStaff)title += ` · ${state.bankStaff}`;
     if(state.writerFilter)title += ` · 작성자 ${state.writerFilter}`;
     $("viewTitle").textContent=title;
     $("viewCount").textContent=`${list.length}곳`;
@@ -373,6 +442,7 @@ button{cursor:pointer}
     let title="오늘 완료";
     if(state.staff)title += ` · ${state.staff}`;
     if(state.bank!=="전체")title += ` · ${state.bank}`;
+    if(state.bankStaff)title += ` · ${state.bankStaff}`;
     if(state.writerFilter)title += ` · 작성자 ${state.writerFilter}`;
     $("viewTitle").textContent=title;
     $("viewCount").textContent=`${items.length}건`;
@@ -450,12 +520,51 @@ button{cursor:pointer}
   }
   function closeMemoModal(){$("memoModal").classList.add("hidden")}
 
-  function openDrawer(){$("drawer").classList.add("open");$("drawerBackdrop").classList.remove("hidden")}
-  function closeDrawer(){$("drawer").classList.remove("open");$("drawerBackdrop").classList.add("hidden")}
+  function isDesktop(){return window.matchMedia("(min-width:901px)").matches}
 
-  $("menuBtn").onclick=openDrawer;$("drawerClose").onclick=closeDrawer;$("drawerBackdrop").onclick=closeDrawer;
+  function openDrawer(){
+    $("drawer").classList.add("open");
+    if(isDesktop()){
+      document.body.classList.add("drawer-open-pc");
+      $("drawerBackdrop").classList.add("hidden");
+    }else{
+      document.body.classList.remove("drawer-open-pc");
+      $("drawerBackdrop").classList.remove("hidden");
+    }
+  }
+
+  function closeDrawer(){
+    $("drawer").classList.remove("open");
+    $("drawerBackdrop").classList.add("hidden");
+    document.body.classList.remove("drawer-open-pc");
+  }
+
+  function keepOrCloseDrawerAfterSelect(){
+    if(!isDesktop())closeDrawer();
+  }
+
+  $("menuBtn").onclick=()=>{
+    if($("drawer").classList.contains("open"))closeDrawer();
+    else openDrawer();
+  };
+  $("drawerClose").onclick=closeDrawer;
+  $("drawerBackdrop").onclick=closeDrawer;
+
+  window.addEventListener("resize",()=>{
+    if(!$("drawer").classList.contains("open"))return;
+    if(isDesktop()){
+      document.body.classList.add("drawer-open-pc");
+      $("drawerBackdrop").classList.add("hidden");
+    }else{
+      document.body.classList.remove("drawer-open-pc");
+      $("drawerBackdrop").classList.remove("hidden");
+    }
+  });
   document.querySelectorAll('[data-view]').forEach(btn=>btn.onclick=()=>{
-    state.view=btn.dataset.view;state.staff=null;closeDrawer();render();
+    state.view=btn.dataset.view;
+    state.staff=null;
+    keepOrCloseDrawerAfterSelect();
+    render();
   });
 
   $("detailClose").onclick=closeDetail;$("detailModal").onclick=e=>{if(e.target.id==="detailModal")closeDetail()};
