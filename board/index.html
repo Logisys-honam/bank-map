@@ -80,6 +80,24 @@ button{cursor:pointer}
 .memo-card{border:1px solid var(--line);border-radius:10px;padding:11px;background:#fff}.memo-top{display:flex;justify-content:space-between;gap:8px;font-size:11px;font-weight:900}
 .memo-text{font-size:14px;line-height:1.5;white-space:pre-wrap;margin:7px 0}.memo-meta{font-size:10px;color:var(--muted)}
 .memo-actions{display:flex;gap:6px;margin-top:8px}.memo-actions button{border:0;border-radius:7px;padding:7px 10px;font-size:11px;font-weight:900}
+.bulk-btn{border:1px solid #f2b8b5;background:#fff;color:#b42318;border-radius:9px;height:42px;padding:0 14px;font-weight:900;white-space:nowrap}
+.bulk-btn:hover{background:#fff3f2}
+.bulk-modal-card{width:min(980px,96vw);max-height:88vh;display:flex;flex-direction:column;background:#fff;border-radius:16px;box-shadow:0 18px 60px rgba(0,0,0,.25)}
+.bulk-head{display:flex;align-items:center;justify-content:space-between;padding:16px;border-bottom:1px solid var(--line)}
+.bulk-head h2{margin:0;font-size:18px}
+.bulk-tools{display:flex;gap:8px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.bulk-tools input[type=search]{flex:1;min-width:220px;height:40px;border:1px solid #ccd3db;border-radius:9px;padding:0 10px}
+.bulk-summary{font-size:12px;color:var(--muted);font-weight:800}
+.bulk-list{overflow:auto;padding:10px 16px 16px}
+.bulk-row{display:grid;grid-template-columns:28px minmax(160px,1fr) minmax(240px,2fr) 110px 120px;gap:10px;align-items:start;padding:10px 6px;border-bottom:1px solid var(--line)}
+.bulk-row:hover{background:#f8fafc}
+.bulk-branch{font-weight:900}.bulk-text{white-space:pre-wrap;line-height:1.4}.bulk-meta{font-size:11px;color:var(--muted)}
+.memo-select{width:18px;height:18px;margin-top:2px;accent-color:#d92d20;flex:0 0 auto}
+.bulk-select-all{border:0;border-radius:8px;padding:9px 12px;background:#eef2f6;color:#344054;font-weight:900}
+.bulk-delete-selected{border:0;border-radius:8px;padding:9px 12px;background:#fee2e2;color:#991b1b;font-weight:900}
+.bulk-delete-selected:disabled{opacity:.45}
+@media(max-width:700px){.toolbar{grid-template-columns:1fr 1fr}.bulk-btn{grid-column:1/-1}.bulk-row{grid-template-columns:28px 1fr}.bulk-row .bulk-text,.bulk-row .bulk-meta{grid-column:2}.bulk-modal-card{width:100%;max-height:92vh;border-radius:14px}}
+
 .complete{background:#dcfce7;color:#166534}.delete{background:#fee2e2;color:#991b1b}
 .memo-modal-card{padding:17px}.memo-modal-card h2{margin:0 0 10px;font-size:18px}.memo-modal-card textarea{width:100%;min-height:150px;border:1px solid #ccd3db;border-radius:9px;padding:10px;resize:vertical}
 .modal-buttons{display:flex;justify-content:flex-end;gap:7px;margin-top:9px}.btn{border-radius:8px;padding:8px 11px;font-weight:900}.primary{border:0;background:var(--blue);color:#fff}.secondary{border:1px solid #d0d5dd;background:#fff}
@@ -196,6 +214,7 @@ button{cursor:pointer}
       <option>김대한</option>
       <option>관리자</option>
     </select>
+    <button id="bulkMemoOpen" class="bulk-btn">메모 선택삭제</button>
   </section>
 
   <div class="view-title">
@@ -238,6 +257,22 @@ button{cursor:pointer}
       <button id="officeMemoCancel" class="btn secondary">취소</button>
       <button id="officeMemoSave" class="btn primary">추가</button>
     </div>
+  </div>
+</div>
+
+<div id="bulkMemoModal" class="modal hidden">
+  <div class="bulk-modal-card">
+    <div class="bulk-head">
+      <h2>진행중 메모 선택삭제</h2>
+      <button id="bulkMemoClose" class="close-x">×</button>
+    </div>
+    <div class="bulk-tools">
+      <input id="bulkMemoSearch" type="search" placeholder="지점명 · 점번 · 메모내용 · 작성자 검색">
+      <button id="bulkSelectAll" class="bulk-select-all">현재 목록 전체 선택</button>
+      <button id="bulkDeleteSelected" class="bulk-delete-selected" disabled>선택 삭제 (0)</button>
+      <span id="bulkSummary" class="bulk-summary"></span>
+    </div>
+    <div id="bulkMemoList" class="bulk-list"></div>
   </div>
 </div>
 
@@ -307,7 +342,7 @@ button{cursor:pointer}
   }
 
   let db,memoPath="bankMap/memos",historyPath="bankMap/memoHistory",officeMemoPath="bankMap/officeMemos";
-  const state={memos:{},todayHistory:{},officeMemos:{},view:"all",staff:null,bank:"전체",bankStaff:null,writerFilter:"",search:"",selected:null};
+  const state={memos:{},todayHistory:{},officeMemos:{},view:"all",staff:null,bank:"전체",bankStaff:null,writerFilter:"",search:"",selected:null,bulkSelected:new Set(),bulkSearch:""};
 
   const esc=s=>String(s??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
   const fmt=ms=>{if(!ms)return "";try{return new Intl.DateTimeFormat("ko-KR",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}).format(new Date(ms))}catch{return ""}};
@@ -765,6 +800,90 @@ button{cursor:pointer}
     await db.ref().update(updates);
   }
 
+  function allActiveMemos(){
+    const out=[];
+    branches.forEach(b=>memosFor(b).forEach(m=>out.push({b,m})));
+    out.sort((a,b)=>(Number(b.m.createdAt)||0)-(Number(a.m.createdAt)||0));
+    return out;
+  }
+
+  function bulkFilteredMemos(){
+    const q=(state.bulkSearch||"").trim().toLowerCase();
+    const all=allActiveMemos();
+    if(!q)return all;
+    return all.filter(({b,m})=>[
+      b.name,b.branchNo,b.bank,b.center,b.staff,m.text,m.writer
+    ].some(v=>String(v||"").toLowerCase().includes(q)));
+  }
+
+  function updateBulkControls(list){
+    const valid=new Set(list.map(({b,m})=>`${b.memoId}/${m.key}`));
+    [...state.bulkSelected].forEach(k=>{if(!valid.has(k))state.bulkSelected.delete(k)});
+    $("bulkDeleteSelected").disabled=state.bulkSelected.size===0;
+    $("bulkDeleteSelected").textContent=`선택 삭제 (${state.bulkSelected.size})`;
+    $("bulkSelectAll").textContent=list.length&&state.bulkSelected.size===list.length?"현재 목록 전체 해제":"현재 목록 전체 선택";
+    $("bulkSummary").textContent=`표시 ${list.length}건 · 선택 ${state.bulkSelected.size}건`;
+  }
+
+  function renderBulkMemoList(){
+    const el=$("bulkMemoList"),list=bulkFilteredMemos();el.innerHTML="";
+    updateBulkControls(list);
+    if(!list.length){el.innerHTML='<div class="empty">표시할 진행중 메모가 없습니다.</div>';return}
+    list.forEach(({b,m})=>{
+      const id=`${b.memoId}/${m.key}`;
+      const row=document.createElement("div");row.className="bulk-row";
+      row.innerHTML=`
+        <input class="memo-select" type="checkbox" ${state.bulkSelected.has(id)?"checked":""}>
+        <div>
+          <div class="bulk-branch">${esc(b.name)}</div>
+          <div class="bulk-meta">${esc(b.bank||"")}${b.branchNo?" · 점번 "+esc(b.branchNo):""}</div>
+        </div>
+        <div class="bulk-text">${esc(m.text||"")}</div>
+        <div class="bulk-meta">${esc(m.writer||"")}</div>
+        <div class="bulk-meta">${esc(fmt(m.createdAt))}</div>`;
+      const cb=row.querySelector("input");
+      cb.onchange=()=>{
+        if(cb.checked)state.bulkSelected.add(id);else state.bulkSelected.delete(id);
+        updateBulkControls(list);
+      };
+      el.appendChild(row);
+    });
+  }
+
+  function openBulkMemoModal(){
+    state.bulkSelected.clear();
+    state.bulkSearch="";
+    $("bulkMemoSearch").value="";
+    renderBulkMemoList();
+    $("bulkMemoModal").classList.remove("hidden");
+  }
+
+  function closeBulkMemoModal(){
+    $("bulkMemoModal").classList.add("hidden");
+    state.bulkSelected.clear();
+  }
+
+  async function deleteBulkSelected(){
+    if(!state.bulkSelected.size)return;
+    const count=state.bulkSelected.size;
+    if(!confirm(`선택한 진행중 메모 ${count}개를 한 번에 삭제할까요?\n\n한 건씩 삭제하지 않고 Firebase에 한 번의 묶음 요청으로 처리합니다.`))return;
+
+    const updates={};
+    state.bulkSelected.forEach(id=>updates[`${memoPath}/${id}`]=null);
+
+    try{
+      $("bulkDeleteSelected").disabled=true;
+      $("bulkDeleteSelected").textContent=`삭제 중... (${count})`;
+      await db.ref().update(updates);
+      state.bulkSelected.clear();
+      renderBulkMemoList();
+    }catch(e){
+      console.error(e);
+      alert("일괄 삭제에 실패했습니다.");
+      renderBulkMemoList();
+    }
+  }
+
   function openMemoModal(){
     const b=state.selected;if(!b)return;
     $("memoModalTitle").textContent=`${b.name} · 메모 추가`;
@@ -844,6 +963,18 @@ button{cursor:pointer}
 
   $("detailClose").onclick=closeDetail;$("detailModal").onclick=e=>{if(e.target.id==="detailModal")closeDetail()};
   $("detailAdd").onclick=openMemoModal;
+  $("bulkMemoOpen").onclick=openBulkMemoModal;
+  $("bulkMemoClose").onclick=closeBulkMemoModal;
+  $("bulkMemoModal").onclick=e=>{if(e.target.id==="bulkMemoModal")closeBulkMemoModal()};
+  $("bulkMemoSearch").oninput=e=>{state.bulkSearch=e.target.value;renderBulkMemoList()};
+  $("bulkSelectAll").onclick=()=>{
+    const list=bulkFilteredMemos();
+    const ids=list.map(({b,m})=>`${b.memoId}/${m.key}`);
+    if(ids.length&&ids.every(id=>state.bulkSelected.has(id)))ids.forEach(id=>state.bulkSelected.delete(id));
+    else ids.forEach(id=>state.bulkSelected.add(id));
+    renderBulkMemoList();
+  };
+  $("bulkDeleteSelected").onclick=deleteBulkSelected;
   $("memoCancel").onclick=closeMemoModal;$("memoModal").onclick=e=>{if(e.target.id==="memoModal")closeMemoModal()};
   $("memoSave").onclick=async()=>{
     const b=state.selected,text=$("memoText").value.trim();if(!b||!text)return;
@@ -883,6 +1014,7 @@ button{cursor:pointer}
         $("sync").textContent="실시간 연결 · "+new Date().toLocaleTimeString("ko-KR");
         render();
         if(!$("detailModal").classList.contains("hidden"))renderDetail();
+        if(!$("bulkMemoModal").classList.contains("hidden"))renderBulkMemoList();
       });
 
       db.ref(`${historyPath}/${todayKey()}`).on("value",snap=>{
