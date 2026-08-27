@@ -555,6 +555,7 @@ button{cursor:pointer}
       btn.className="nav-btn"+(state.bank==="전체"?" active":"");
       btn.innerHTML=`<span>전체 은행</span><span class="nav-count-wrap"><span class="nav-count">${allBranches.length}</span>${allMemoCount?`<span class="memo-count-badge">${allMemoCount}</span>`:""}</span>`;
       btn.onclick=()=>{
+        state.view="all";
         state.bank="전체";
         state.bankStaff=null;
         state.staff=null;
@@ -572,6 +573,7 @@ button{cursor:pointer}
       btn.className="nav-btn"+(state.bank===bank?" active":"");
       btn.innerHTML=`<span>${esc(bank)}</span><span class="nav-count-wrap"><span class="nav-count">${bankBranches.length}</span>${memoCount?`<span class="memo-count-badge">${memoCount}</span>`:""}</span>`;
       btn.onclick=()=>{
+        state.view="all";
         if(state.bank===bank){
           state.bank="전체";
           state.bankStaff=null;
@@ -600,6 +602,8 @@ button{cursor:pointer}
         allBtn.className="bank-sub-btn"+(!state.bankStaff?" active":"");
         allBtn.innerHTML=`<span>전체 담당자</span><span class="bank-sub-count-wrap"><span class="bank-sub-count">${bankBranches.length}</span>${memoCount?`<span class="memo-count-badge">${memoCount}</span>`:""}</span>`;
         allBtn.onclick=()=>{
+          state.view="all";
+          state.staff=null;
           state.bankStaff=null;
           keepOrCloseDrawerAfterSelect();
           render();
@@ -616,6 +620,8 @@ button{cursor:pointer}
           subBtn.className="bank-sub-btn"+(state.bankStaff===s?" active":"");
           subBtn.innerHTML=`<span>${esc(s)}</span><span class="bank-sub-count-wrap"><span class="bank-sub-count">${staffBranches.length}</span>${staffMemoCount?`<span class="memo-count-badge">${staffMemoCount}</span>`:""}</span>`;
           subBtn.onclick=()=>{
+            state.view="all";
+            state.staff=null;
             state.bankStaff=s;
             keepOrCloseDrawerAfterSelect();
             render();
@@ -811,6 +817,8 @@ button{cursor:pointer}
   document.querySelectorAll('[data-view]').forEach(btn=>btn.onclick=()=>{
     state.view=btn.dataset.view;
     state.staff=null;
+    state.bank="전체";
+    state.bankStaff=null;
     keepOrCloseDrawerAfterSelect();
     render();
   });
