@@ -103,8 +103,8 @@ button{cursor:pointer}
 <main class="page">
   <section class="toolbar">
     <input id="search" type="search" placeholder="지점명 또는 메모내용 검색">
-    <select id="writer">
-      <option value="">작성자 선택</option>
+    <select id="writerFilter">
+      <option value="">작성자 전체</option>
       <option>김준호</option>
       <option>장창형</option>
       <option>김대한</option>
@@ -139,6 +139,13 @@ button{cursor:pointer}
 <div id="memoModal" class="modal hidden">
   <div class="memo-modal-card">
     <h2 id="memoModalTitle">메모 추가</h2>
+    <select id="memoWriter" style="width:100%;height:42px;border:1px solid #ccd3db;border-radius:9px;padding:0 10px;margin-bottom:8px;background:#fff">
+      <option value="">작성자 선택</option>
+      <option>김준호</option>
+      <option>장창형</option>
+      <option>김대한</option>
+      <option>관리자</option>
+    </select>
     <textarea id="memoText" placeholder="공유할 업무 메모를 입력하세요."></textarea>
     <div class="modal-buttons">
       <button id="memoCancel" class="btn secondary">취소</button>
@@ -149,6 +156,7 @@ button{cursor:pointer}
 
 <script src="../config.js"></script>
 <script src="../data.js"></script>
+<script src="./staff.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
@@ -165,14 +173,20 @@ button{cursor:pointer}
     return "m_"+Math.trunc(h).toString(16).toUpperCase();
   }
 
-  const branches=rawData.map((x,i)=>({
-    id:x.id||String(i),
-    memoId:x.memoId||stableMemoId(x.bank,x.name),
-    name:x.name||"(지점명 없음)",
-    staff:x.staff||x.manager||x.assignee||x.담당직원||x.staffName||"미지정",
-    bank:x.bank||"",center:x.center||"",quarter:x.quarter||"",
-    address:x.address||"",phone:x.phone||""
-  }));
+  const staffMap = window.BANK_STAFF_MAP || {};
+  const branches=rawData.map((x,i)=>{
+    const bank=x.bank||"";
+    const name=x.name||"(지점명 없음)";
+    const staffKey=`${bank}|${name}`;
+    return {
+      id:x.id||String(i),
+      memoId:x.memoId||stableMemoId(bank,name),
+      name,
+      staff:x.staff||x.manager||x.assignee||x.담당직원||x.staffName||staffMap[staffKey]||staffMap[name]||"미지정",
+      bank,center:x.center||"",quarter:x.quarter||"",
+      address:x.address||"",phone:x.phone||""
+    };
+  });
 
   async function loadFirebaseFromRoot(){
     const html=await fetch("../index.html",{cache:"no-store"}).then(r=>r.text());
@@ -186,7 +200,7 @@ button{cursor:pointer}
   }
 
   let db,memoPath="bankMap/memos",historyPath="bankMap/memoHistory";
-  const state={memos:{},todayHistory:{},view:"all",staff:null,search:"",selected:null};
+  const state={memos:{},todayHistory:{},view:"all",staff:null,writerFilter:"",search:"",selected:null};
 
   const esc=s=>String(s??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
   const fmt=ms=>{if(!ms)return "";try{return new Intl.DateTimeFormat("ko-KR",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}).format(new Date(ms))}catch{return ""}};
@@ -211,19 +225,37 @@ button{cursor:pointer}
     return out;
   }
 
+  function writerMatchesMemo(m){
+    if(!state.writerFilter)return true;
+    return String(m.writer||m.createdBy||"")===state.writerFilter;
+  }
+
+  function filteredMemosFor(b){
+    return memosFor(b).filter(writerMatchesMemo);
+  }
+
   function branchVisible(b){
     if(state.staff && b.staff!==state.staff)return false;
-    const ms=memosFor(b);
-    if(state.view==="todo" && ms.length===0)return false;
+
+    const allMemos=memosFor(b);
+    const writerMemos=filteredMemosFor(b);
+
+    // 작성자 필터가 선택되면 그 작성자의 메모가 있는 지점만 표시
+    if(state.writerFilter && writerMemos.length===0)return false;
+
+    if(state.view==="todo" && (state.writerFilter?writerMemos.length:allMemos.length)===0)return false;
+
     const q=state.search.trim().toLowerCase();
-    if(q && ![b.name,b.address,b.bank,b.center,...ms.map(x=>x.text)].join(" ").toLowerCase().includes(q))return false;
+    const searchMemos=state.writerFilter?writerMemos:allMemos;
+    if(q && ![b.name,b.address,b.bank,b.center,...searchMemos.map(x=>x.text)].join(" ").toLowerCase().includes(q))return false;
     return true;
   }
 
   function currentBranches(){
     return branches.filter(branchVisible).sort((a,b)=>{
       if(state.view==="todo"){
-        const da=memosFor(a).length,dbb=memosFor(b).length;
+        const da=(state.writerFilter?filteredMemosFor(a):memosFor(a)).length;
+        const dbb=(state.writerFilter?filteredMemosFor(b):memosFor(b)).length;
         if(da!==dbb)return dbb-da;
       }
       return a.name.localeCompare(b.name,"ko");
@@ -231,12 +263,18 @@ button{cursor:pointer}
   }
 
   function historyItems(){
-    return Object.values(state.todayHistory||{}).sort((a,b)=>(Number(b.completedAt)||0)-(Number(a.completedAt)||0));
+    return Object.values(state.todayHistory||{})
+      .filter(h=>!state.writerFilter || String(h.writer||h.completedBy||"")===state.writerFilter)
+      .sort((a,b)=>(Number(b.completedAt)||0)-(Number(a.completedAt)||0));
   }
 
   function renderDrawer(){
-    const todoBranches=branches.filter(b=>memosFor(b).length>0).length;
-    $("navAll").textContent=branches.length;
+    const visibleBase=branches.filter(b=>{
+      if(!state.writerFilter)return true;
+      return filteredMemosFor(b).length>0;
+    });
+    const todoBranches=visibleBase.filter(b=>(state.writerFilter?filteredMemosFor(b):memosFor(b)).length>0).length;
+    $("navAll").textContent=visibleBase.length;
     $("navTodo").textContent=todoBranches;
     $("navDone").textContent=historyItems().length;
     $("headerStat").textContent=`진행중 ${todoBranches}곳 · 오늘완료 ${historyItems().length}건`;
@@ -267,13 +305,16 @@ button{cursor:pointer}
 
   function renderBranches(){
     const list=currentBranches();
-    $("viewTitle").textContent=state.staff?`${state.staff} 담당 지점`:(state.view==="todo"?"진행중 업무":"전체 지점");
+    let title=state.staff?`${state.staff} 담당 지점`:(state.view==="todo"?"진행중 업무":"전체 지점");
+    if(state.writerFilter)title += ` · 작성자 ${state.writerFilter}`;
+    $("viewTitle").textContent=title;
     $("viewCount").textContent=`${list.length}곳`;
     const el=$("list");el.innerHTML="";
     if(!list.length){el.innerHTML='<div class="empty">표시할 지점이 없습니다.</div>';return}
 
     list.forEach(b=>{
-      const ms=memosFor(b),latest=latestMemo(b);
+      const ms=state.writerFilter?filteredMemosFor(b):memosFor(b);
+      const latest=ms.length?[...ms].sort((x,y)=>(Number(y.createdAt)||0)-(Number(x.createdAt)||0))[0]:null;
       const row=document.createElement("div");row.className="row";
       row.innerHTML=`
         <div><div class="branch-name">${esc(b.name)}</div><div class="branch-sub">${esc([b.bank,b.center,b.quarter?b.quarter+"분기":"",b.address].filter(Boolean).join(" · "))}</div></div>
@@ -312,8 +353,8 @@ button{cursor:pointer}
   function renderDetail(){
     const b=state.selected,el=$("detailMemos");el.innerHTML="";
     if(!b)return;
-    const ms=memosFor(b);
-    if(!ms.length){el.innerHTML='<div class="empty">현재 진행중인 메모가 없습니다.</div>';return}
+    const ms=state.writerFilter?filteredMemosFor(b):memosFor(b);
+    if(!ms.length){el.innerHTML='<div class="empty">현재 조건에 맞는 진행중 메모가 없습니다.</div>';return}
     ms.forEach(m=>{
       const card=document.createElement("div");card.className="memo-card";
       card.innerHTML=`
@@ -337,7 +378,7 @@ button{cursor:pointer}
     if(!confirm(`${b.name}의 ${m.no||""}번 메모를 완료 처리할까요?`))return;
     const day=todayKey();
     const historyKey=`${b.memoId}_${m.key}_${Date.now()}`;
-    const writer=$("writer").value||null;
+    const writer=$("memoWriter").value||localStorage.getItem("bankBoardWriter")||null;
     const updates={};
 
     updates[`${historyPath}/${day}/${historyKey}`]={
@@ -356,6 +397,7 @@ button{cursor:pointer}
   function openMemoModal(){
     const b=state.selected;if(!b)return;
     $("memoModalTitle").textContent=`${b.name} · 메모 추가`;
+    $("memoWriter").value=localStorage.getItem("bankBoardWriter")||"";
     $("memoText").value="";
     $("memoModal").classList.remove("hidden");
   }
@@ -375,15 +417,24 @@ button{cursor:pointer}
   $("memoSave").onclick=async()=>{
     const b=state.selected,text=$("memoText").value.trim();if(!b||!text)return;
     await db.ref(`${memoPath}/${b.memoId}`).push().set({
-      no:nextNo(b),text,writer:$("writer").value||null,
+      no:nextNo(b),text,writer:$("memoWriter").value||null,
       createdAt:firebase.database.ServerValue.TIMESTAMP
     });
     closeMemoModal();
   };
 
   $("search").oninput=e=>{state.search=e.target.value;render()};
-  $("writer").value=localStorage.getItem("bankBoardWriter")||"";
-  $("writer").onchange=e=>localStorage.setItem("bankBoardWriter",e.target.value);
+
+  $("writerFilter").value="";
+  $("writerFilter").onchange=e=>{
+    state.writerFilter=e.target.value;
+    render();
+  };
+
+  $("memoWriter").value=localStorage.getItem("bankBoardWriter")||"";
+  $("memoWriter").onchange=e=>{
+    localStorage.setItem("bankBoardWriter",e.target.value);
+  };
 
   (async()=>{
     try{
