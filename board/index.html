@@ -383,6 +383,28 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   .site-result-name{font-size:12px}
   .site-result-sub{font-size:9px}
 }
+
+/* v2.30 완료이력 상세팝업 + 사이트 검색 안정화 */
+.site-pick-wrap{position:relative;margin-bottom:8px;z-index:15}
+.site-pick-row{margin-bottom:0!important}
+.site-search-results{
+  position:absolute!important;
+  left:0;top:calc(100% + 4px);
+  width:60%;
+  margin:0!important;
+  z-index:50;
+  max-height:230px;
+  overflow-y:auto;
+  background:#fff
+}
+.work-add-stable{min-height:520px}
+.recent-history-row{cursor:pointer}
+.recent-history-row:hover{background:#eef6ff!important}
+.history-detail-card{max-width:760px}
+@media(max-width:700px){
+  .site-search-results{width:60%;max-height:190px}
+  .work-add-stable{min-height:500px}
+}
 </style>
 </head>
 <body>
@@ -479,6 +501,30 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   </div>
 </div>
 
+
+<div id="historyDetailModal" class="modal hidden">
+  <div class="detail-card system-detail-card history-detail-card">
+    <div class="detail-head">
+      <div>
+        <div class="detail-breadcrumb">완료 업무 &gt; 상세정보</div>
+        <h2 id="historyDetailTitle">완료 업무 상세</h2>
+      </div>
+      <button id="historyDetailClose" class="close-x">×</button>
+    </div>
+
+    <div class="system-info-grid">
+      <div class="info-label">작성일시</div><div id="historyCreated" class="info-value">-</div>
+      <div class="info-label">완료일시</div><div id="historyCompleted" class="info-value">-</div>
+      <div class="info-label">사이트</div><div id="historySite" class="info-value">-</div>
+      <div class="info-label">은행</div><div id="historyBank" class="info-value">-</div>
+      <div class="info-label">담당</div><div id="historyStaff" class="info-value">-</div>
+      <div class="info-label">작성자</div><div id="historyWriter" class="info-value">-</div>
+      <div class="info-label">업무구분</div><div id="historyWorkType" class="info-value">-</div>
+      <div class="info-label">메모</div><div id="historyText" class="info-value detail-summary-value">-</div>
+    </div>
+  </div>
+</div>
+
 <div id="officeMemoModal" class="modal hidden">
   <div class="memo-modal-card">
     <h2>순천지사메모 추가</h2>
@@ -514,16 +560,18 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
 
 
 <div id="workAddModal" class="modal hidden">
-  <div class="memo-modal-card">
+  <div class="memo-modal-card work-add-stable">
     <h2 id="workAddTitle">장애 추가</h2>
     <select id="workAddBank" style="width:100%;height:42px;border:1px solid #ccd3db;border-radius:9px;padding:0 10px;margin-bottom:8px;background:#fff">
       <option value="">은행 선택</option>
     </select>
-    <div class="site-pick-row">
-      <input id="workAddBranchSearch" type="search" placeholder="사이트 검색">
-      <select id="workAddBranch"><option value="">사이트 선택</option></select>
+    <div class="site-pick-wrap">
+      <div class="site-pick-row">
+        <input id="workAddBranchSearch" type="search" placeholder="사이트 검색">
+        <select id="workAddBranch"><option value="">사이트 선택</option></select>
+      </div>
+      <div id="workAddSearchResults" class="site-search-results hidden"></div>
     </div>
-    <div id="workAddSearchResults" class="site-search-results hidden"></div>
     <select id="workAddWriter" style="width:100%;height:42px;border:1px solid #ccd3db;border-radius:9px;padding:0 10px;margin-bottom:8px;background:#fff">
       <option value="">작성자 선택</option>
       <option>김준호</option>
@@ -1471,6 +1519,19 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     $("detailSelectAll").textContent=ms.length&&count===ms.length?"전체 해제":"전체 선택";
   }
 
+  function openHistoryDetail(h){
+    $("historyDetailTitle").textContent=h.branchName||"완료 업무 상세";
+    $("historyCreated").innerHTML=h.createdAt?shortCreatedAt(h.createdAt):"-";
+    $("historyCompleted").innerHTML=h.completedAt?shortCreatedAt(h.completedAt):"-";
+    $("historySite").textContent=h.branchName||"-";
+    $("historyBank").textContent=h.bank||"-";
+    $("historyStaff").textContent=h.staff||"-";
+    $("historyWriter").textContent=h.writer||h.completedBy||"-";
+    $("historyWorkType").textContent=h.workType||"장애";
+    $("historyText").textContent=h.text||"-";
+    showBoardModal("historyDetailModal");
+  }
+
   async function renderRecentCompletedHistory(b){
     const title=$("detailPastTitle"),el=$("detailPastList");
     const type=currentWorkType();
@@ -1502,12 +1563,19 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
         return;
       }
 
-      el.innerHTML=recent.map(h=>`
-        <div class="recent-history-row">
+      el.innerHTML=recent.map((h,i)=>`
+        <div class="recent-history-row" data-history-index="${i}" title="눌러서 당시 완료 상세 보기">
           <div class="recent-history-date">${esc(fmt(h.completedAt)||h.day||"-")}</div>
           <div class="recent-history-text">${esc(h.text||"")}</div>
           <div class="recent-history-writer">${esc(h.writer||h.completedBy||"-")}</div>
         </div>`).join("");
+
+      el.querySelectorAll(".recent-history-row").forEach(row=>{
+        row.onclick=()=>{
+          const i=Number(row.dataset.historyIndex);
+          if(Number.isInteger(i)&&recent[i])openHistoryDetail(recent[i]);
+        };
+      });
     }catch(e){
       console.error(e);
       el.innerHTML='<div class="recent-history-empty">이전 완료 내역을 불러오지 못했습니다.</div>';
@@ -1702,8 +1770,6 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
 
     if(rows.some(b=>String(b.id)===String(current))){
       $("workAddBranch").value=current;
-    }else if(rows.length===1 && q){
-      $("workAddBranch").value=String(rows[0].id);
     }
 
     const resultBox=$("workAddSearchResults");
@@ -1746,9 +1812,12 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     $("workAddBank").innerHTML='<option value="">은행 선택</option>'+banks.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join("");
     $("workAddBank").value=state.bankFilter||"";
     $("workAddBranchSearch").value="";
+    $("workAddBranch").innerHTML='<option value="">사이트 선택</option>';
+    $("workAddBranch").value="";
     $("workAddSearchResults").innerHTML="";
     $("workAddSearchResults").classList.add("hidden");
     populateWorkAddBranches();
+    $("workAddBranch").value="";
     $("workAddWriter").value=localStorage.getItem("bankBoardWriter")||"";
     $("workAddText").value="";
     showBoardModal("workAddModal");
@@ -1963,7 +2032,9 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     }
   };
 
-  $("detailClose").onclick=closeDetail;$("detailModal").onclick=e=>{if(e.target.id==="detailModal")closeDetail()};
+  $("detailClose").onclick=closeDetail;
+  $("historyDetailClose").onclick=()=>requestCloseBoardModal("historyDetailModal");
+  $("historyDetailModal").onclick=e=>{if(e.target.id==="historyDetailModal")requestCloseBoardModal("historyDetailModal")};$("detailModal").onclick=e=>{if(e.target.id==="detailModal")closeDetail()};
   $("detailAdd").onclick=()=>{
     openMemoModal();
     $("memoWorkType").value=currentWorkType();
