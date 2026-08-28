@@ -278,6 +278,31 @@ button{cursor:pointer}
   .status-memo{font-size:10px}
   .status-staff,.status-writer{font-size:10px}
 }
+
+.filter-bar{grid-template-columns:repeat(4,minmax(120px,190px))}
+.board-search{grid-column:1/-1;height:40px;border:1px solid #9aa3b2;border-radius:5px;padding:0 10px;font-size:14px;background:#fff}
+.sub-tab.add-tab{color:#0b7b3e}
+.system-detail-card{max-width:900px;padding:0;overflow:hidden;background:#fff;border-radius:8px}
+.system-detail-card .detail-head{padding:12px 14px;border-bottom:1px solid #d6dde8;background:#fff}
+.detail-breadcrumb{font-size:12px;font-weight:900;color:#2c3e50;margin-bottom:5px}
+.system-info-grid{display:grid;grid-template-columns:110px 1fr;gap:0;border-top:1px solid #d5dce7;border-left:1px solid #d5dce7;margin:0 14px 12px}
+.info-label,.info-value{padding:7px 9px;border-right:1px solid #d5dce7;border-bottom:1px solid #d5dce7;font-size:12px}
+.info-label{background:#dfe7f3;font-weight:900}
+.info-value{background:#fff;word-break:break-word}
+.detail-summary-value{white-space:pre-wrap;line-height:1.5}
+.system-section-title{margin:12px 14px 5px;font-size:13px;font-weight:900}
+.system-detail-card .detail-actions{padding:6px 14px 8px}
+.system-history-list{margin:0 14px 14px;border-top:1px solid #d5dce7}
+.system-history-list .memo-card{border-radius:0;border-left:1px solid #d5dce7;border-right:1px solid #d5dce7;border-bottom:1px solid #d5dce7}
+@media(max-width:700px){
+  .filter-bar{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .board-search{grid-column:1/-1;height:37px;font-size:12px}
+  .system-info-grid{grid-template-columns:82px 1fr;margin:0 6px 10px}
+  .info-label,.info-value{font-size:10px;padding:6px}
+  .system-section-title{margin-left:7px}
+  .system-detail-card .detail-actions{padding-left:7px;padding-right:7px}
+  .system-history-list{margin-left:6px;margin-right:6px}
+}
 </style>
 </head>
 <body>
@@ -325,9 +350,9 @@ button{cursor:pointer}
       <option>김준호</option>
       <option>장창형</option>
       <option>김대한</option>
-      <option>관리자</option>
     </select>
     <select id="pageFilter"><option value="1">1P</option></select>
+    <input id="boardSearch" class="board-search" type="search" placeholder="사이트 · 은행 · 점번 · 메모내용 검색">
   </section>
 
   <div class="view-title" style="display:none">
@@ -337,23 +362,36 @@ button{cursor:pointer}
 </main>
 
 <div id="detailModal" class="modal hidden">
-  <div class="detail-card">
+  <div class="detail-card system-detail-card">
     <div class="detail-head">
       <div>
+        <div class="detail-breadcrumb">업무 &gt; 사이트정보</div>
         <h2 id="detailTitle"></h2>
-        <div id="detailSub" class="detail-sub"></div>
       </div>
       <button id="detailClose" class="close-x">×</button>
     </div>
+
+    <div class="system-info-grid">
+      <div class="info-label">작성일시</div><div id="detailCreated" class="info-value">-</div>
+      <div class="info-label">사이트</div><div id="detailSite" class="info-value">-</div>
+      <div class="info-label">은행</div><div id="detailBank" class="info-value">-</div>
+      <div class="info-label">점번</div><div id="detailBranchNo" class="info-value">-</div>
+      <div class="info-label">주소</div><div id="detailAddress" class="info-value">-</div>
+      <div class="info-label">담당</div><div id="detailStaff" class="info-value">-</div>
+      <div class="info-label">작성자</div><div id="detailWriter" class="info-value">-</div>
+      <div class="info-label">업무구분</div><div id="detailWorkType" class="info-value">-</div>
+      <div class="info-label">메모</div><div id="detailSummary" class="info-value detail-summary-value">-</div>
+    </div>
+
+    <div class="system-section-title">■ 관련 업무 내역</div>
     <div class="detail-actions">
       <button id="detailAdd" class="add-btn">메모 추가</button>
       <button id="detailSelectAll" class="detail-select-btn">전체 선택</button>
       <button id="detailDeleteSelected" class="detail-delete-selected" disabled>선택 삭제 (0)</button>
     </div>
-    <div id="detailMemos" class="memo-list"></div>
+    <div id="detailMemos" class="memo-list system-history-list"></div>
   </div>
 </div>
-
 
 <div id="officeMemoModal" class="modal hidden">
   <div class="memo-modal-card">
@@ -363,7 +401,6 @@ button{cursor:pointer}
       <option>김준호</option>
       <option>장창형</option>
       <option>김대한</option>
-      <option>관리자</option>
     </select>
     <textarea id="officeMemoText" placeholder="지사 공용 메모를 입력하세요."></textarea>
     <div class="modal-buttons">
@@ -389,6 +426,30 @@ button{cursor:pointer}
   </div>
 </div>
 
+
+<div id="workAddModal" class="modal hidden">
+  <div class="memo-modal-card">
+    <h2 id="workAddTitle">장애 추가</h2>
+    <select id="workAddBank" style="width:100%;height:42px;border:1px solid #ccd3db;border-radius:9px;padding:0 10px;margin-bottom:8px;background:#fff">
+      <option value="">은행 선택</option>
+    </select>
+    <select id="workAddBranch" style="width:100%;height:42px;border:1px solid #ccd3db;border-radius:9px;padding:0 10px;margin-bottom:8px;background:#fff">
+      <option value="">사이트 선택</option>
+    </select>
+    <select id="workAddWriter" style="width:100%;height:42px;border:1px solid #ccd3db;border-radius:9px;padding:0 10px;margin-bottom:8px;background:#fff">
+      <option value="">작성자 선택</option>
+      <option>김준호</option>
+      <option>장창형</option>
+      <option>김대한</option>
+    </select>
+    <textarea id="workAddText" placeholder="메모 내용을 입력하세요."></textarea>
+    <div class="modal-buttons">
+      <button id="workAddCancel" class="btn secondary">취소</button>
+      <button id="workAddSave" class="btn primary">추가</button>
+    </div>
+  </div>
+</div>
+
 <div id="memoModal" class="modal hidden">
   <div class="memo-modal-card">
     <h2 id="memoModalTitle">메모 추가</h2>
@@ -401,7 +462,6 @@ button{cursor:pointer}
       <option>김준호</option>
       <option>장창형</option>
       <option>김대한</option>
-      <option>관리자</option>
     </select>
     <textarea id="memoText" placeholder="공유할 업무 메모를 입력하세요."></textarea>
     <div class="modal-buttons">
@@ -480,7 +540,7 @@ button{cursor:pointer}
   }
 
   let db,memoPath="bankMap/memos",historyPath="bankMap/memoHistory",officeMemoPath="bankMap/officeMemos";
-  const state={memos:{},weekHistory:[],officeMemos:{},main:"office",sub:"",staff:null,branchId:"",writerFilter:"",page:1,pageSize:20,selected:null,bulkSelected:new Set(),bulkSearch:"",detailSelected:new Set(),editMemo:null};
+  const state={memos:{},weekHistory:[],officeMemos:{},main:"office",sub:"",staff:null,bankFilter:"",writerFilter:"",search:"",page:1,pageSize:20,selected:null,bulkSelected:new Set(),bulkSearch:"",detailSelected:new Set(),editMemo:null};
 
   const esc=s=>String(s??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
   const fmt=ms=>{if(!ms)return "";try{return new Intl.DateTimeFormat("ko-KR",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}).format(new Date(ms))}catch{return ""}};
@@ -653,10 +713,7 @@ button{cursor:pointer}
     return Object.entries(state.officeMemos||{})
       .map(([key,v])=>({key,...(v||{})}))
       .filter(m=>!state.writerFilter || String(m.writer||"")===state.writerFilter)
-      .filter(m=>{
-        const q=state.search.trim();
-        return !q || smartIncludes(m.text||"",q) || smartIncludes(m.writer||"",q);
-      })
+      .filter(m=>true)
       .sort((a,b)=>{
         if(!!a.done!==!!b.done)return a.done?1:-1;
         return (Number(b.createdAt)||0)-(Number(a.createdAt)||0);
@@ -777,10 +834,12 @@ button{cursor:pointer}
     const rows=[];
     branches.forEach(b=>{
       if(state.staff && b.staff!==state.staff)return;
-      if(state.branchId && String(b.id)!==String(state.branchId))return;
+      if(state.bankFilter && b.bank!==state.bankFilter)return;
       memosFor(b).forEach(m=>{
         if((m.workType||"장애")!==type)return;
         if(state.writerFilter && String(m.writer||"")!==state.writerFilter)return;
+        const hay=[b.name,b.bank,b.center,b.branchNo,b.address,m.text,m.writer,b.staff].join(" ");
+        if(state.search && !smartIncludes(hay,state.search))return;
         rows.push({b,m});
       });
     });
@@ -793,11 +852,11 @@ button{cursor:pointer}
     return (state.weekHistory||[])
       .filter(h=>(h.workType||"장애")===type)
       .filter(h=>!state.staff || String(h.staff||"")===state.staff)
+      .filter(h=>!state.bankFilter || String(h.bank||"")===state.bankFilter)
       .filter(h=>!state.writerFilter || String(h.writer||h.completedBy||"")===state.writerFilter)
       .filter(h=>{
-        if(!state.branchId)return true;
-        const b=branches.find(x=>String(x.id)===String(state.branchId));
-        return !b || String(h.branchMemoId||"")===String(b.memoId);
+        const hay=[h.branchName,h.bank,h.center,h.text,h.writer,h.completedBy,h.staff].join(" ");
+        return !state.search || smartIncludes(hay,state.search);
       })
       .sort((a,b)=>(Number(b.completedAt)||0)-(Number(a.completedAt)||0));
   }
@@ -821,19 +880,24 @@ button{cursor:pointer}
     return `${o.month}-${o.day}<br>${o.hour}:${o.minute}`;
   }
 
+  function bankCategories(){
+    const vals=[...new Set(branches.map(b=>b.bank).filter(Boolean))];
+    return vals.sort((a,b)=>a.localeCompare(b,"ko"));
+  }
+
   function refreshSimpleFilters(){
-    const staffSel=$("staffFilter"),branchSel=$("branchFilter");
-    const staffList=uniqueStaff().filter(x=>x!=="미지정").sort((a,b)=>a.localeCompare(b,"ko"));
+    const staffSel=$("staffFilter"),bankSel=$("branchFilter");
+    const staffList=uniqueStaff().filter(x=>x!=="미지정"&&x!=="관리자").sort((a,b)=>a.localeCompare(b,"ko"));
     const oldStaff=state.staff||"";
     staffSel.innerHTML='<option value="">담당자</option>'+staffList.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join("");
     staffSel.value=staffList.includes(oldStaff)?oldStaff:"";
     state.staff=staffSel.value||null;
 
-    const candidates=branches.filter(b=>!state.staff || b.staff===state.staff).slice().sort((a,b)=>a.name.localeCompare(b.name,"ko"));
-    const oldBranch=state.branchId||"";
-    branchSel.innerHTML='<option value="">은행지점</option>'+candidates.map(b=>`<option value="${esc(b.id)}">${esc(b.name)} · ${esc(b.bank||"")}</option>`).join("");
-    branchSel.value=candidates.some(b=>String(b.id)===String(oldBranch))?String(oldBranch):"";
-    state.branchId=branchSel.value;
+    const banks=bankCategories();
+    const oldBank=state.bankFilter||"";
+    bankSel.innerHTML='<option value="">은행지점</option>'+banks.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join("");
+    bankSel.value=banks.includes(oldBank)?oldBank:"";
+    state.bankFilter=bankSel.value||"";
   }
 
   function updatePageFilter(total){
@@ -847,15 +911,21 @@ button{cursor:pointer}
   function renderSubTabs(){
     const el=$("subTabs");el.innerHTML="";
     let defs=[];
-    if(state.main==="issue")defs=[["active","현황"],["done","완료"]];
-    if(state.main==="install")defs=[["active","일정"],["done","완료"]];
+    if(state.main==="issue")defs=[["active","현황"],["done","완료"],["add","추가"]];
+    if(state.main==="install")defs=[["active","일정"],["done","완료"],["add","추가"]];
     if(!defs.length)return;
     if(!defs.some(x=>x[0]===state.sub))state.sub=defs[0][0];
     defs.forEach(([key,label])=>{
       const b=document.createElement("button");
-      b.className="sub-tab"+(state.sub===key?" active":"");
+      b.className="sub-tab"+(state.sub===key?" active":"")+(key==="add"?" add-tab":"");
       b.textContent=label;
-      b.onclick=()=>{state.sub=key;state.page=1;render()};
+      b.onclick=()=>{
+        if(key==="add"){
+          openWorkAddModal();
+          return;
+        }
+        state.sub=key;state.page=1;render();
+      };
       el.appendChild(b);
     });
   }
@@ -932,6 +1002,7 @@ button{cursor:pointer}
 
     if(state.main==="office"){
       $("filterBar").style.display="none";
+      state.sub="";
       renderOfficeMemos();
       return;
     }
@@ -1052,8 +1123,23 @@ button{cursor:pointer}
   function openDetail(b){
     state.selected=b;
     state.detailSelected.clear();
+
+    const type=currentWorkType();
+    const ms=memosFor(b).filter(m=>(m.workType||"장애")===type)
+      .sort((a,b)=>(Number(b.createdAt)||0)-(Number(a.createdAt)||0));
+    const latest=ms[0]||null;
+
     $("detailTitle").textContent=b.name;
-    $("detailSub").textContent=[b.bank,b.center,b.quarter?b.quarter+"분기":"",b.branchNo?`점번 ${b.branchNo}`:"",b.address].filter(Boolean).join(" · ");
+    $("detailCreated").innerHTML=latest?shortCreatedAt(latest.createdAt):"-";
+    $("detailSite").textContent=b.name||"-";
+    $("detailBank").textContent=b.bank||"-";
+    $("detailBranchNo").textContent=b.branchNo||"-";
+    $("detailAddress").textContent=b.address||"-";
+    $("detailStaff").textContent=b.staff||"-";
+    $("detailWriter").textContent=latest?.writer||"-";
+    $("detailWorkType").textContent=type;
+    $("detailSummary").textContent=latest?.text||"-";
+
     $("detailModal").classList.remove("hidden");
     renderDetail();
   }
@@ -1074,7 +1160,9 @@ button{cursor:pointer}
   function renderDetail(){
     const b=state.selected,el=$("detailMemos");el.innerHTML="";
     if(!b)return;
-    const ms=state.writerFilter?filteredMemosFor(b):memosFor(b);
+    const type=currentWorkType();
+    const baseMs=state.writerFilter?filteredMemosFor(b):memosFor(b);
+    const ms=baseMs.filter(m=>(m.workType||"장애")===type);
     updateDetailSelection(ms);
     if(!ms.length){el.innerHTML='<div class="empty">현재 조건에 맞는 진행중 메모가 없습니다.</div>';return}
     ms.forEach(m=>{
@@ -1237,6 +1325,28 @@ button{cursor:pointer}
     }
   }
 
+  function populateWorkAddBranches(){
+    const bank=$("workAddBank").value||"";
+    const rows=branches.filter(b=>!bank || b.bank===bank).slice().sort((a,b)=>a.name.localeCompare(b.name,"ko"));
+    $("workAddBranch").innerHTML='<option value="">사이트 선택</option>'+rows.map(b=>`<option value="${esc(b.id)}">${esc(b.name)} · ${esc(b.bank||"")}</option>`).join("");
+  }
+
+  function openWorkAddModal(){
+    const type=currentWorkType();
+    $("workAddTitle").textContent=`${type} 추가`;
+    const banks=bankCategories();
+    $("workAddBank").innerHTML='<option value="">은행 선택</option>'+banks.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join("");
+    $("workAddBank").value=state.bankFilter||"";
+    populateWorkAddBranches();
+    $("workAddWriter").value=localStorage.getItem("bankBoardWriter")||"";
+    $("workAddText").value="";
+    $("workAddModal").classList.remove("hidden");
+  }
+
+  function closeWorkAddModal(){
+    $("workAddModal").classList.add("hidden");
+  }
+
   function openMemoModal(){
     const b=state.selected;if(!b)return;
     state.editMemo=null;
@@ -1327,13 +1437,12 @@ button{cursor:pointer}
 
   $("staffFilter").onchange=e=>{
     state.staff=e.target.value||null;
-    state.branchId="";
     state.page=1;
     render();
   };
 
   $("branchFilter").onchange=e=>{
-    state.branchId=e.target.value||"";
+    state.bankFilter=e.target.value||"";
     state.page=1;
     render();
   };
@@ -1348,6 +1457,49 @@ button{cursor:pointer}
   $("pageFilter").onchange=e=>{
     state.page=Math.max(1,Number(e.target.value)||1);
     render();
+  };
+
+  $("boardSearch").oninput=e=>{
+    state.search=e.target.value||"";
+    state.page=1;
+    render();
+  };
+
+  $("workAddBank").onchange=populateWorkAddBranches;
+  $("workAddCancel").onclick=closeWorkAddModal;
+  $("workAddModal").onclick=e=>{if(e.target.id==="workAddModal")closeWorkAddModal()};
+  $("workAddWriter").onchange=e=>localStorage.setItem("bankBoardWriter",e.target.value);
+
+  $("workAddSave").onclick=async()=>{
+    const id=$("workAddBranch").value;
+    const b=branches.find(x=>String(x.id)===String(id));
+    const text=$("workAddText").value.trim();
+    const writer=$("workAddWriter").value||null;
+    if(!b){alert("사이트를 선택해주세요.");return}
+    if(!text){alert("메모 내용을 입력해주세요.");return}
+    if(!db){alert("Firebase 연결이 완료되지 않았습니다.");return}
+
+    try{
+      $("workAddSave").disabled=true;
+      $("workAddSave").textContent="저장 중...";
+      await db.ref(`${memoPath}/${b.memoId}`).push().set({
+        no:nextNo(b),
+        text,
+        writer,
+        workType:currentWorkType(),
+        createdAt:firebase.database.ServerValue.TIMESTAMP
+      });
+      closeWorkAddModal();
+      state.sub="active";
+      state.page=1;
+      render();
+    }catch(e){
+      console.error(e);
+      alert("메모 저장 실패: "+(e&&e.message?e.message:e));
+    }finally{
+      $("workAddSave").disabled=false;
+      $("workAddSave").textContent="추가";
+    }
   };
 
   $("officeMemoCancel").onclick=closeOfficeMemoModal;
@@ -1391,7 +1543,10 @@ button{cursor:pointer}
   };
 
   $("detailClose").onclick=closeDetail;$("detailModal").onclick=e=>{if(e.target.id==="detailModal")closeDetail()};
-  $("detailAdd").onclick=openMemoModal;
+  $("detailAdd").onclick=()=>{
+    openMemoModal();
+    $("memoWorkType").value=currentWorkType();
+  };
   $("detailSelectAll").onclick=()=>{
     const b=state.selected;if(!b)return;
     const ms=state.writerFilter?filteredMemosFor(b):memosFor(b);
