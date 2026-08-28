@@ -217,7 +217,7 @@ window.BANK_BOARD_BRANCHES = [
   {"quarter":"PA_본부","bank":"메리츠","center":"순천","branchNo":"D001141","name":"순천베스트본부","address":"전남 순천시 이수로314,2층(연향동,순천베스트본부)","phone":"전화 061-729-5902","staff":"김대한","memoId":"m_46CF134B"},
   {"quarter":"보상/손사","bank":"메리츠","center":"순천","branchNo":"D007245","name":"순천센터(순천)(좌식2교육장)","address":"전남 순천시 이수로314,3층(연향동)","phone":"전화 010-5151-3427","staff":"김대한","memoId":"m_5D1EBC0A"},
   {"quarter":"GA_대리점","bank":"메리츠","center":"순천","branchNo":"S036370","name":"에이비에이금융서비스 유한회사(순천)(조례동)","address":"전남 순천시 장선배기1길9-8,3층(조례동)","phone":"전화 061-921-9510","staff":"김대한","memoId":"m_11090757"},
-  {"quarter":"GA_대리점","bank":"메리츠","center":"순천","branchNo":"S003500","name":"지에이코리아 주식회사(금당)","address":"전남 순천시 장선배기길 274층 GAK금당 (조례동대흥빌딩)","phone":"전화 061-727-3026","staff":"김대한","memoId":"m_472BE732"},
+  {"quarter":"GA_대리점","bank":"메리츠","center":"순천","branchNo":"S003500","name":"지에이코리아 주식회사(금당)","address":"전남광주 순천시 장선배기길 27","phone":"전화 061-727-3026","staff":"김대한","memoId":"m_472BE732"},
   {"quarter":"GA_대리점","bank":"메리츠","center":"순천","branchNo":"S042760","name":"주식회사 지금융코리아(더존에셋순천칠)","address":"전남 순천시 장자보1길61,2층(연향동)","phone":"전화 061-726-3996","staff":"김대한","memoId":"m_70672CA5"},
   {"quarter":"GA_대리점","bank":"메리츠","center":"순천","branchNo":"S043378","name":"인카금융서비스(주)(치트기본부)","address":"전남 순천시 조례신대앞길20,2층(조례동)","phone":"전화 010-9450-2606","staff":"김대한","memoId":"m_3E274F71"},
   {"quarter":"TA_본부","bank":"메리츠","center":"순천","branchNo":"D010781","name":"호남제일본부","address":"전남 순천시 충효로 142,(비어 있음)","phone":"전화 061-727-6577","staff":"김대한","memoId":"m_772B5008"},
