@@ -914,7 +914,7 @@ button{cursor:pointer}
   }
 
   function renderRegularBlank(){
-    $("list").innerHTML='<div class="empty-board"></div>';
+    $("list").innerHTML='<div class="empty-board">정기 업무 화면은 다음 단계에서 구성합니다.</div>';
     updatePageFilter(0);
   }
 
@@ -1243,46 +1243,6 @@ button{cursor:pointer}
     $("memoModalTitle").textContent=`${b.name} · 메모 추가`;
     $("memoWorkType").value=state.main==="install"?"설치":"장애";
     $("memoSave").textContent="추가";
-    document.querySelectorAll("[data-main]").forEach(btn=>btn.onclick=()=>{
-    state.main=btn.dataset.main;
-    state.sub=state.main==="issue"?"active":state.main==="install"?"active":"";
-    state.page=1;
-    render();
-  });
-
-  document.querySelectorAll("[data-main-menu]").forEach(btn=>btn.onclick=()=>{
-    state.main=btn.dataset.mainMenu;
-    state.sub=state.main==="issue"?"active":state.main==="install"?"active":"";
-    state.page=1;
-    keepOrCloseDrawerAfterSelect();
-    render();
-  });
-
-  $("staffFilter").onchange=e=>{
-    state.staff=e.target.value||null;
-    state.branchId="";
-    state.page=1;
-    render();
-  };
-
-  $("branchFilter").onchange=e=>{
-    state.branchId=e.target.value||"";
-    state.page=1;
-    render();
-  };
-
-  $("writerFilter").value="";
-  $("writerFilter").onchange=e=>{
-    state.writerFilter=e.target.value;
-    state.page=1;
-    render();
-  };
-
-  $("pageFilter").onchange=e=>{
-    state.page=Math.max(1,Number(e.target.value)||1);
-    render();
-  };
-
   $("memoWriter").value=localStorage.getItem("bankBoardWriter")||"";
     $("memoText").value="";
     $("memoModal").classList.remove("hidden");
@@ -1346,6 +1306,50 @@ button{cursor:pointer}
     }
   });
 
+  document.querySelectorAll("[data-main]").forEach(btn=>{
+    btn.onclick=()=>{
+      state.main=btn.dataset.main;
+      state.sub=state.main==="issue"?"active":state.main==="install"?"active":"";
+      state.page=1;
+      render();
+    };
+  });
+
+  document.querySelectorAll("[data-main-menu]").forEach(btn=>{
+    btn.onclick=()=>{
+      state.main=btn.dataset.mainMenu;
+      state.sub=state.main==="issue"?"active":state.main==="install"?"active":"";
+      state.page=1;
+      keepOrCloseDrawerAfterSelect();
+      render();
+    };
+  });
+
+  $("staffFilter").onchange=e=>{
+    state.staff=e.target.value||null;
+    state.branchId="";
+    state.page=1;
+    render();
+  };
+
+  $("branchFilter").onchange=e=>{
+    state.branchId=e.target.value||"";
+    state.page=1;
+    render();
+  };
+
+  $("writerFilter").value="";
+  $("writerFilter").onchange=e=>{
+    state.writerFilter=e.target.value;
+    state.page=1;
+    render();
+  };
+
+  $("pageFilter").onchange=e=>{
+    state.page=Math.max(1,Number(e.target.value)||1);
+    render();
+  };
+
   $("officeMemoCancel").onclick=closeOfficeMemoModal;
   $("officeMemoModal").onclick=e=>{if(e.target.id==="officeMemoModal")closeOfficeMemoModal()};
   $("officeMemoWriter").value=localStorage.getItem("bankBoardWriter")||"";
@@ -1354,15 +1358,36 @@ button{cursor:pointer}
   $("officeMemoSave").onclick=async()=>{
     const text=$("officeMemoText").value.trim();
     const writer=$("officeMemoWriter").value||null;
-    if(!text)return;
-    await db.ref(officeMemoPath).push().set({
-      text,
-      writer,
-      done:false,
-      createdAt:firebase.database.ServerValue.TIMESTAMP,
-      completedAt:null
-    });
-    closeOfficeMemoModal();
+    if(!text){
+      alert("메모 내용을 입력해주세요.");
+      return;
+    }
+    if(!db){
+      alert("Firebase 연결이 아직 완료되지 않았습니다. 잠시 후 다시 시도해주세요.");
+      return;
+    }
+
+    try{
+      $("officeMemoSave").disabled=true;
+      $("officeMemoSave").textContent="저장 중...";
+      if(writer)localStorage.setItem("bankBoardWriter",writer);
+
+      await db.ref(officeMemoPath).push().set({
+        text,
+        writer,
+        done:false,
+        createdAt:firebase.database.ServerValue.TIMESTAMP,
+        completedAt:null
+      });
+
+      closeOfficeMemoModal();
+    }catch(e){
+      console.error(e);
+      alert("지사메모 저장 실패: "+(e&&e.message?e.message:e));
+    }finally{
+      $("officeMemoSave").disabled=false;
+      $("officeMemoSave").textContent="추가";
+    }
   };
 
   $("detailClose").onclick=closeDetail;$("detailModal").onclick=e=>{if(e.target.id==="detailModal")closeDetail()};
@@ -1414,6 +1439,9 @@ button{cursor:pointer}
   $("memoWriter").onchange=e=>{
     localStorage.setItem("bankBoardWriter",e.target.value);
   };
+
+  // Firebase 연결 전에도 탭/필터 UI는 즉시 동작
+  render();
 
   (async()=>{
     try{
