@@ -178,6 +178,19 @@ button{cursor:pointer}
 .office-complete{background:#dcfce7;color:#166534}
 .office-delete{background:#fee2e2;color:#991b1b}
 .office-empty{padding:34px;text-align:center;color:#98a2b3}
+
+.quick-filters{display:grid;grid-template-columns:repeat(4,minmax(130px,1fr));gap:8px;grid-column:1/-1}
+.quick-filters select{width:100%;height:42px;border:1px solid #ccd3db;border-radius:9px;background:#fff;padding:0 10px;font-weight:800;color:#344054}
+.quick-filters select:focus{outline:2px solid rgba(30,111,220,.18);border-color:#1e6fdc}
+.toolbar-search{min-width:0}
+@media(max-width:900px){
+  .quick-filters{grid-template-columns:1fr 1fr}
+  .quick-filters select{height:44px;font-size:14px}
+}
+@media(max-width:520px){
+  .quick-filters{grid-template-columns:1fr 1fr}
+  .toolbar .bulk-btn{grid-column:1/-1}
+}
 </style>
 </head>
 <body>
@@ -199,35 +212,34 @@ button{cursor:pointer}
     <button id="drawerClose" class="drawer-close">×</button>
   </div>
   <div class="drawer-body">
-    <div class="drawer-section">업무현황</div>
-    <button class="nav-btn active" data-view="all"><span>전체 지점</span><span id="navAll" class="nav-count">0</span></button>
-    <button class="nav-btn" data-view="todo"><span>진행중</span><span id="navTodo" class="nav-count">0</span></button>
-    <button class="nav-btn" data-view="todayDone"><span>오늘 완료</span><span id="navDone" class="nav-count">0</span></button>
+    <div class="drawer-section">업무</div>
+    <button class="nav-btn active" data-view="all"><span>지점</span><span id="navAll" class="nav-count">0</span></button>
+    <button class="nav-btn" data-view="todo"><span>현황</span><span id="navTodo" class="nav-count">0</span></button>
+    <button class="nav-btn" data-view="weekDone"><span>완료</span><span id="navDone" class="nav-count">0</span></button>
     <button class="nav-btn" data-view="officeMemo"><span>순천지사메모</span><span id="navOfficeMemo" class="nav-count">0</span></button>
-
-    <div class="drawer-section">은행 구분</div>
-    <div id="bankNav"></div>
-
-    <div class="drawer-section">담당자</div>
-    <div id="staffNav"></div>
   </div>
 </aside>
 
 <main class="page">
   <section class="toolbar">
-    <input id="search" type="search" placeholder="지점명 · 은행 · 센터 · 점번 · 주소 · 메모 검색">
-    <select id="writerFilter">
-      <option value="">작성자 전체</option>
-      <option>김준호</option>
-      <option>장창형</option>
-      <option>김대한</option>
-      <option>관리자</option>
-    </select>
+    <input id="search" class="toolbar-search" type="search" placeholder="지점명 · 은행 · 센터 · 점번 · 주소 · 메모 검색">
+    <div class="quick-filters">
+      <select id="bankFilter" aria-label="은행 선택"><option value="전체">은행 전체</option></select>
+      <select id="staffFilter" aria-label="담당자 선택"><option value="">담당자 전체</option></select>
+      <select id="branchFilter" aria-label="지점 선택"><option value="">지점 전체</option></select>
+      <select id="writerFilter" aria-label="작성자 선택">
+        <option value="">작성자 전체</option>
+        <option>김준호</option>
+        <option>장창형</option>
+        <option>김대한</option>
+        <option>관리자</option>
+      </select>
+    </div>
     <button id="bulkMemoOpen" class="bulk-btn">메모 선택삭제</button>
   </section>
 
   <div class="view-title">
-    <h2 id="viewTitle">전체 지점</h2>
+    <h2 id="viewTitle">지점</h2>
     <span id="viewCount"></span>
   </div>
 
@@ -353,7 +365,7 @@ button{cursor:pointer}
   }
 
   let db,memoPath="bankMap/memos",historyPath="bankMap/memoHistory",officeMemoPath="bankMap/officeMemos";
-  const state={memos:{},todayHistory:{},officeMemos:{},view:"all",staff:null,bank:"전체",bankStaff:null,writerFilter:"",search:"",selected:null,bulkSelected:new Set(),bulkSearch:"",detailSelected:new Set(),editMemo:null,activeNav:"view:all"};
+  const state={memos:{},weekHistory:[],officeMemos:{},view:"all",staff:null,bank:"전체",branchId:"",writerFilter:"",search:"",selected:null,bulkSelected:new Set(),bulkSearch:"",detailSelected:new Set(),editMemo:null,activeNav:"view:all"};
 
   const esc=s=>String(s??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
   const fmt=ms=>{if(!ms)return "";try{return new Intl.DateTimeFormat("ko-KR",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}).format(new Date(ms))}catch{return ""}};
@@ -394,6 +406,29 @@ button{cursor:pointer}
   function todayKey(){
     const p=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Seoul",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
     const o={};p.forEach(x=>o[x.type]=x.value);return `${o.year}-${o.month}-${o.day}`;
+  }
+
+  function keyFromUTCDate(d){
+    return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,"0")}-${String(d.getUTCDate()).padStart(2,"0")}`;
+  }
+
+  function currentWeekRange(){
+    const [y,m,d]=todayKey().split("-").map(Number);
+    const base=new Date(Date.UTC(y,m-1,d));
+    const mondayOffset=(base.getUTCDay()+6)%7;
+    const start=new Date(base);
+    start.setUTCDate(start.getUTCDate()-mondayOffset);
+    const end=new Date(start);
+    end.setUTCDate(end.getUTCDate()+6);
+    return {start:keyFromUTCDate(start),end:keyFromUTCDate(end)};
+  }
+
+  function flattenWeekHistory(raw){
+    const out=[];
+    Object.entries(raw||{}).forEach(([day,rows])=>{
+      Object.entries(rows||{}).forEach(([key,v])=>out.push({key,day,...(v||{})}));
+    });
+    return out;
   }
 
   function memosFor(b){
@@ -437,7 +472,7 @@ button{cursor:pointer}
   function branchVisible(b){
     if(state.staff && b.staff!==state.staff)return false;
     if(state.bank!=="전체" && b.bank!==state.bank)return false;
-    if(state.bank!=="전체" && state.bankStaff && b.staff!==state.bankStaff)return false;
+    if(state.branchId && String(b.id)!==String(state.branchId))return false;
 
     const allMemos=memosFor(b);
     const writerMemos=filteredMemosFor(b);
@@ -486,11 +521,15 @@ button{cursor:pointer}
   }
 
   function historyItems(){
-    return Object.values(state.todayHistory||{})
+    return (state.weekHistory||[])
       .filter(h=>!state.writerFilter || String(h.writer||h.completedBy||"")===state.writerFilter)
       .filter(h=>!state.staff || String(h.staff||"")===state.staff)
       .filter(h=>state.bank==="전체" || String(h.bank||"")===state.bank)
-      .filter(h=>!state.bankStaff || String(h.staff||"")===state.bankStaff)
+      .filter(h=>{
+        if(!state.branchId)return true;
+        const b=branches.find(x=>String(x.id)===String(state.branchId));
+        return !b || String(h.branchMemoId||"")===String(b.memoId);
+      })
       .sort((a,b)=>(Number(b.completedAt)||0)-(Number(a.completedAt)||0));
   }
 
@@ -580,122 +619,50 @@ button{cursor:pointer}
     $("officeMemoModal").classList.add("hidden");
   }
 
-  function renderDrawer(){
-    const visibleBase=branches.filter(b=>{
-      if(!state.writerFilter)return true;
-      return filteredMemosFor(b).length>0;
+  function filterBaseBranches(){
+    return branches.filter(b=>{
+      if(state.bank!=="전체" && b.bank!==state.bank)return false;
+      if(state.staff && b.staff!==state.staff)return false;
+      return true;
     });
-    const todoBranches=visibleBase.filter(b=>(state.writerFilter?filteredMemosFor(b):memosFor(b)).length>0).length;
-    $("navAll").textContent=visibleBase.length;
+  }
+
+  function refreshQuickFilters(){
+    const bankSel=$("bankFilter"),staffSel=$("staffFilter"),branchSel=$("branchFilter");
+
+    const banks=uniqueBanks().sort((a,b)=>a.localeCompare(b,"ko"));
+    const currentBank=state.bank;
+    bankSel.innerHTML='<option value="전체">은행 전체</option>'+banks.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join("");
+    bankSel.value=banks.includes(currentBank)?currentBank:"전체";
+    state.bank=bankSel.value;
+
+    const staffChoices=uniqueStaff().filter(x=>x!=="미지정").sort((a,b)=>a.localeCompare(b,"ko"));
+    const currentStaff=state.staff||"";
+    staffSel.innerHTML='<option value="">담당자 전체</option>'+staffChoices.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join("");
+    staffSel.value=staffChoices.includes(currentStaff)?currentStaff:"";
+    state.staff=staffSel.value||null;
+
+    const choices=filterBaseBranches().slice().sort((a,b)=>a.name.localeCompare(b.name,"ko"));
+    const currentBranch=state.branchId||"";
+    branchSel.innerHTML='<option value="">지점 전체</option>'+choices.map(b=>{
+      const sub=[b.bank,b.branchNo?`점번 ${b.branchNo}`:""].filter(Boolean).join(" · ");
+      return `<option value="${esc(b.id)}">${esc(b.name)}${sub?" · "+esc(sub):""}</option>`;
+    }).join("");
+    branchSel.value=choices.some(b=>String(b.id)===String(currentBranch))?String(currentBranch):"";
+    state.branchId=branchSel.value;
+  }
+
+  function renderDrawer(){
+    const base=branches.filter(branchVisible);
+    const todoBranches=base.filter(b=>(state.writerFilter?filteredMemosFor(b):memosFor(b)).length>0).length;
+
+    $("navAll").textContent=branches.length;
     $("navTodo").textContent=todoBranches;
     $("navDone").textContent=historyItems().length;
     $("navOfficeMemo").textContent=Object.keys(state.officeMemos||{}).length;
-    $("headerStat").textContent=`진행중 ${todoBranches}곳 · 오늘완료 ${historyItems().length}건`;
+    $("headerStat").textContent=`진행중 ${todoBranches}곳 · 이번주완료 ${historyItems().length}건`;
 
-    const bankNav=$("bankNav");bankNav.innerHTML="";
-
-    {
-      const allBranches=branches;
-      const allMemoCount=activeMemoCount(allBranches);
-      const btn=document.createElement("button");
-      btn.className="nav-btn"+(state.activeNav==="bank:전체"?" active":"");
-      btn.innerHTML=`<span>전체 은행</span><span class="nav-count-wrap"><span class="nav-count">${allBranches.length}</span>${allMemoCount?`<span class="memo-count-badge">${allMemoCount}</span>`:""}</span>`;
-      btn.onclick=()=>{
-        state.view="all";
-        state.bank="전체";
-        state.bankStaff=null;
-        state.staff=null;
-        state.activeNav="bank:전체";
-        keepOrCloseDrawerAfterSelect();
-        render();
-      };
-      bankNav.appendChild(btn);
-    }
-
-    uniqueBanks().forEach(bank=>{
-      const bankBranches=branches.filter(b=>b.bank===bank);
-      const memoCount=activeMemoCount(bankBranches);
-
-      const btn=document.createElement("button");
-      btn.className="nav-btn"+(state.activeNav===`bank:${bank}`?" active":"");
-      btn.innerHTML=`<span>${esc(bank)}</span><span class="nav-count-wrap"><span class="nav-count">${bankBranches.length}</span>${memoCount?`<span class="memo-count-badge">${memoCount}</span>`:""}</span>`;
-      btn.onclick=()=>{
-        state.view="all";
-        state.bank=bank;
-        state.bankStaff=null;
-        state.staff=null;
-        state.activeNav=`bank:${bank}`;
-        keepOrCloseDrawerAfterSelect();
-        render();
-      };
-      bankNav.appendChild(btn);
-
-      // 선택한 은행의 담당자 소분류는 해당 은행 버튼 바로 아래에 붙인다.
-      if(state.bank===bank){
-        const sub=document.createElement("div");
-        sub.className="bank-subnav";
-
-        const title=document.createElement("div");
-        title.className="bank-subnav-title";
-        title.textContent=`${bank} 담당자`;
-        sub.appendChild(title);
-
-        const allBtn=document.createElement("button");
-        allBtn.className="bank-sub-btn"+(state.activeNav===`bankStaff:${bank}:all`?" active":"");
-        allBtn.innerHTML=`<span>전체 담당자</span><span class="bank-sub-count-wrap"><span class="bank-sub-count">${bankBranches.length}</span>${memoCount?`<span class="memo-count-badge">${memoCount}</span>`:""}</span>`;
-        allBtn.onclick=()=>{
-          state.view="all";
-          state.staff=null;
-          state.bankStaff=null;
-          state.activeNav=`bankStaff:${bank}:all`;
-          keepOrCloseDrawerAfterSelect();
-          render();
-        };
-        sub.appendChild(allBtn);
-
-        uniqueStaff().forEach(s=>{
-          if(s==="미지정")return;
-          const staffBranches=bankBranches.filter(b=>b.staff===s);
-          if(staffBranches.length===0)return;
-
-          const staffMemoCount=activeMemoCount(staffBranches);
-          const subBtn=document.createElement("button");
-          subBtn.className="bank-sub-btn"+(state.activeNav===`bankStaff:${bank}:${s}`?" active":"");
-          subBtn.innerHTML=`<span>${esc(s)}</span><span class="bank-sub-count-wrap"><span class="bank-sub-count">${staffBranches.length}</span>${staffMemoCount?`<span class="memo-count-badge">${staffMemoCount}</span>`:""}</span>`;
-          subBtn.onclick=()=>{
-            state.view="all";
-            state.staff=null;
-            state.bankStaff=s;
-            state.activeNav=`bankStaff:${bank}:${s}`;
-            keepOrCloseDrawerAfterSelect();
-            render();
-          };
-          sub.appendChild(subBtn);
-        });
-
-        bankNav.appendChild(sub);
-      }
-    });
-
-    // 메인 담당자 영역의 숫자는 은행 필터와 무관하게 전체 담당지점 수를 항상 유지
-    const nav=$("staffNav");nav.innerHTML="";
-    uniqueStaff().forEach(s=>{
-      const count=branches.filter(b=>b.staff===s).length;
-      const btn=document.createElement("button");
-      btn.className="nav-btn"+(state.activeNav===`staff:${s}`?" active":"");
-      btn.innerHTML=`<span>${esc(s)}</span><span class="nav-count">${count}</span>`;
-      btn.onclick=()=>{
-        state.staff=s;
-        state.bank="전체";
-        state.bankStaff=null;
-        state.view="all";
-        state.activeNav=`staff:${s}`;
-        setActiveNav();
-        keepOrCloseDrawerAfterSelect();
-        render();
-      };
-      nav.appendChild(btn);
-    });
+    refreshQuickFilters();
     setActiveNav();
   }
 
@@ -708,15 +675,19 @@ button{cursor:pointer}
   function render(){
     renderDrawer();
     if(state.view==="officeMemo" && !state.staff)renderOfficeMemos();
-    else if(state.view==="todayDone" && !state.staff)renderHistory();
+    else if(state.view==="weekDone")renderHistory();
     else renderBranches();
   }
 
   function renderBranches(){
     const list=currentBranches();
-    let title=state.staff?`${state.staff} 담당 지점`:(state.view==="todo"?"진행중 업무":"전체 지점");
+    let title=state.view==="todo"?"현황":"지점";
     if(state.bank!=="전체")title += ` · ${state.bank}`;
-    if(state.bankStaff)title += ` · ${state.bankStaff}`;
+    if(state.staff)title += ` · ${state.staff}`;
+    if(state.branchId){
+      const picked=branches.find(b=>String(b.id)===String(state.branchId));
+      if(picked)title += ` · ${picked.name}`;
+    }
     if(state.writerFilter)title += ` · 작성자 ${state.writerFilter}`;
     $("viewTitle").textContent=title;
     $("viewCount").textContent=`${list.length}곳`;
@@ -738,15 +709,18 @@ button{cursor:pointer}
 
   function renderHistory(){
     const items=historyItems();
-    let title="오늘 완료";
-    if(state.staff)title += ` · ${state.staff}`;
+    let title="완료";
     if(state.bank!=="전체")title += ` · ${state.bank}`;
-    if(state.bankStaff)title += ` · ${state.bankStaff}`;
+    if(state.staff)title += ` · ${state.staff}`;
+    if(state.branchId){
+      const picked=branches.find(b=>String(b.id)===String(state.branchId));
+      if(picked)title += ` · ${picked.name}`;
+    }
     if(state.writerFilter)title += ` · 작성자 ${state.writerFilter}`;
     $("viewTitle").textContent=title;
     $("viewCount").textContent=`${items.length}건`;
     const el=$("list");el.innerHTML="";
-    if(!items.length){el.innerHTML='<div class="empty">오늘 완료한 메모가 없습니다.</div>';return}
+    if(!items.length){el.innerHTML='<div class="empty">이번 주 완료한 메모가 없습니다.</div>';return}
     items.forEach(h=>{
       const row=document.createElement("div");row.className="history-row";
       row.innerHTML=`
@@ -1013,9 +987,6 @@ button{cursor:pointer}
   });
   document.querySelectorAll('[data-view]').forEach(btn=>btn.onclick=()=>{
     state.view=btn.dataset.view;
-    state.staff=null;
-    state.bank="전체";
-    state.bankStaff=null;
     state.activeNav=`view:${btn.dataset.view}`;
     keepOrCloseDrawerAfterSelect();
     render();
@@ -1086,6 +1057,23 @@ button{cursor:pointer}
 
   $("search").oninput=e=>{state.search=e.target.value;render()};
 
+  $("bankFilter").onchange=e=>{
+    state.bank=e.target.value||"전체";
+    state.branchId="";
+    render();
+  };
+
+  $("staffFilter").onchange=e=>{
+    state.staff=e.target.value||null;
+    state.branchId="";
+    render();
+  };
+
+  $("branchFilter").onchange=e=>{
+    state.branchId=e.target.value||"";
+    render();
+  };
+
   $("writerFilter").value="";
   $("writerFilter").onchange=e=>{
     state.writerFilter=e.target.value;
@@ -1116,10 +1104,25 @@ button{cursor:pointer}
         if(!$("bulkMemoModal").classList.contains("hidden"))renderBulkMemoList();
       });
 
-      db.ref(`${historyPath}/${todayKey()}`).on("value",snap=>{
-        state.todayHistory=snap.val()||{};
-        render();
-      });
+      let historyQuery=null,historyCallback=null,boundWeekStart="";
+
+      function bindWeeklyHistory(){
+        const range=currentWeekRange();
+        if(boundWeekStart===range.start)return;
+
+        if(historyQuery&&historyCallback)historyQuery.off("value",historyCallback);
+        boundWeekStart=range.start;
+
+        historyQuery=db.ref(historyPath).orderByKey().startAt(range.start).endAt(range.end);
+        historyCallback=snap=>{
+          state.weekHistory=flattenWeekHistory(snap.val()||{});
+          render();
+        };
+        historyQuery.on("value",historyCallback);
+      }
+
+      bindWeeklyHistory();
+      setInterval(bindWeeklyHistory,60000);
 
       db.ref(officeMemoPath).on("value",snap=>{
         state.officeMemos=snap.val()||{};
