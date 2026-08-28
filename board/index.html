@@ -413,6 +413,37 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   .status-site{font-size:13.5px!important}
   .branch-title{font-size:13.5px!important}
 }
+
+/* v2.32 모바일 팝업 확대/이동 개선
+   핀치줌 후 손가락으로 상하좌우 화면 이동 가능 */
+.modal{
+  overflow:auto!important;
+  overscroll-behavior:auto!important;
+  touch-action:pan-x pan-y pinch-zoom!important;
+}
+.modal>.detail-card,
+.modal>.memo-modal-card,
+.modal>.bulk-modal-card{
+  overflow:auto!important;
+  overscroll-behavior:auto!important;
+  touch-action:pan-x pan-y pinch-zoom!important;
+}
+.system-detail-card,
+.system-history-list,
+.system-info-grid,
+.memo-card{
+  touch-action:pan-x pan-y pinch-zoom!important;
+}
+@media(max-width:700px){
+  .modal{
+    overflow:auto!important;
+    touch-action:pan-x pan-y pinch-zoom!important;
+  }
+  .system-detail-card{
+    overflow:auto!important;
+    touch-action:pan-x pan-y pinch-zoom!important;
+  }
+}
 </style>
 </head>
 <body>
