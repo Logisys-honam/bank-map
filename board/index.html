@@ -324,6 +324,35 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   .site-pick-row{grid-template-columns:minmax(0,1fr) 110px;gap:5px}
   .site-pick-row select,.site-pick-row input{height:40px;font-size:12px;padding:0 7px}
 }
+
+/* v2.28 선택/이동/최근이력/뒤로가기 */
+.selection-tools{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:7px 0 8px}
+.selection-tools button,.selection-tools select{height:34px;border-radius:7px;font-weight:800;font-size:12px}
+.selection-tools button{border:1px solid #cbd5e1;background:#fff;padding:0 10px}
+.selection-tools .sel-delete{border-color:#f3b5b5;color:#b42318;background:#fff5f5}
+.selection-tools .sel-move{border-color:#9fc0ef;color:#1859a9;background:#eef5ff}
+.selection-tools select{border:1px solid #cbd5e1;background:#fff;padding:0 8px}
+.selection-tools .sel-count{font-size:12px;color:#5f6b7a;font-weight:800}
+.status-head.selectable,.status-row.selectable{grid-template-columns:34px 96px minmax(240px,1fr) 90px 90px}
+.row-select-cell{display:flex;align-items:flex-start;justify-content:center}
+.row-select-cell input{width:17px;height:17px;accent-color:#2563eb}
+.recent-history-list{margin:0 14px 16px;border:1px solid #d5dce7;border-bottom:0}
+.recent-history-row{display:grid;grid-template-columns:110px minmax(0,1fr) 82px;border-bottom:1px solid #d5dce7;background:#fff}
+.recent-history-row:nth-child(even){background:#e9fbfb}
+.recent-history-row>div{padding:7px 8px;font-size:11px;border-right:1px solid #d5dce7}
+.recent-history-row>div:last-child{border-right:0}
+.recent-history-date{font-weight:800;color:#42526b}
+.recent-history-text{white-space:pre-wrap;line-height:1.4}
+.recent-history-writer{font-weight:800}
+.recent-history-empty{padding:14px;text-align:center;color:#8a94a6;font-size:11px}
+@media(max-width:700px){
+  .status-head.selectable,.status-row.selectable{grid-template-columns:30px 72px minmax(0,1fr) 64px 62px}
+  .selection-tools{padding:6px 2px}
+  .selection-tools button,.selection-tools select{height:32px;font-size:10px}
+  .recent-history-list{margin:0 6px 10px}
+  .recent-history-row{grid-template-columns:76px minmax(0,1fr) 58px}
+  .recent-history-row>div{font-size:9px;padding:6px 5px}
+}
 </style>
 </head>
 <body>
@@ -415,6 +444,8 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       <button id="detailDeleteSelected" class="detail-delete-selected" disabled>선택 삭제 (0)</button>
     </div>
     <div id="detailMemos" class="memo-list system-history-list"></div>
+    <div id="detailPastTitle" class="system-section-title">■ 완료 내역: 최근 5건</div>
+    <div id="detailPastList" class="recent-history-list"></div>
   </div>
 </div>
 
@@ -566,7 +597,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   }
 
   let db,memoPath="bankMap/memos",historyPath="bankMap/memoHistory",officeMemoPath="bankMap/officeMemos";
-  const state={memos:{},weekHistory:[],officeMemos:{},main:"office",sub:"",staff:null,bankFilter:"",writerFilter:"",search:"",page:1,pageSize:20,selected:null,bulkSelected:new Set(),bulkSearch:"",detailSelected:new Set(),editMemo:null};
+  const state={memos:{},weekHistory:[],officeMemos:{},main:"office",sub:"",staff:null,bankFilter:"",writerFilter:"",search:"",page:1,pageSize:20,selected:null,bulkSelected:new Set(),bulkSearch:"",detailSelected:new Set(),listSelected:new Set(),editMemo:null};
 
   const esc=s=>String(s??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
   const fmt=ms=>{if(!ms)return "";try{return new Intl.DateTimeFormat("ko-KR",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}).format(new Date(ms))}catch{return ""}};
@@ -852,7 +883,9 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   }
 
   function currentWorkType(){
-    return state.main==="install"?"설치":"장애";
+    if(state.main==="install")return "설치";
+    if(state.main==="regular")return "정기";
+    return "장애";
   }
 
   function activeMemoRows(){
@@ -964,9 +997,30 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
 
   function renderStatusTable(rows,isDone){
     const el=$("list");el.innerHTML="";
+
+    if(!isDone){
+      const tools=document.createElement("div");
+      tools.className="selection-tools";
+      tools.innerHTML=`
+        <button id="listSelectPage" type="button">현재 페이지 전체 선택</button>
+        <button id="listDeleteSelected" class="sel-delete" type="button">선택 삭제</button>
+        <select id="listMoveTarget">
+          <option value="">이동 위치</option>
+          <option value="office">지사메모</option>
+          <option value="장애">장애</option>
+          <option value="설치">설치</option>
+          <option value="정기">정기</option>
+        </select>
+        <button id="listMoveSelected" class="sel-move" type="button">선택 이동</button>
+        <span id="listSelectedCount" class="sel-count">선택 0건</span>`;
+      el.appendChild(tools);
+    }
+
     const head=document.createElement("div");
-    head.className="status-head";
-    head.innerHTML="<div>작성일시</div><div>사이트</div><div>담당</div><div>작성자</div>";
+    head.className="status-head"+(!isDone?" selectable":"");
+    head.innerHTML=isDone
+      ?"<div>작성일시</div><div>사이트</div><div>담당</div><div>작성자</div>"
+      :"<div></div><div>작성일시</div><div>사이트</div><div>담당</div><div>작성자</div>";
     el.appendChild(head);
 
     updatePageFilter(rows.length);
@@ -978,6 +1032,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       empty.className="empty-board";
       empty.textContent="표시할 목록이 없습니다.";
       el.appendChild(empty);
+      if(!isDone)updateListSelectionUI();
       return;
     }
 
@@ -986,22 +1041,62 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       const m=isDone ? item : item.m;
       const overdue=!isDone && isOver48h(m);
       const row=document.createElement("div");
-      row.className="status-row"+(overdue?" overdue":"");
+      row.className="status-row"+(!isDone?" selectable":"")+(overdue?" overdue":"");
       const siteName=isDone?(item.branchName||""):(b?b.name:"");
       const bank=isDone?(item.bank||""):(b?b.bank:"");
       const no=isDone?"":(b&&b.branchNo?` · 점번 ${b.branchNo}`:"");
-      row.innerHTML=`
-        <div class="status-time">${isDone?shortCreatedAt(item.completedAt):shortCreatedAt(m.createdAt)}</div>
+      const selectionKey=!isDone&&b?`${b.memoId}|${m.key}`:"";
+
+      row.innerHTML=isDone?`
+        <div class="status-time">${shortCreatedAt(item.completedAt)}</div>
+        <div>
+          <div class="status-site">${esc(siteName)}</div>
+          <div class="status-sub">${esc(bank)}</div>
+          <div class="status-memo">${esc(shortMemoText(m.text||""))}</div>
+        </div>
+        <div class="status-staff">${esc(item.staff||"-")}</div>
+        <div class="status-writer">${esc((m.writer||item.completedBy)||"-")}</div>`
+      :`
+        <div class="row-select-cell"><input type="checkbox" class="row-select-check" ${state.listSelected.has(selectionKey)?"checked":""}></div>
+        <div class="status-time">${shortCreatedAt(m.createdAt)}</div>
         <div>
           <div class="status-site ${overdue?"overdue-text":""}">${esc(siteName)}</div>
           <div class="status-sub">${esc(bank)}${esc(no)}</div>
           <div class="status-memo ${overdue?"overdue-text":""}">${esc(shortMemoText(m.text||""))}</div>
         </div>
-        <div class="status-staff">${esc((isDone?item.staff:(b&&b.staff))||"-")}</div>
-        <div class="status-writer">${esc((m.writer||item.completedBy)||"-")}</div>`;
-      if(!isDone && b)row.onclick=()=>openDetail(b);
+        <div class="status-staff">${esc((b&&b.staff)||"-")}</div>
+        <div class="status-writer">${esc(m.writer||"-")}</div>`;
+
+      if(!isDone&&b){
+        const cb=row.querySelector(".row-select-check");
+        cb.onclick=e=>e.stopPropagation();
+        cb.onchange=()=>{
+          if(cb.checked)state.listSelected.add(selectionKey);
+          else state.listSelected.delete(selectionKey);
+          updateListSelectionUI();
+        };
+        row.onclick=()=>openDetail(b);
+      }
       el.appendChild(row);
     });
+
+    if(!isDone){
+      $("listSelectPage").onclick=()=>{
+        const allSelected=pageRows.every(item=>{
+          const b=item.b,m=item.m;
+          return state.listSelected.has(`${b.memoId}|${m.key}`);
+        });
+        pageRows.forEach(item=>{
+          const key=`${item.b.memoId}|${item.m.key}`;
+          if(allSelected)state.listSelected.delete(key);
+          else state.listSelected.add(key);
+        });
+        render();
+      };
+      $("listDeleteSelected").onclick=deleteListSelected;
+      $("listMoveSelected").onclick=moveListSelected;
+      updateListSelectionUI();
+    }
 
     const note=document.createElement("div");
     note.className="page-note";
@@ -1009,9 +1104,94 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     el.appendChild(note);
   }
 
+  function updateListSelectionUI(){
+    const el=$("listSelectedCount");
+    if(el)el.textContent=`선택 ${state.listSelected.size}건`;
+    const del=$("listDeleteSelected"),move=$("listMoveSelected");
+    if(del)del.disabled=state.listSelected.size===0;
+    if(move)move.disabled=state.listSelected.size===0;
+  }
+
+  function selectedMemoRecords(){
+    const out=[];
+    state.listSelected.forEach(token=>{
+      const sep=token.indexOf("|");
+      if(sep<0)return;
+      const branchMemoId=token.slice(0,sep);
+      const key=token.slice(sep+1);
+      const b=branches.find(x=>x.memoId===branchMemoId);
+      if(!b)return;
+      const m=memosFor(b).find(x=>x.key===key);
+      if(m)out.push({b,m});
+    });
+    return out;
+  }
+
+  async function deleteListSelected(){
+    const records=selectedMemoRecords();
+    if(!records.length)return;
+    if(!confirm(`선택한 메모 ${records.length}건을 삭제할까요?`))return;
+    const updates={};
+    records.forEach(({b,m})=>updates[`${memoPath}/${b.memoId}/${m.key}`]=null);
+    try{
+      await db.ref().update(updates);
+      state.listSelected.clear();
+    }catch(e){
+      console.error(e);
+      alert("선택 삭제에 실패했습니다.");
+    }
+  }
+
+  async function moveListSelected(){
+    const records=selectedMemoRecords();
+    if(!records.length)return;
+    const target=$("listMoveTarget").value;
+    if(!target){alert("이동할 위치를 선택해주세요.");return}
+    const label=target==="office"?"지사메모":target;
+    if(!confirm(`선택한 메모 ${records.length}건을 [${label}]로 이동할까요?`))return;
+
+    const updates={};
+    records.forEach(({b,m})=>{
+      if(target==="office"){
+        const newKey=db.ref(officeMemoPath).push().key;
+        updates[`${officeMemoPath}/${newKey}`]={
+          text:m.text||"",
+          writer:m.writer||null,
+          done:false,
+          createdAt:m.createdAt||firebase.database.ServerValue.TIMESTAMP,
+          completedAt:null,
+          branchMemoId:b.memoId,
+          branchName:b.name,
+          bank:b.bank||"",
+          staff:b.staff||"",
+          sourceWorkType:m.workType||currentWorkType()
+        };
+        updates[`${memoPath}/${b.memoId}/${m.key}`]=null;
+      }else{
+        updates[`${memoPath}/${b.memoId}/${m.key}/workType`]=target;
+      }
+    });
+
+    try{
+      await db.ref().update(updates);
+      state.listSelected.clear();
+      if(target==="office"){
+        state.main="office";state.sub="";
+      }else{
+        state.main=target==="장애"?"issue":target==="설치"?"install":"regular";
+        state.sub=state.main==="regular"?"":"active";
+      }
+      state.page=1;
+      render();
+    }catch(e){
+      console.error(e);
+      alert("선택 이동에 실패했습니다.");
+    }
+  }
+
+
   function renderRegularBlank(){
-    $("list").innerHTML='<div class="empty-board">정기 업무 화면은 다음 단계에서 구성합니다.</div>';
-    updatePageFilter(0);
+    renderStatusTable(activeMemoRows(),false);
   }
 
   function renderDrawer(){
@@ -1147,6 +1327,8 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   }
 
   let modalScrollY=0;
+  const modalHistoryStack=[];
+
   function lockPageScroll(){
     if(document.body.classList.contains("modal-locked"))return;
     modalScrollY=window.scrollY||window.pageYOffset||0;
@@ -1154,6 +1336,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     document.body.classList.add("modal-locked");
     document.body.style.top=`-${modalScrollY}px`;
   }
+
   function unlockPageScroll(){
     if(!document.body.classList.contains("modal-locked"))return;
     document.documentElement.classList.remove("modal-locked");
@@ -1161,12 +1344,59 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     document.body.style.top="";
     window.scrollTo(0,modalScrollY);
   }
+
   function anyModalOpen(){
     return [...document.querySelectorAll(".modal")].some(m=>!m.classList.contains("hidden"));
   }
+
   function unlockIfNoModal(){
     setTimeout(()=>{if(!anyModalOpen())unlockPageScroll()},0);
   }
+
+  function afterModalHidden(id){
+    if(id==="detailModal"){
+      state.detailSelected.clear();
+    }else if(id==="memoModal"){
+      state.editMemo=null;
+      if($("memoSave"))$("memoSave").textContent="추가";
+    }
+  }
+
+  function showBoardModal(id){
+    const el=$(id);
+    if(!el)return;
+    lockPageScroll();
+    el.classList.remove("hidden");
+    modalHistoryStack.push(id);
+    history.pushState({bankBoardModal:true,id,nonce:Date.now()},"");
+  }
+
+  function hideBoardModalDirect(id){
+    const el=$(id);
+    if(el)el.classList.add("hidden");
+    const idx=modalHistoryStack.lastIndexOf(id);
+    if(idx>=0)modalHistoryStack.splice(idx,1);
+    afterModalHidden(id);
+    unlockIfNoModal();
+  }
+
+  function requestCloseBoardModal(id){
+    const top=modalHistoryStack[modalHistoryStack.length-1];
+    if(top===id){
+      history.back();
+    }else{
+      hideBoardModalDirect(id);
+    }
+  }
+
+  window.addEventListener("popstate",()=>{
+    const id=modalHistoryStack.pop();
+    if(!id)return;
+    const el=$(id);
+    if(el)el.classList.add("hidden");
+    afterModalHidden(id);
+    unlockIfNoModal();
+  });
 
   function openDetail(b){
     state.selected=b;
@@ -1193,14 +1423,12 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     $("detailWorkType").textContent=type;
     $("detailSummary").textContent=latest?.text||"-";
 
-    lockPageScroll();
-    $("detailModal").classList.remove("hidden");
+    showBoardModal("detailModal");
     renderDetail();
+    renderRecentCompletedHistory(b);
   }
   function closeDetail(){
-    $("detailModal").classList.add("hidden");
-    state.detailSelected.clear();
-    unlockIfNoModal();
+    requestCloseBoardModal("detailModal");
   }
 
   function updateDetailSelection(ms){
@@ -1210,6 +1438,49 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     $("detailDeleteSelected").disabled=count===0;
     $("detailDeleteSelected").textContent=`선택 삭제 (${count})`;
     $("detailSelectAll").textContent=ms.length&&count===ms.length?"전체 해제":"전체 선택";
+  }
+
+  async function renderRecentCompletedHistory(b){
+    const title=$("detailPastTitle"),el=$("detailPastList");
+    const type=currentWorkType();
+    title.textContent=`■ ${type} 완료 내역: 최근 5건`;
+    el.innerHTML='<div class="recent-history-empty">지난 완료 내역을 불러오는 중...</div>';
+
+    if(!db){
+      el.innerHTML='<div class="recent-history-empty">Firebase 연결 후 확인할 수 있습니다.</div>';
+      return;
+    }
+
+    try{
+      const snap=await db.ref(historyPath).once("value");
+      const rows=[];
+      const raw=snap.val()||{};
+      Object.entries(raw).forEach(([day,items])=>{
+        Object.entries(items||{}).forEach(([key,v])=>{
+          const h=v||{};
+          if(String(h.branchMemoId||"")!==String(b.memoId))return;
+          if((h.workType||"장애")!==type)return;
+          rows.push({key,day,...h});
+        });
+      });
+      rows.sort((a,b)=>(Number(b.completedAt)||0)-(Number(a.completedAt)||0));
+      const recent=rows.slice(0,5);
+
+      if(!recent.length){
+        el.innerHTML='<div class="recent-history-empty">이 사이트의 이전 완료 내역이 없습니다.</div>';
+        return;
+      }
+
+      el.innerHTML=recent.map(h=>`
+        <div class="recent-history-row">
+          <div class="recent-history-date">${esc(fmt(h.completedAt)||h.day||"-")}</div>
+          <div class="recent-history-text">${esc(h.text||"")}</div>
+          <div class="recent-history-writer">${esc(h.writer||h.completedBy||"-")}</div>
+        </div>`).join("");
+    }catch(e){
+      console.error(e);
+      el.innerHTML='<div class="recent-history-empty">이전 완료 내역을 불러오지 못했습니다.</div>';
+    }
   }
 
   function renderDetail(){
@@ -1404,13 +1675,11 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     populateWorkAddBranches();
     $("workAddWriter").value=localStorage.getItem("bankBoardWriter")||"";
     $("workAddText").value="";
-    lockPageScroll();
-    $("workAddModal").classList.remove("hidden");
+    showBoardModal("workAddModal");
   }
 
   function closeWorkAddModal(){
-    $("workAddModal").classList.add("hidden");
-    unlockIfNoModal();
+    requestCloseBoardModal("workAddModal");
   }
 
   function openMemoModal(){
@@ -1421,8 +1690,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     $("memoSave").textContent="추가";
   $("memoWriter").value=localStorage.getItem("bankBoardWriter")||"";
     $("memoText").value="";
-    lockPageScroll();
-    $("memoModal").classList.remove("hidden");
+    showBoardModal("memoModal");
   }
 
   function openEditMemoModal(b,m){
@@ -1433,15 +1701,11 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     $("memoSave").textContent="수정 저장";
     $("memoWriter").value=m.writer||localStorage.getItem("bankBoardWriter")||"";
     $("memoText").value=m.text||"";
-    lockPageScroll();
-    $("memoModal").classList.remove("hidden");
+    showBoardModal("memoModal");
   }
 
   function closeMemoModal(){
-    $("memoModal").classList.add("hidden");
-    state.editMemo=null;
-    $("memoSave").textContent="추가";
-    unlockIfNoModal();
+    requestCloseBoardModal("memoModal");
   }
 
   function isDesktop(){return window.matchMedia("(min-width:901px)").matches}
@@ -1488,6 +1752,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   document.querySelectorAll("[data-main]").forEach(btn=>{
     btn.onclick=()=>{
       state.main=btn.dataset.main;
+      state.listSelected.clear();
       state.sub=state.main==="issue"?"active":state.main==="install"?"active":"";
       state.page=1;
       render();
@@ -1497,6 +1762,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   document.querySelectorAll("[data-main-menu]").forEach(btn=>{
     btn.onclick=()=>{
       state.main=btn.dataset.mainMenu;
+      state.listSelected.clear();
       state.sub=state.main==="issue"?"active":state.main==="install"?"active":"";
       state.page=1;
       keepOrCloseDrawerAfterSelect();
