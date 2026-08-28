@@ -233,6 +233,51 @@ button{cursor:pointer}
   .branch-writer{font-size:10px}
   .bulk-btn{height:38px;font-size:12px}
 }
+
+/* v2.25 로지시스 현황형 업무보드 */
+.work-tabs{display:grid;grid-template-columns:repeat(5,1fr);background:#4f7fea}
+.work-tab{min-height:48px;border:0;border-right:1px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;background:#4f7fea;color:#fff;font-size:16px;font-weight:900;text-decoration:none;cursor:pointer}
+.work-tab.active{background:#3d5fb3}
+.sub-tabs{display:flex;min-height:48px;background:#eff1f5;border-bottom:1px solid #d5dae3}
+.sub-tab{flex:1;max-width:260px;border:0;border-right:1px solid #d6dae2;background:transparent;color:#333;font-size:15px;font-weight:900;cursor:pointer}
+.sub-tab.active{background:#fff;color:#3e70d8}
+.filter-bar{display:grid;grid-template-columns:repeat(4,minmax(120px,190px));gap:5px;padding:10px 8px 8px;background:#fff}
+.filter-bar select{height:38px;border:1px solid #9aa3b2;border-radius:5px;background:#fff;padding:0 8px;font-size:14px}
+.page{margin-top:0}
+.list{border:0;background:#fff;padding:0 8px 70px}
+.status-head,.status-row{display:grid;grid-template-columns:96px minmax(240px,1fr) 90px 90px}
+.status-head{background:#dfe7f3;border-top:1px solid #c8d2df;border-bottom:1px solid #c8d2df;font-weight:900}
+.status-head>div,.status-row>div{padding:8px 9px;border-right:1px solid #d5dbe4;min-width:0}
+.status-head>div:last-child,.status-row>div:last-child{border-right:0}
+.status-row{border-bottom:1px solid #cfd6df;background:#fff;cursor:pointer}
+.status-row:nth-child(even){background:#dff8f7}
+.status-row.overdue{background:#fff0f0}
+.status-time{font-size:12px;line-height:1.35;white-space:nowrap;color:#333}
+.status-site{font-size:14px;font-weight:900;line-height:1.25;color:#1f2937}
+.status-site.overdue-text,.status-memo.overdue-text{color:#c62828}
+.status-sub{font-size:10px;color:#667085;margin-top:2px}
+.status-memo{font-size:12px;font-weight:800;color:#2f3f54;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.status-staff,.status-writer{font-size:13px;font-weight:900;color:#27364a}
+.empty-board{padding:48px 16px;text-align:center;color:#8b95a5;font-weight:700}
+.page-note{padding:8px 10px;font-size:11px;color:#687386;text-align:right}
+@media(max-width:700px){
+  .topbar{min-height:58px}
+  .titlebox h1{font-size:17px}
+  .work-tab{min-height:46px;font-size:14px}
+  .sub-tabs{min-height:42px}
+  .sub-tab{font-size:13px}
+  .filter-bar{grid-template-columns:repeat(4,minmax(0,1fr));gap:3px;padding:6px 4px}
+  .filter-bar select{height:35px;padding:0 3px;font-size:11px}
+  .list{padding:0 2px 72px}
+  .status-head,.status-row{grid-template-columns:72px minmax(0,1fr) 64px 62px}
+  .status-head>div,.status-row>div{padding:7px 4px}
+  .status-head{font-size:10px}
+  .status-time{font-size:10px}
+  .status-site{font-size:12px}
+  .status-sub{font-size:8px}
+  .status-memo{font-size:10px}
+  .status-staff,.status-writer{font-size:10px}
+}
 </style>
 </head>
 <body>
@@ -244,8 +289,17 @@ button{cursor:pointer}
     <div id="sync" class="sync">연결 중...</div>
   </div>
   <div id="headerStat" class="header-stat"></div>
-  <a class="map-btn" href="../" target="_blank" rel="noopener noreferrer">은행 지도</a>
 </header>
+
+<nav class="work-tabs">
+  <button class="work-tab active" data-main="office">지사메모</button>
+  <button class="work-tab" data-main="issue">장애</button>
+  <button class="work-tab" data-main="install">설치</button>
+  <button class="work-tab" data-main="regular">정기</button>
+  <a class="work-tab" href="../" target="_blank" rel="noopener noreferrer">지도</a>
+</nav>
+
+<nav id="subTabs" class="sub-tabs"></nav>
 
 <div id="drawerBackdrop" class="drawer-backdrop hidden"></div>
 <aside id="drawer" class="drawer">
@@ -254,37 +308,31 @@ button{cursor:pointer}
     <button id="drawerClose" class="drawer-close">×</button>
   </div>
   <div class="drawer-body">
-    <div class="drawer-section">업무</div>
-    <button class="nav-btn active" data-view="all"><span>지점</span><span id="navAll" class="nav-count">0</span></button>
-    <button class="nav-btn" data-view="todo"><span>현황</span><span id="navTodo" class="nav-count">0</span></button>
-    <button class="nav-btn" data-view="weekDone"><span>완료</span><span id="navDone" class="nav-count">0</span></button>
-    <button class="nav-btn" data-view="officeMemo"><span>순천지사메모</span><span id="navOfficeMemo" class="nav-count">0</span></button>
+    <button class="nav-btn active" data-main-menu="office">지사메모</button>
+    <button class="nav-btn" data-main-menu="issue">장애</button>
+    <button class="nav-btn" data-main-menu="install">설치</button>
+    <button class="nav-btn" data-main-menu="regular">정기</button>
+    <a class="nav-btn" href="../" target="_blank" rel="noopener noreferrer" style="text-decoration:none">지도</a>
   </div>
 </aside>
 
 <main class="page">
-  <section class="toolbar">
-    <input id="search" class="toolbar-search" type="search" placeholder="지점명 · 은행 · 센터 · 점번 · 주소 · 메모 검색">
-    <div class="quick-filters">
-      <select id="bankFilter" aria-label="은행 선택"><option value="전체">은행 전체</option></select>
-      <select id="staffFilter" aria-label="담당자 선택"><option value="">담당자 전체</option></select>
-      <select id="branchFilter" aria-label="지점 선택"><option value="">지점 전체</option></select>
-      <select id="writerFilter" aria-label="작성자 선택">
-        <option value="">작성자 전체</option>
-        <option>김준호</option>
-        <option>장창형</option>
-        <option>김대한</option>
-        <option>관리자</option>
-      </select>
-    </div>
-    <button id="bulkMemoOpen" class="bulk-btn">메모 선택삭제</button>
+  <section id="filterBar" class="filter-bar">
+    <select id="staffFilter"><option value="">담당자</option></select>
+    <select id="branchFilter"><option value="">은행지점</option></select>
+    <select id="writerFilter">
+      <option value="">작성자</option>
+      <option>김준호</option>
+      <option>장창형</option>
+      <option>김대한</option>
+      <option>관리자</option>
+    </select>
+    <select id="pageFilter"><option value="1">1P</option></select>
   </section>
 
-  <div class="view-title">
-    <h2 id="viewTitle">지점</h2>
-    <span id="viewCount"></span>
+  <div class="view-title" style="display:none">
+    <h2 id="viewTitle"></h2><span id="viewCount"></span>
   </div>
-
   <section id="list" class="list"></section>
 </main>
 
@@ -344,6 +392,10 @@ button{cursor:pointer}
 <div id="memoModal" class="modal hidden">
   <div class="memo-modal-card">
     <h2 id="memoModalTitle">메모 추가</h2>
+    <select id="memoWorkType" style="width:100%;height:42px;border:1px solid #ccd3db;border-radius:9px;padding:0 10px;margin-bottom:8px;background:#fff">
+      <option value="장애">장애</option>
+      <option value="설치">설치</option>
+    </select>
     <select id="memoWriter" style="width:100%;height:42px;border:1px solid #ccd3db;border-radius:9px;padding:0 10px;margin-bottom:8px;background:#fff">
       <option value="">작성자 선택</option>
       <option>김준호</option>
@@ -407,7 +459,7 @@ button{cursor:pointer}
   }
 
   let db,memoPath="bankMap/memos",historyPath="bankMap/memoHistory",officeMemoPath="bankMap/officeMemos";
-  const state={memos:{},weekHistory:[],officeMemos:{},view:"all",staff:null,bank:"전체",branchId:"",writerFilter:"",search:"",selected:null,bulkSelected:new Set(),bulkSearch:"",detailSelected:new Set(),editMemo:null,activeNav:"view:all"};
+  const state={memos:{},weekHistory:[],officeMemos:{},main:"office",sub:"",staff:null,branchId:"",writerFilter:"",page:1,pageSize:20,selected:null,bulkSelected:new Set(),bulkSearch:"",detailSelected:new Set(),editMemo:null};
 
   const esc=s=>String(s??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
   const fmt=ms=>{if(!ms)return "";try{return new Intl.DateTimeFormat("ko-KR",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}).format(new Date(ms))}catch{return ""}};
@@ -475,7 +527,7 @@ button{cursor:pointer}
 
   function memosFor(b){
     const o=state.memos[b.memoId]||{};
-    return Object.entries(o).map(([key,v])=>({key,...(v||{})})).sort((a,b)=>(Number(a.no)||0)-(Number(b.no)||0));
+    return Object.entries(o).map(([key,v])=>({workType:"장애",key,...(v||{})})).sort((a,b)=>(Number(a.no)||0)-(Number(b.no)||0));
   }
   function latestMemo(b){
     const a=memosFor(b);if(!a.length)return null;
@@ -694,31 +746,183 @@ button{cursor:pointer}
     state.branchId=branchSel.value;
   }
 
-  function renderDrawer(){
-    const base=branches.filter(branchVisible);
-    const todoBranches=base.filter(b=>(state.writerFilter?filteredMemosFor(b):memosFor(b)).length>0).length;
-
-    $("navAll").textContent=branches.length;
-    $("navTodo").textContent=todoBranches;
-    $("navDone").textContent=historyItems().length;
-    $("navOfficeMemo").textContent=Object.keys(state.officeMemos||{}).length;
-    $("headerStat").textContent=`진행중 ${todoBranches}곳 · 이번주완료 ${historyItems().length}건`;
-
-    refreshQuickFilters();
-    setActiveNav();
+  function currentWorkType(){
+    return state.main==="install"?"설치":"장애";
   }
 
-  function setActiveNav(){
-    document.querySelectorAll('[data-view]').forEach(btn=>{
-      btn.classList.toggle("active",state.activeNav===`view:${btn.dataset.view}`);
+  function activeMemoRows(){
+    const type=currentWorkType();
+    const rows=[];
+    branches.forEach(b=>{
+      if(state.staff && b.staff!==state.staff)return;
+      if(state.branchId && String(b.id)!==String(state.branchId))return;
+      memosFor(b).forEach(m=>{
+        if((m.workType||"장애")!==type)return;
+        if(state.writerFilter && String(m.writer||"")!==state.writerFilter)return;
+        rows.push({b,m});
+      });
+    });
+    rows.sort((a,b)=>(Number(b.m.createdAt)||0)-(Number(a.m.createdAt)||0));
+    return rows;
+  }
+
+  function completedRows(){
+    const type=currentWorkType();
+    return (state.weekHistory||[])
+      .filter(h=>(h.workType||"장애")===type)
+      .filter(h=>!state.staff || String(h.staff||"")===state.staff)
+      .filter(h=>!state.writerFilter || String(h.writer||h.completedBy||"")===state.writerFilter)
+      .filter(h=>{
+        if(!state.branchId)return true;
+        const b=branches.find(x=>String(x.id)===String(state.branchId));
+        return !b || String(h.branchMemoId||"")===String(b.memoId);
+      })
+      .sort((a,b)=>(Number(b.completedAt)||0)-(Number(a.completedAt)||0));
+  }
+
+  function isOver48h(m){
+    const t=Number(m&&m.createdAt)||0;
+    return !!t && Date.now()-t>=48*60*60*1000;
+  }
+
+  function shortMemoText(text){
+    const s=String(text||"").replace(/\s+/g," ").trim();
+    if(!s)return "";
+    return s.length>38?s.slice(0,38)+"…":s;
+  }
+
+  function shortCreatedAt(ts){
+    if(!ts)return "-";
+    const d=new Date(Number(ts));
+    const p=new Intl.DateTimeFormat("ko-KR",{timeZone:"Asia/Seoul",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false}).formatToParts(d);
+    const o={};p.forEach(x=>o[x.type]=x.value);
+    return `${o.month}-${o.day}<br>${o.hour}:${o.minute}`;
+  }
+
+  function refreshSimpleFilters(){
+    const staffSel=$("staffFilter"),branchSel=$("branchFilter");
+    const staffList=uniqueStaff().filter(x=>x!=="미지정").sort((a,b)=>a.localeCompare(b,"ko"));
+    const oldStaff=state.staff||"";
+    staffSel.innerHTML='<option value="">담당자</option>'+staffList.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join("");
+    staffSel.value=staffList.includes(oldStaff)?oldStaff:"";
+    state.staff=staffSel.value||null;
+
+    const candidates=branches.filter(b=>!state.staff || b.staff===state.staff).slice().sort((a,b)=>a.name.localeCompare(b.name,"ko"));
+    const oldBranch=state.branchId||"";
+    branchSel.innerHTML='<option value="">은행지점</option>'+candidates.map(b=>`<option value="${esc(b.id)}">${esc(b.name)} · ${esc(b.bank||"")}</option>`).join("");
+    branchSel.value=candidates.some(b=>String(b.id)===String(oldBranch))?String(oldBranch):"";
+    state.branchId=branchSel.value;
+  }
+
+  function updatePageFilter(total){
+    const pages=Math.max(1,Math.ceil(total/state.pageSize));
+    if(state.page>pages)state.page=pages;
+    const el=$("pageFilter");
+    el.innerHTML=Array.from({length:pages},(_,i)=>`<option value="${i+1}">${i+1}P</option>`).join("");
+    el.value=String(state.page);
+  }
+
+  function renderSubTabs(){
+    const el=$("subTabs");el.innerHTML="";
+    let defs=[];
+    if(state.main==="issue")defs=[["active","현황"],["done","완료"]];
+    if(state.main==="install")defs=[["active","일정"],["done","완료"]];
+    if(!defs.length)return;
+    if(!defs.some(x=>x[0]===state.sub))state.sub=defs[0][0];
+    defs.forEach(([key,label])=>{
+      const b=document.createElement("button");
+      b.className="sub-tab"+(state.sub===key?" active":"");
+      b.textContent=label;
+      b.onclick=()=>{state.sub=key;state.page=1;render()};
+      el.appendChild(b);
     });
   }
 
+  function renderTopTabs(){
+    document.querySelectorAll("[data-main]").forEach(btn=>btn.classList.toggle("active",btn.dataset.main===state.main));
+    document.querySelectorAll("[data-main-menu]").forEach(btn=>btn.classList.toggle("active",btn.dataset.mainMenu===state.main));
+    renderSubTabs();
+  }
+
+  function renderStatusTable(rows,isDone){
+    const el=$("list");el.innerHTML="";
+    const head=document.createElement("div");
+    head.className="status-head";
+    head.innerHTML="<div>작성일시</div><div>사이트</div><div>담당</div><div>작성자</div>";
+    el.appendChild(head);
+
+    updatePageFilter(rows.length);
+    const start=(state.page-1)*state.pageSize;
+    const pageRows=rows.slice(start,start+state.pageSize);
+
+    if(!pageRows.length){
+      const empty=document.createElement("div");
+      empty.className="empty-board";
+      empty.textContent="표시할 목록이 없습니다.";
+      el.appendChild(empty);
+      return;
+    }
+
+    pageRows.forEach(item=>{
+      const b=isDone ? branches.find(x=>x.memoId===item.branchMemoId) : item.b;
+      const m=isDone ? item : item.m;
+      const overdue=!isDone && isOver48h(m);
+      const row=document.createElement("div");
+      row.className="status-row"+(overdue?" overdue":"");
+      const siteName=isDone?(item.branchName||""):(b?b.name:"");
+      const bank=isDone?(item.bank||""):(b?b.bank:"");
+      const no=isDone?"":(b&&b.branchNo?` · 점번 ${b.branchNo}`:"");
+      row.innerHTML=`
+        <div class="status-time">${isDone?shortCreatedAt(item.completedAt):shortCreatedAt(m.createdAt)}</div>
+        <div>
+          <div class="status-site ${overdue?"overdue-text":""}">${esc(siteName)}</div>
+          <div class="status-sub">${esc(bank)}${esc(no)}</div>
+          <div class="status-memo ${overdue?"overdue-text":""}">${esc(shortMemoText(m.text||""))}</div>
+        </div>
+        <div class="status-staff">${esc((isDone?item.staff:(b&&b.staff))||"-")}</div>
+        <div class="status-writer">${esc((m.writer||item.completedBy)||"-")}</div>`;
+      if(!isDone && b)row.onclick=()=>openDetail(b);
+      el.appendChild(row);
+    });
+
+    const note=document.createElement("div");
+    note.className="page-note";
+    note.textContent=`총 ${rows.length}건 · ${state.page}P / ${Math.max(1,Math.ceil(rows.length/state.pageSize))}P`;
+    el.appendChild(note);
+  }
+
+  function renderRegularBlank(){
+    $("list").innerHTML='<div class="empty-board"></div>';
+    updatePageFilter(0);
+  }
+
+  function renderDrawer(){
+    refreshSimpleFilters();
+    const activeCount=activeMemoRows().length;
+    $("headerStat").textContent=`진행중 ${activeCount}건`;
+  }
+
+  function setActiveNav(){}
+
   function render(){
+    renderTopTabs();
     renderDrawer();
-    if(state.view==="officeMemo" && !state.staff)renderOfficeMemos();
-    else if(state.view==="weekDone")renderHistory();
-    else renderBranches();
+
+    if(state.main==="office"){
+      $("filterBar").style.display="none";
+      renderOfficeMemos();
+      return;
+    }
+
+    if(state.main==="regular"){
+      $("filterBar").style.display="grid";
+      renderRegularBlank();
+      return;
+    }
+
+    $("filterBar").style.display="grid";
+    if(state.sub==="done")renderStatusTable(completedRows(),true);
+    else renderStatusTable(activeMemoRows(),false);
   }
 
   function firstMemoForBranch(b){
@@ -765,7 +969,7 @@ button{cursor:pointer}
     $("viewTitle").textContent=title;
     $("viewCount").textContent=`${list.length}곳`;
 
-    const el=$("branchList");el.innerHTML="";
+    const el=$("list");el.innerHTML="";
     const head=document.createElement("div");
     head.className="list-head";
     head.innerHTML="<div>접수</div><div>사이트 / 메모</div><div>담당</div><div>작성자</div>";
@@ -917,7 +1121,7 @@ button{cursor:pointer}
     updates[`${historyPath}/${day}/${historyKey}`]={
       branchMemoId:b.memoId,branchName:b.name,bank:b.bank||"",center:b.center||"",
       staff:b.staff||"",quarter:b.quarter||"",memoKey:m.key,memoNo:Number(m.no)||0,text:m.text||"",
-      writer:m.writer||null,createdAt:m.createdAt||null,
+      writer:m.writer||null,createdAt:m.createdAt||null,workType:m.workType||"장애",
       completedAt:firebase.database.ServerValue.TIMESTAMP,completedBy:writer
     };
 
@@ -1015,8 +1219,49 @@ button{cursor:pointer}
     const b=state.selected;if(!b)return;
     state.editMemo=null;
     $("memoModalTitle").textContent=`${b.name} · 메모 추가`;
+    $("memoWorkType").value=state.main==="install"?"설치":"장애";
     $("memoSave").textContent="추가";
-    $("memoWriter").value=localStorage.getItem("bankBoardWriter")||"";
+    document.querySelectorAll("[data-main]").forEach(btn=>btn.onclick=()=>{
+    state.main=btn.dataset.main;
+    state.sub=state.main==="issue"?"active":state.main==="install"?"active":"";
+    state.page=1;
+    render();
+  });
+
+  document.querySelectorAll("[data-main-menu]").forEach(btn=>btn.onclick=()=>{
+    state.main=btn.dataset.mainMenu;
+    state.sub=state.main==="issue"?"active":state.main==="install"?"active":"";
+    state.page=1;
+    keepOrCloseDrawerAfterSelect();
+    render();
+  });
+
+  $("staffFilter").onchange=e=>{
+    state.staff=e.target.value||null;
+    state.branchId="";
+    state.page=1;
+    render();
+  };
+
+  $("branchFilter").onchange=e=>{
+    state.branchId=e.target.value||"";
+    state.page=1;
+    render();
+  };
+
+  $("writerFilter").value="";
+  $("writerFilter").onchange=e=>{
+    state.writerFilter=e.target.value;
+    state.page=1;
+    render();
+  };
+
+  $("pageFilter").onchange=e=>{
+    state.page=Math.max(1,Number(e.target.value)||1);
+    render();
+  };
+
+  $("memoWriter").value=localStorage.getItem("bankBoardWriter")||"";
     $("memoText").value="";
     $("memoModal").classList.remove("hidden");
   }
@@ -1025,6 +1270,7 @@ button{cursor:pointer}
     state.selected=b;
     state.editMemo={branchMemoId:b.memoId,key:m.key};
     $("memoModalTitle").textContent=`${b.name} · ${m.no||""}번 메모 수정`;
+    $("memoWorkType").value=m.workType||"장애";
     $("memoSave").textContent="수정 저장";
     $("memoWriter").value=m.writer||localStorage.getItem("bankBoardWriter")||"";
     $("memoText").value=m.text||"";
@@ -1077,12 +1323,6 @@ button{cursor:pointer}
       $("drawerBackdrop").classList.remove("hidden");
     }
   });
-  document.querySelectorAll('[data-view]').forEach(btn=>btn.onclick=()=>{
-    state.view=btn.dataset.view;
-    state.activeNav=`view:${btn.dataset.view}`;
-    keepOrCloseDrawerAfterSelect();
-    render();
-  });
 
   $("officeMemoCancel").onclick=closeOfficeMemoModal;
   $("officeMemoModal").onclick=e=>{if(e.target.id==="officeMemoModal")closeOfficeMemoModal()};
@@ -1130,47 +1370,23 @@ button{cursor:pointer}
   $("memoSave").onclick=async()=>{
     const b=state.selected,text=$("memoText").value.trim();if(!b||!text)return;
     const writer=$("memoWriter").value||null;
+    const workType=$("memoWorkType").value||"장애";
     if(writer)localStorage.setItem("bankBoardWriter",writer);
 
     if(state.editMemo){
       await db.ref(`${memoPath}/${state.editMemo.branchMemoId}/${state.editMemo.key}`).update({
-        text,
-        writer,
+        text,writer,workType,
         editedAt:firebase.database.ServerValue.TIMESTAMP
       });
     }else{
       await db.ref(`${memoPath}/${b.memoId}`).push().set({
-        no:nextNo(b),text,writer,
+        no:nextNo(b),text,writer,workType,
         createdAt:firebase.database.ServerValue.TIMESTAMP
       });
     }
     closeMemoModal();
   };
 
-  $("search").oninput=e=>{state.search=e.target.value;render()};
-
-  $("bankFilter").onchange=e=>{
-    state.bank=e.target.value||"전체";
-    state.branchId="";
-    render();
-  };
-
-  $("staffFilter").onchange=e=>{
-    state.staff=e.target.value||null;
-    state.branchId="";
-    render();
-  };
-
-  $("branchFilter").onchange=e=>{
-    state.branchId=e.target.value||"";
-    render();
-  };
-
-  $("writerFilter").value="";
-  $("writerFilter").onchange=e=>{
-    state.writerFilter=e.target.value;
-    render();
-  };
 
   $("memoWriter").value=localStorage.getItem("bankBoardWriter")||"";
   $("memoWriter").onchange=e=>{
