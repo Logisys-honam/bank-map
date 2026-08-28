@@ -303,6 +303,27 @@ button{cursor:pointer}
   .system-detail-card .detail-actions{padding-left:7px;padding-right:7px}
   .system-history-list{margin-left:6px;margin-right:6px}
 }
+
+/* v2.27 팝업 독립 스크롤 / 사이트 검색 / 주소 지도 */
+html.modal-locked,body.modal-locked{overflow:hidden!important;overscroll-behavior:none}
+body.modal-locked{position:fixed;left:0;right:0;width:100%}
+.modal{overflow-y:auto!important;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:16px 8px}
+.modal>.detail-card,.modal>.memo-modal-card,.modal>.bulk-modal-card{
+  max-height:calc(100dvh - 32px)!important;overflow-y:auto!important;
+  overscroll-behavior:contain;-webkit-overflow-scrolling:touch
+}
+.address-with-map{display:flex;align-items:flex-start;gap:8px}
+.address-with-map #detailAddress{flex:1;min-width:0}
+.mini-map-btn{flex:0 0 auto;width:30px;height:28px;border:1px solid #b9c6d8;border-radius:6px;background:#fff;cursor:pointer;font-size:15px;line-height:1}
+.mini-map-btn:hover{background:#edf4ff}
+.site-pick-row{display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:7px;margin-bottom:8px}
+.site-pick-row select,.site-pick-row input{width:100%;height:42px;border:1px solid #ccd3db;border-radius:9px;padding:0 10px;background:#fff}
+@media(max-width:700px){
+  .modal{padding:6px}
+  .modal>.detail-card,.modal>.memo-modal-card,.modal>.bulk-modal-card{max-height:calc(100dvh - 12px)!important}
+  .site-pick-row{grid-template-columns:minmax(0,1fr) 110px;gap:5px}
+  .site-pick-row select,.site-pick-row input{height:40px;font-size:12px;padding:0 7px}
+}
 </style>
 </head>
 <body>
@@ -376,7 +397,11 @@ button{cursor:pointer}
       <div class="info-label">사이트</div><div id="detailSite" class="info-value">-</div>
       <div class="info-label">은행</div><div id="detailBank" class="info-value">-</div>
       <div class="info-label">점번</div><div id="detailBranchNo" class="info-value">-</div>
-      <div class="info-label">주소</div><div id="detailAddress" class="info-value">-</div>
+      <div class="info-label">주소</div>
+      <div class="info-value address-with-map">
+        <span id="detailAddress">-</span>
+        <button id="detailMapBtn" class="mini-map-btn" type="button" title="네이버 지도에서 주소 열기">🗺️</button>
+      </div>
       <div class="info-label">담당</div><div id="detailStaff" class="info-value">-</div>
       <div class="info-label">작성자</div><div id="detailWriter" class="info-value">-</div>
       <div class="info-label">업무구분</div><div id="detailWorkType" class="info-value">-</div>
@@ -433,9 +458,10 @@ button{cursor:pointer}
     <select id="workAddBank" style="width:100%;height:42px;border:1px solid #ccd3db;border-radius:9px;padding:0 10px;margin-bottom:8px;background:#fff">
       <option value="">은행 선택</option>
     </select>
-    <select id="workAddBranch" style="width:100%;height:42px;border:1px solid #ccd3db;border-radius:9px;padding:0 10px;margin-bottom:8px;background:#fff">
-      <option value="">사이트 선택</option>
-    </select>
+    <div class="site-pick-row">
+      <select id="workAddBranch"><option value="">사이트 선택</option></select>
+      <input id="workAddBranchSearch" type="search" placeholder="사이트 검색">
+    </div>
     <select id="workAddWriter" style="width:100%;height:42px;border:1px solid #ccd3db;border-radius:9px;padding:0 10px;margin-bottom:8px;background:#fff">
       <option value="">작성자 선택</option>
       <option>김준호</option>
@@ -1120,6 +1146,28 @@ button{cursor:pointer}
     });
   }
 
+  let modalScrollY=0;
+  function lockPageScroll(){
+    if(document.body.classList.contains("modal-locked"))return;
+    modalScrollY=window.scrollY||window.pageYOffset||0;
+    document.documentElement.classList.add("modal-locked");
+    document.body.classList.add("modal-locked");
+    document.body.style.top=`-${modalScrollY}px`;
+  }
+  function unlockPageScroll(){
+    if(!document.body.classList.contains("modal-locked"))return;
+    document.documentElement.classList.remove("modal-locked");
+    document.body.classList.remove("modal-locked");
+    document.body.style.top="";
+    window.scrollTo(0,modalScrollY);
+  }
+  function anyModalOpen(){
+    return [...document.querySelectorAll(".modal")].some(m=>!m.classList.contains("hidden"));
+  }
+  function unlockIfNoModal(){
+    setTimeout(()=>{if(!anyModalOpen())unlockPageScroll()},0);
+  }
+
   function openDetail(b){
     state.selected=b;
     state.detailSelected.clear();
@@ -1135,17 +1183,24 @@ button{cursor:pointer}
     $("detailBank").textContent=b.bank||"-";
     $("detailBranchNo").textContent=b.branchNo||"-";
     $("detailAddress").textContent=b.address||"-";
+    $("detailMapBtn").disabled=!b.address;
+    $("detailMapBtn").onclick=()=>{
+      if(!b.address)return;
+      window.open("https://map.naver.com/p/search/"+encodeURIComponent(b.address),"_blank","noopener,noreferrer");
+    };
     $("detailStaff").textContent=b.staff||"-";
     $("detailWriter").textContent=latest?.writer||"-";
     $("detailWorkType").textContent=type;
     $("detailSummary").textContent=latest?.text||"-";
 
+    lockPageScroll();
     $("detailModal").classList.remove("hidden");
     renderDetail();
   }
   function closeDetail(){
     $("detailModal").classList.add("hidden");
     state.detailSelected.clear();
+    unlockIfNoModal();
   }
 
   function updateDetailSelection(ms){
@@ -1327,8 +1382,16 @@ button{cursor:pointer}
 
   function populateWorkAddBranches(){
     const bank=$("workAddBank").value||"";
-    const rows=branches.filter(b=>!bank || b.bank===bank).slice().sort((a,b)=>a.name.localeCompare(b.name,"ko"));
-    $("workAddBranch").innerHTML='<option value="">사이트 선택</option>'+rows.map(b=>`<option value="${esc(b.id)}">${esc(b.name)} · ${esc(b.bank||"")}</option>`).join("");
+    const q=$("workAddBranchSearch").value.trim();
+    const rows=branches
+      .filter(b=>!bank || b.bank===bank)
+      .filter(b=>!q || smartIncludes([b.name,b.bank,b.center,b.branchNo,b.address].join(" "),q))
+      .slice().sort((a,b)=>a.name.localeCompare(b.name,"ko"));
+
+    const current=$("workAddBranch").value||"";
+    $("workAddBranch").innerHTML='<option value="">사이트 선택</option>'+
+      rows.map(b=>`<option value="${esc(b.id)}">${esc(b.name)}</option>`).join("");
+    if(rows.some(b=>String(b.id)===String(current)))$("workAddBranch").value=current;
   }
 
   function openWorkAddModal(){
@@ -1337,14 +1400,17 @@ button{cursor:pointer}
     const banks=bankCategories();
     $("workAddBank").innerHTML='<option value="">은행 선택</option>'+banks.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join("");
     $("workAddBank").value=state.bankFilter||"";
+    $("workAddBranchSearch").value="";
     populateWorkAddBranches();
     $("workAddWriter").value=localStorage.getItem("bankBoardWriter")||"";
     $("workAddText").value="";
+    lockPageScroll();
     $("workAddModal").classList.remove("hidden");
   }
 
   function closeWorkAddModal(){
     $("workAddModal").classList.add("hidden");
+    unlockIfNoModal();
   }
 
   function openMemoModal(){
@@ -1355,6 +1421,7 @@ button{cursor:pointer}
     $("memoSave").textContent="추가";
   $("memoWriter").value=localStorage.getItem("bankBoardWriter")||"";
     $("memoText").value="";
+    lockPageScroll();
     $("memoModal").classList.remove("hidden");
   }
 
@@ -1366,6 +1433,7 @@ button{cursor:pointer}
     $("memoSave").textContent="수정 저장";
     $("memoWriter").value=m.writer||localStorage.getItem("bankBoardWriter")||"";
     $("memoText").value=m.text||"";
+    lockPageScroll();
     $("memoModal").classList.remove("hidden");
   }
 
@@ -1373,6 +1441,7 @@ button{cursor:pointer}
     $("memoModal").classList.add("hidden");
     state.editMemo=null;
     $("memoSave").textContent="추가";
+    unlockIfNoModal();
   }
 
   function isDesktop(){return window.matchMedia("(min-width:901px)").matches}
@@ -1466,6 +1535,7 @@ button{cursor:pointer}
   };
 
   $("workAddBank").onchange=populateWorkAddBranches;
+  $("workAddBranchSearch").oninput=populateWorkAddBranches;
   $("workAddCancel").onclick=closeWorkAddModal;
   $("workAddModal").onclick=e=>{if(e.target.id==="workAddModal")closeWorkAddModal()};
   $("workAddWriter").onchange=e=>localStorage.setItem("bankBoardWriter",e.target.value);
