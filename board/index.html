@@ -353,6 +353,36 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   .recent-history-row{grid-template-columns:76px minmax(0,1fr) 58px}
   .recent-history-row>div{font-size:9px;padding:6px 5px}
 }
+
+/* v2.29 사이트 검색 개선 */
+.site-pick-row{grid-template-columns:minmax(0,3fr) minmax(0,2fr)!important;align-items:stretch}
+.site-search-results{
+  margin:-2px 0 8px;
+  border:1px solid #cbd5e1;
+  border-radius:8px;
+  background:#fff;
+  max-height:230px;
+  overflow-y:auto;
+  box-shadow:0 8px 24px rgba(15,23,42,.12);
+  -webkit-overflow-scrolling:touch
+}
+.site-search-results.hidden{display:none}
+.site-result-item{
+  width:100%;border:0;border-bottom:1px solid #eef2f6;background:#fff;
+  padding:9px 10px;text-align:left;cursor:pointer
+}
+.site-result-item:last-child{border-bottom:0}
+.site-result-item:hover,.site-result-item:focus{background:#eef6ff;outline:0}
+.site-result-name{font-size:13px;font-weight:900;color:#1f2937}
+.site-result-sub{font-size:10px;color:#667085;margin-top:2px}
+.site-result-empty{padding:12px;text-align:center;color:#8a94a6;font-size:11px}
+@media(max-width:700px){
+  .site-pick-row{grid-template-columns:minmax(0,3fr) minmax(0,2fr)!important}
+  .site-search-results{max-height:190px}
+  .site-result-item{padding:9px 8px}
+  .site-result-name{font-size:12px}
+  .site-result-sub{font-size:9px}
+}
 </style>
 </head>
 <body>
@@ -490,9 +520,10 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       <option value="">은행 선택</option>
     </select>
     <div class="site-pick-row">
-      <select id="workAddBranch"><option value="">사이트 선택</option></select>
       <input id="workAddBranchSearch" type="search" placeholder="사이트 검색">
+      <select id="workAddBranch"><option value="">사이트 선택</option></select>
     </div>
+    <div id="workAddSearchResults" class="site-search-results hidden"></div>
     <select id="workAddWriter" style="width:100%;height:42px;border:1px solid #ccd3db;border-radius:9px;padding:0 10px;margin-bottom:8px;background:#fff">
       <option value="">작성자 선택</option>
       <option>김준호</option>
@@ -1654,15 +1685,58 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   function populateWorkAddBranches(){
     const bank=$("workAddBank").value||"";
     const q=$("workAddBranchSearch").value.trim();
+
     const rows=branches
       .filter(b=>!bank || b.bank===bank)
-      .filter(b=>!q || smartIncludes([b.name,b.bank,b.center,b.branchNo,b.address].join(" "),q))
-      .slice().sort((a,b)=>a.name.localeCompare(b.name,"ko"));
+      .filter(b=>{
+        if(!q)return true;
+        const hay=[b.name,b.bank,b.center,b.branchNo,b.address].join(" ");
+        return smartIncludes(hay,q);
+      })
+      .slice()
+      .sort((a,b)=>a.name.localeCompare(b.name,"ko"));
 
     const current=$("workAddBranch").value||"";
     $("workAddBranch").innerHTML='<option value="">사이트 선택</option>'+
       rows.map(b=>`<option value="${esc(b.id)}">${esc(b.name)}</option>`).join("");
-    if(rows.some(b=>String(b.id)===String(current)))$("workAddBranch").value=current;
+
+    if(rows.some(b=>String(b.id)===String(current))){
+      $("workAddBranch").value=current;
+    }else if(rows.length===1 && q){
+      $("workAddBranch").value=String(rows[0].id);
+    }
+
+    const resultBox=$("workAddSearchResults");
+    if(!q){
+      resultBox.classList.add("hidden");
+      resultBox.innerHTML="";
+      return;
+    }
+
+    resultBox.classList.remove("hidden");
+    if(!rows.length){
+      resultBox.innerHTML='<div class="site-result-empty">검색 결과가 없습니다.</div>';
+      return;
+    }
+
+    resultBox.innerHTML=rows.slice(0,50).map(b=>{
+      const sub=[b.bank,b.center,b.branchNo?`점번 ${b.branchNo}`:""].filter(Boolean).join(" · ");
+      return `<button type="button" class="site-result-item" data-id="${esc(b.id)}">
+        <div class="site-result-name">${esc(b.name)}</div>
+        <div class="site-result-sub">${esc(sub)}</div>
+      </button>`;
+    }).join("");
+
+    resultBox.querySelectorAll(".site-result-item").forEach(btn=>{
+      btn.onclick=()=>{
+        const id=btn.dataset.id;
+        const picked=branches.find(b=>String(b.id)===String(id));
+        if(!picked)return;
+        $("workAddBranch").value=String(picked.id);
+        $("workAddBranchSearch").value=picked.name;
+        resultBox.classList.add("hidden");
+      };
+    });
   }
 
   function openWorkAddModal(){
@@ -1672,6 +1746,8 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     $("workAddBank").innerHTML='<option value="">은행 선택</option>'+banks.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join("");
     $("workAddBank").value=state.bankFilter||"";
     $("workAddBranchSearch").value="";
+    $("workAddSearchResults").innerHTML="";
+    $("workAddSearchResults").classList.add("hidden");
     populateWorkAddBranches();
     $("workAddWriter").value=localStorage.getItem("bankBoardWriter")||"";
     $("workAddText").value="";
@@ -1800,10 +1876,19 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     render();
   };
 
-  $("workAddBank").onchange=populateWorkAddBranches;
+  $("workAddBank").onchange=()=>{
+    $("workAddBranchSearch").value="";
+    $("workAddSearchResults").innerHTML="";
+    $("workAddSearchResults").classList.add("hidden");
+    populateWorkAddBranches();
+  };
   $("workAddBranchSearch").oninput=populateWorkAddBranches;
+  $("workAddBranchSearch").onfocus=()=>{
+    if($("workAddBranchSearch").value.trim())populateWorkAddBranches();
+  };
   $("workAddCancel").onclick=closeWorkAddModal;
   $("workAddModal").onclick=e=>{if(e.target.id==="workAddModal")closeWorkAddModal()};
+  $("workAddSearchResults").onclick=e=>e.stopPropagation();
   $("workAddWriter").onchange=e=>localStorage.setItem("bankBoardWriter",e.target.value);
 
   $("workAddSave").onclick=async()=>{
