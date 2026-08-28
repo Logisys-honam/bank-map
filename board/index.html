@@ -448,12 +448,33 @@ button{cursor:pointer}
   });
 
   async function loadFirebaseFromRoot(){
-    const html=await fetch("../index.html",{cache:"no-store"}).then(r=>r.text());
-    const m=html.match(/const\s+fbCfg\s*=\s*(\{[\s\S]*?\})\s*;/);
+    // config.js에 직접 Firebase 설정이 있으면 우선 사용
+    const directCfg =
+      window.BANK_MAP_CONFIG?.firebaseConfig ||
+      window.BANK_MAP_CONFIG?.firebase ||
+      window.BANK_FIREBASE_CONFIG ||
+      window.firebaseConfig ||
+      null;
+
+    if(directCfg && directCfg.apiKey && directCfg.databaseURL){
+      const directPath =
+        window.BANK_MAP_CONFIG?.memoPath ||
+        window.BANK_MAP_CONFIG?.memoBasePath ||
+        "bankMap/memos";
+      return {cfg:directCfg,memoPath:directPath};
+    }
+
+    // 기존 정상 동작 방식: 루트 index.html에서 설정 읽기
+    const res=await fetch("../index.html",{cache:"no-store"});
+    if(!res.ok)throw new Error(`루트 index.html 읽기 실패 (${res.status})`);
+    const rootHtml=await res.text();
+
+    const m=rootHtml.match(/const\s+fbCfg\s*=\s*(\{[\s\S]*?\})\s*;/);
     if(!m)throw new Error("기존 index.html에서 Firebase 설정을 찾지 못했습니다.");
+
     const cfg=Function('"use strict";return ('+m[1]+')')();
     let memoPath="bankMap/memos";
-    const mm=html.match(/const\s+memoBasePath\s*=\s*['"]([^'"]+)['"]/);
+    const mm=rootHtml.match(/const\s+memoBasePath\s*=\s*['"]([^'"]+)['"]/);
     if(mm&&mm[1])memoPath=mm[1];
     return {cfg,memoPath};
   }
@@ -723,6 +744,7 @@ button{cursor:pointer}
 
   function refreshQuickFilters(){
     const bankSel=$("bankFilter"),staffSel=$("staffFilter"),branchSel=$("branchFilter");
+    if(!bankSel||!staffSel||!branchSel)return;
 
     const banks=uniqueBanks().sort((a,b)=>a.localeCompare(b,"ko"));
     const currentBank=state.bank;
@@ -1354,7 +1376,7 @@ button{cursor:pointer}
     renderDetail();
   };
   $("detailDeleteSelected").onclick=deleteDetailSelected;
-  $("bulkMemoOpen").onclick=openBulkMemoModal;
+  if($("bulkMemoOpen"))$("bulkMemoOpen").onclick=openBulkMemoModal;
   $("bulkMemoClose").onclick=closeBulkMemoModal;
   $("bulkMemoModal").onclick=e=>{if(e.target.id==="bulkMemoModal")closeBulkMemoModal()};
   $("bulkMemoSearch").oninput=e=>{state.bulkSearch=e.target.value;renderBulkMemoList()};
@@ -1395,6 +1417,7 @@ button{cursor:pointer}
 
   (async()=>{
     try{
+      $("sync").textContent="Firebase 연결 중...";
       const loaded=await loadFirebaseFromRoot();
       memoPath=loaded.memoPath;
       historyPath=memoPath.replace(/\/memos\/?$/,"/memoHistory");
@@ -1437,7 +1460,9 @@ button{cursor:pointer}
         render();
       });
     }catch(e){
-      console.error(e);$("sync").textContent="연결 실패";alert("Firebase 연결 실패: "+e.message);
+      console.error(e);
+      $("sync").textContent="연결 실패 · "+(e&&e.message?e.message:"알 수 없는 오류");
+      alert("Firebase 연결 실패: "+(e&&e.message?e.message:e));
     }
   })();
 })();
