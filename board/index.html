@@ -251,10 +251,10 @@ button{cursor:pointer}
 .status-head>div:last-child,.status-row>div:last-child{border-right:0}
 .status-row{border-bottom:1px solid #cfd6df;background:#fff;cursor:pointer}
 .status-row:nth-child(even){background:#dff8f7}
-.status-row.overdue{background:#fff0f0}
+.status-row.overdue{background:inherit}
 .status-time{font-size:12px;line-height:1.35;white-space:nowrap;color:#333}
 .status-site{font-size:14px;font-weight:900;line-height:1.25;color:#1f2937}
-.status-site.overdue-text,.status-memo.overdue-text{color:#c62828}
+.status-site.overdue-text{color:#c62828}.status-memo.overdue-text{color:#2f3f54}
 .status-sub{font-size:10px;color:#667085;margin-top:2px}
 .status-memo{font-size:12px;font-weight:800;color:#2f3f54;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .status-staff,.status-writer{font-size:13px;font-weight:900;color:#27364a}
@@ -444,6 +444,30 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     touch-action:pan-x pan-y pinch-zoom!important;
   }
 }
+
+/* v2.33 목록 표시 개선 */
+.filter-bar{
+  grid-template-columns:repeat(5,minmax(110px,190px))!important;
+}
+.board-search{grid-column:1/-1!important}
+
+/* 48시간 경과: 사이트명만 빨간색 */
+.status-row.overdue{background:inherit!important}
+.status-row.overdue:nth-child(even){background:#dff8f7!important}
+.status-row.overdue:nth-child(odd){background:#fff!important}
+.status-site.overdue-text{color:#c62828!important}
+.status-memo.overdue-text{color:#2f3f54!important}
+
+/* 페이지당 표시 개수 */
+#pageSizeFilter{font-weight:800}
+
+@media(max-width:700px){
+  .filter-bar{
+    grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  }
+  .filter-bar select{font-size:10px!important}
+  #pageSizeFilter{min-width:0}
+}
 </style>
 </head>
 <body>
@@ -485,7 +509,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
 <main class="page">
   <section id="filterBar" class="filter-bar">
     <select id="staffFilter"><option value="">담당자</option></select>
-    <select id="branchFilter"><option value="">은행지점</option></select>
+    <select id="branchFilter"><option value="">전체</option></select>
     <select id="writerFilter">
       <option value="">작성자</option>
       <option>김준호</option>
@@ -493,6 +517,12 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       <option>김대한</option>
     </select>
     <select id="pageFilter"><option value="1">1P</option></select>
+    <select id="pageSizeFilter" aria-label="페이지당 표시 개수">
+      <option value="20">20개</option>
+      <option value="30">30개</option>
+      <option value="50">50개</option>
+      <option value="100">100개</option>
+    </select>
     <input id="boardSearch" class="board-search" type="search" placeholder="사이트 · 은행 · 점번 · 메모내용 검색">
   </section>
 
@@ -1072,7 +1102,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
 
     const banks=bankCategories();
     const oldBank=state.bankFilter||"";
-    bankSel.innerHTML='<option value="">은행지점</option>'+banks.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join("");
+    bankSel.innerHTML='<option value="">전체</option>'+banks.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join("");
     bankSel.value=banks.includes(oldBank)?oldBank:"";
     state.bankFilter=bankSel.value||"";
   }
@@ -1321,6 +1351,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   function setActiveNav(){}
 
   function render(){
+    if($("pageSizeFilter"))$("pageSizeFilter").value=String(state.pageSize);
     renderTopTabs();
     renderDrawer();
 
@@ -1975,6 +2006,15 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
 
   $("pageFilter").onchange=e=>{
     state.page=Math.max(1,Number(e.target.value)||1);
+    render();
+  };
+
+  $("pageSizeFilter").value=String(state.pageSize);
+  $("pageSizeFilter").onchange=e=>{
+    const n=Number(e.target.value)||20;
+    state.pageSize=[20,30,50,100].includes(n)?n:20;
+    state.page=1;
+    state.listSelected.clear();
     render();
   };
 
