@@ -468,6 +468,25 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   .filter-bar select{font-size:10px!important}
   #pageSizeFilter{min-width:0}
 }
+
+/* v2.34 중요 메모 + 장애만 48시간 경과 빨강 */
+.important-check-row{
+  display:flex;align-items:center;gap:8px;
+  min-height:38px;margin:0 0 8px;padding:0 10px;
+  border:1px solid #f1c0c0;border-radius:9px;background:#fff8f8;
+  font-size:13px;font-weight:900;color:#b42318
+}
+.important-check-row input{width:18px;height:18px;accent-color:#d92d20}
+.important-mark{
+  display:inline-block;margin-top:4px;
+  color:#d92d20;font-weight:1000;font-size:16px;
+  line-height:1;letter-spacing:-1px
+}
+.status-time .important-mark{font-size:15px}
+@media(max-width:700px){
+  .important-check-row{min-height:36px;font-size:12px}
+  .status-time .important-mark{font-size:14px}
+}
 </style>
 </head>
 <body>
@@ -647,6 +666,10 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       <option>장창형</option>
       <option>김대한</option>
     </select>
+    <label class="important-check-row">
+      <input id="workAddImportant" type="checkbox">
+      <span>중요 메모</span>
+    </label>
     <textarea id="workAddText" placeholder="메모 내용을 입력하세요."></textarea>
     <div class="modal-buttons">
       <button id="workAddCancel" class="btn secondary">취소</button>
@@ -668,6 +691,10 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       <option>장창형</option>
       <option>김대한</option>
     </select>
+    <label class="important-check-row">
+      <input id="memoImportant" type="checkbox">
+      <span>중요 메모</span>
+    </label>
     <textarea id="memoText" placeholder="공유할 업무 메모를 입력하세요."></textarea>
     <div class="modal-buttons">
       <button id="memoCancel" class="btn secondary">취소</button>
@@ -1187,7 +1214,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     pageRows.forEach(item=>{
       const b=isDone ? branches.find(x=>x.memoId===item.branchMemoId) : item.b;
       const m=isDone ? item : item.m;
-      const overdue=!isDone && isOver48h(m);
+      const overdue=!isDone && state.main==="issue" && isOver48h(m);
       const row=document.createElement("div");
       row.className="status-row"+(!isDone?" selectable":"")+(overdue?" overdue":"");
       const siteName=isDone?(item.branchName||""):(b?b.name:"");
@@ -1196,7 +1223,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       const selectionKey=!isDone&&b?`${b.memoId}|${m.key}`:"";
 
       row.innerHTML=isDone?`
-        <div class="status-time">${shortCreatedAt(item.completedAt)}</div>
+        <div class="status-time">${shortCreatedAt(item.completedAt)}${item.important?'<div class="important-mark">!!</div>':""}</div>
         <div>
           <div class="status-site">${esc(siteName)}</div>
           <div class="status-sub">${esc(bank)}</div>
@@ -1206,7 +1233,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
         <div class="status-writer">${esc((m.writer||item.completedBy)||"-")}</div>`
       :`
         <div class="row-select-cell"><input type="checkbox" class="row-select-check" ${state.listSelected.has(selectionKey)?"checked":""}></div>
-        <div class="status-time">${shortCreatedAt(m.createdAt)}</div>
+        <div class="status-time">${shortCreatedAt(m.createdAt)}${m.important?'<div class="important-mark">!!</div>':""}</div>
         <div>
           <div class="status-site ${overdue?"overdue-text":""}">${esc(siteName)}</div>
           <div class="status-sub">${esc(bank)}${esc(no)}</div>
@@ -1312,7 +1339,8 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
           branchName:b.name,
           bank:b.bank||"",
           staff:b.staff||"",
-          sourceWorkType:m.workType||currentWorkType()
+          sourceWorkType:m.workType||currentWorkType(),
+          important:m.important===true
         };
         updates[`${memoPath}/${b.memoId}/${m.key}`]=null;
       }else{
@@ -1635,7 +1663,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
 
       el.innerHTML=recent.map((h,i)=>`
         <div class="recent-history-row" data-history-index="${i}" title="눌러서 당시 완료 상세 보기">
-          <div class="recent-history-date">${esc(fmt(h.completedAt)||h.day||"-")}</div>
+          <div class="recent-history-date">${esc(fmt(h.completedAt)||h.day||"-")}${h.important?'<div class="important-mark">!!</div>':""}</div>
           <div class="recent-history-text">${esc(h.text||"")}</div>
           <div class="recent-history-writer">${esc(h.writer||h.completedBy||"-")}</div>
         </div>`).join("");
@@ -1726,7 +1754,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     updates[`${historyPath}/${day}/${historyKey}`]={
       branchMemoId:b.memoId,branchName:b.name,bank:b.bank||"",center:b.center||"",
       staff:b.staff||"",quarter:b.quarter||"",memoKey:m.key,memoNo:Number(m.no)||0,text:m.text||"",
-      writer:m.writer||null,createdAt:m.createdAt||null,workType:m.workType||"장애",
+      writer:m.writer||null,createdAt:m.createdAt||null,workType:m.workType||"장애",important:m.important===true,
       completedAt:firebase.database.ServerValue.TIMESTAMP,completedBy:writer
     };
 
@@ -1889,6 +1917,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     populateWorkAddBranches();
     $("workAddBranch").value="";
     $("workAddWriter").value=localStorage.getItem("bankBoardWriter")||"";
+    $("workAddImportant").checked=false;
     $("workAddText").value="";
     showBoardModal("workAddModal");
   }
@@ -1901,7 +1930,8 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     const b=state.selected;if(!b)return;
     state.editMemo=null;
     $("memoModalTitle").textContent=`${b.name} · 메모 추가`;
-    $("memoWorkType").value=state.main==="install"?"설치":"장애";
+    $("memoWorkType").value=state.main==="install"?"설치":state.main==="regular"?"정기":"장애";
+    $("memoImportant").checked=false;
     $("memoSave").textContent="추가";
   $("memoWriter").value=localStorage.getItem("bankBoardWriter")||"";
     $("memoText").value="";
@@ -1913,6 +1943,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     state.editMemo={branchMemoId:b.memoId,key:m.key};
     $("memoModalTitle").textContent=`${b.name} · ${m.no||""}번 메모 수정`;
     $("memoWorkType").value=m.workType||"장애";
+    $("memoImportant").checked=m.important===true;
     $("memoSave").textContent="수정 저장";
     $("memoWriter").value=m.writer||localStorage.getItem("bankBoardWriter")||"";
     $("memoText").value=m.text||"";
@@ -2044,6 +2075,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     const b=branches.find(x=>String(x.id)===String(id));
     const text=$("workAddText").value.trim();
     const writer=$("workAddWriter").value||null;
+    const important=$("workAddImportant").checked===true;
     if(!b){alert("사이트를 선택해주세요.");return}
     if(!text){alert("메모 내용을 입력해주세요.");return}
     if(!db){alert("Firebase 연결이 완료되지 않았습니다.");return}
@@ -2055,6 +2087,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
         no:nextNo(b),
         text,
         writer,
+        important,
         workType:currentWorkType(),
         createdAt:firebase.database.ServerValue.TIMESTAMP
       });
@@ -2144,16 +2177,17 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     const b=state.selected,text=$("memoText").value.trim();if(!b||!text)return;
     const writer=$("memoWriter").value||null;
     const workType=$("memoWorkType").value||"장애";
+    const important=$("memoImportant").checked===true;
     if(writer)localStorage.setItem("bankBoardWriter",writer);
 
     if(state.editMemo){
       await db.ref(`${memoPath}/${state.editMemo.branchMemoId}/${state.editMemo.key}`).update({
-        text,writer,workType,
+        text,writer,workType,important,
         editedAt:firebase.database.ServerValue.TIMESTAMP
       });
     }else{
       await db.ref(`${memoPath}/${b.memoId}`).push().set({
-        no:nextNo(b),text,writer,workType,
+        no:nextNo(b),text,writer,workType,important,
         createdAt:firebase.database.ServerValue.TIMESTAMP
       });
     }
