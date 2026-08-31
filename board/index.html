@@ -1419,7 +1419,8 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
 
   function refreshQuickFilters(){
     const bankSel=$("bankFilter"),staffSel=$("staffFilter"),branchSel=$("branchFilter");
-    if(!bankSel||!staffSel||!branchSel)return;
+    if(!staffSel||!branchSel)return;
+    if(!bankSel)return;
 
     const banks=uniqueBanks().sort((a,b)=>a.localeCompare(b,"ko"));
     const currentBank=state.bank;
@@ -2528,7 +2529,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   $("officeMemoCancel").onclick=closeOfficeMemoModal;
 
   $("officeMemoDetailClose").onclick=()=>requestCloseBoardModal("officeMemoDetailModal");
-  $("officeMemoDetailCloseBtn").onclick=()=>requestCloseBoardModal("officeMemoDetailModal");
+  if($("officeMemoDetailCloseBtn"))$("officeMemoDetailCloseBtn").onclick=()=>requestCloseBoardModal("officeMemoDetailModal");
   $("officeMemoDetailModal").onclick=e=>{if(e.target.id==="officeMemoDetailModal")requestCloseBoardModal("officeMemoDetailModal")};
   $("officeMemoDetailComplete").onclick=completeOfficeDetailMemo;
   $("officeMemoDetailEdit").onclick=editOfficeDetailMemo;
