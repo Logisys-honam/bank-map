@@ -1439,6 +1439,15 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   function calendarItemsForDate(key){return Object.entries(state.officeCalendar||{}).map(([id,v])=>({id,...(v||{})})).filter(x=>x.date===key).sort((a,b)=>(Number(a.createdAt)||0)-(Number(b.createdAt)||0))}
 
 
+  function scheduleDateWithWeekday(dateText){
+    const s=String(dateText||"");
+    const m=s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if(!m)return s||"-";
+    const d=new Date(Number(m[1]),Number(m[2])-1,Number(m[3]));
+    const days=["일","월","화","수","목","금","토"];
+    return `${s} (${days[d.getDay()]})`;
+  }
+
   function officeScheduleStatusItems(){
     const today=todayKey();
     return Object.entries(state.officeCalendar||{})
@@ -1466,7 +1475,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     list.innerHTML=items.map(ev=>`
       <div class="schedule-status-row" data-event-id="${esc(ev.id)}">
         <div class="schedule-status-top">
-          <span class="schedule-status-date">${esc(ev.date||"-")}</span>
+          <span class="schedule-status-date">${esc(scheduleDateWithWeekday(ev.date))}</span>
           <span class="schedule-status-state">진행중</span>
         </div>
         <div class="schedule-status-title">${esc(ev.title||"일정")}</div>
