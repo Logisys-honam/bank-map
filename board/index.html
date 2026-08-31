@@ -611,6 +611,110 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   display:inline-block;padding:2px 7px;border-radius:999px;
   font-size:10px;font-weight:900;background:#d9f7e5;color:#087a42
 }
+
+/* v2.39 PC 지사메모 3단 대시보드 + 일정상세 가독성 */
+#calendarViewSubject{
+  font-size:15px;
+  font-weight:900;
+  color:#162033;
+}
+#calendarViewMemo{
+  font-size:15px;
+  font-weight:900;
+  line-height:1.65;
+  color:#162033;
+  white-space:pre-wrap;
+}
+
+/* 오른쪽 일정 현황 */
+.schedule-status-panel{
+  background:#fff;
+  border:1px solid #d9e0e9;
+  border-radius:12px;
+  overflow:hidden;
+  box-shadow:0 2px 10px rgba(15,23,42,.04);
+}
+.schedule-status-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  padding:12px 14px;
+  border-bottom:1px solid #e2e8f0;
+  background:#f8fafc;
+}
+.schedule-status-head strong{font-size:14px;font-weight:900;color:#1f2937}
+.schedule-status-count{font-size:11px;color:#64748b;font-weight:800}
+.schedule-status-list{max-height:650px;overflow:auto}
+.schedule-status-row{
+  padding:11px 12px;
+  border-bottom:1px solid #e2e8f0;
+  cursor:pointer;
+  background:#fff;
+}
+.schedule-status-row:nth-child(even){background:#effafa}
+.schedule-status-row:last-child{border-bottom:0}
+.schedule-status-row:hover{background:#eef6ff}
+.schedule-status-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+.schedule-status-date{font-size:11px;font-weight:900;color:#2457a6}
+.schedule-status-state{
+  font-size:10px;
+  font-weight:900;
+  color:#087a42;
+  background:#d9f7e5;
+  border-radius:999px;
+  padding:2px 7px;
+}
+.schedule-status-title{
+  margin-top:5px;
+  font-size:13px;
+  line-height:1.35;
+  font-weight:900;
+  color:#1e293b;
+}
+.schedule-status-memo{
+  margin-top:4px;
+  font-size:11px;
+  line-height:1.35;
+  font-weight:700;
+  color:#526173;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.schedule-status-meta{margin-top:5px;font-size:10px;color:#7b8794}
+.schedule-status-empty{padding:42px 12px;text-align:center;color:#94a3b8;font-size:12px}
+
+/* PC에서만 왼쪽 메모 / 가운데 큰 달력 / 오른쪽 일정현황 */
+@media(min-width:901px){
+  .office-dashboard{
+    width:100%;
+    grid-template-columns:minmax(260px,.78fr) minmax(560px,1.42fr) minmax(270px,.80fr)!important;
+    gap:12px!important;
+    padding:8px 0 20px!important;
+    align-items:start;
+  }
+  .office-panel{justify-self:stretch}
+  .calendar-panel{justify-self:stretch}
+  .calendar-grid{padding:10px}
+  .calendar-day{min-height:112px;padding:7px}
+  .calendar-day-num{font-size:13px}
+  .calendar-dow{font-size:11px;padding:8px 2px}
+  .calendar-event{font-size:10px;padding:4px 5px}
+  .calendar-title{font-size:15px}
+}
+
+/* 모바일은 기존 2단(메모+달력) 흐름 유지 */
+@media(max-width:900px){
+  .schedule-status-panel{display:none!important}
+  #calendarViewSubject{font-size:14px}
+  #calendarViewMemo{font-size:14px;line-height:1.55}
+}
 </style>
 </head>
 <body>
@@ -1214,6 +1318,13 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
         </div>
         <div id="calendarGrid" class="calendar-grid"></div>
       </section>
+      <section class="schedule-status-panel">
+        <div class="schedule-status-head">
+          <strong>일정 현황</strong>
+          <span id="scheduleStatusCount" class="schedule-status-count">0건</span>
+        </div>
+        <div id="scheduleStatusList" class="schedule-status-list"></div>
+      </section>
     </div>`;
 
     $("officeInlineAdd").onclick=openOfficeMemoModal;
@@ -1239,6 +1350,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     }
 
     renderOfficeCalendar();
+    renderScheduleStatus();
   }
 
 
@@ -1325,6 +1437,46 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   function monthKeyParts(d){return {y:d.getFullYear(),m:d.getMonth()}}
   function dateKeyLocal(y,m,d){return `${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`}
   function calendarItemsForDate(key){return Object.entries(state.officeCalendar||{}).map(([id,v])=>({id,...(v||{})})).filter(x=>x.date===key).sort((a,b)=>(Number(a.createdAt)||0)-(Number(b.createdAt)||0))}
+
+
+  function officeScheduleStatusItems(){
+    const today=todayKey();
+    return Object.entries(state.officeCalendar||{})
+      .map(([id,v])=>({id,...(v||{})}))
+      .filter(ev=>!ev.done)
+      .sort((a,b)=>{
+        const ad=String(a.date||"9999-99-99"),bd=String(b.date||"9999-99-99");
+        const aPast=ad<today,bPast=bd<today;
+        if(aPast!==bPast)return aPast?-1:1;
+        if(ad!==bd)return ad.localeCompare(bd);
+        return (Number(a.createdAt)||0)-(Number(b.createdAt)||0);
+      });
+  }
+
+  function renderScheduleStatus(){
+    const list=$("scheduleStatusList");
+    const count=$("scheduleStatusCount");
+    if(!list||!count)return;
+    const items=officeScheduleStatusItems();
+    count.textContent=`${items.length}건`;
+    if(!items.length){
+      list.innerHTML='<div class="schedule-status-empty">진행중인 일정이 없습니다.</div>';
+      return;
+    }
+    list.innerHTML=items.map(ev=>`
+      <div class="schedule-status-row" data-event-id="${esc(ev.id)}">
+        <div class="schedule-status-top">
+          <span class="schedule-status-date">${esc(ev.date||"-")}</span>
+          <span class="schedule-status-state">진행중</span>
+        </div>
+        <div class="schedule-status-title">${esc(ev.title||"일정")}</div>
+        ${ev.memo?`<div class="schedule-status-memo">${esc(ev.memo)}</div>`:""}
+        <div class="schedule-status-meta">${esc(ev.writer||"작성자 미지정")}</div>
+      </div>`).join("");
+    list.querySelectorAll(".schedule-status-row").forEach(row=>{
+      row.onclick=()=>openCalendarView(row.dataset.eventId);
+    });
+  }
 
   function renderOfficeCalendar(){
     const grid=$("calendarGrid"); if(!grid)return;
@@ -2829,6 +2981,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       db.ref(officeCalendarPath).on("value",snap=>{
         state.officeCalendar=snap.val()||{};
         if(state.main==="office")render();
+        if($("scheduleStatusList"))renderScheduleStatus();
         if(!$("calendarDayListModal").classList.contains("hidden") && state.calendarDayKey)renderCalendarDayList();
         if(!$("calendarViewModal").classList.contains("hidden") && state.calendarViewKey){
           const ev=currentCalendarViewEvent();
