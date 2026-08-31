@@ -3599,7 +3599,15 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       historyPath=memoPath.replace(/\/memos\/?$/,"/memoHistory");
       if(historyPath===memoPath)historyPath="bankMap/memoHistory";
 
-      const app=firebase.initializeApp(loaded.cfg,"bankWorkBoard");
+      // Firebase Storage 기본 버킷 연결.
+      // 기존 config.js / 루트 index.html에 storageBucket 항목이 없어도
+      // 현재 업무보드 프로젝트(dealer-map-status)의 생성된 기본 버킷을 사용한다.
+      const firebaseCfg={...loaded.cfg};
+      if(!firebaseCfg.storageBucket && firebaseCfg.projectId==="dealer-map-status") {
+        firebaseCfg.storageBucket="dealer-map-status.firebasestorage.app";
+      }
+
+      const app=firebase.initializeApp(firebaseCfg,"bankWorkBoard");
       db=app.database();
       storage=app.storage();
       await app.auth().signInAnonymously();
