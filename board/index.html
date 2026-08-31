@@ -816,6 +816,16 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     pointer-events:none;
   }
 }
+
+/* v2.42 PC 팝업 겹침 완화 */
+@media(min-width:901px){
+  .modal.pc-floating-window > .detail-card,
+  .modal.pc-floating-window > .memo-modal-card,
+  .modal.pc-floating-window > .bulk-modal-card,
+  .floating-snapshot{
+    transition:box-shadow .12s ease;
+  }
+}
 </style>
 </head>
 <body>
@@ -2283,6 +2293,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
 
 
   let floatingWindowZ=300;
+  let floatingPlacementCounter=0;
 
   function isPcFloatingMode(){
     return window.matchMedia("(min-width:901px)").matches;
@@ -2301,7 +2312,46 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     el.classList.add("window-active");
   }
 
-  function centerFloatingWindow(el){
+  function nextFloatingPosition(card,preferredRect=null){
+    const margin=14;
+    const stepX=38;
+    const stepY=34;
+    const maxLeft=Math.max(margin,window.innerWidth-card.offsetWidth-margin);
+    const maxTop=Math.max(margin,window.innerHeight-Math.min(card.offsetHeight,window.innerHeight-80)-margin);
+
+    // 같은 종류를 연속으로 열 때는 바로 이전 창에서 살짝 우하단으로 이동
+    if(preferredRect){
+      let left=preferredRect.left+stepX;
+      let top=preferredRect.top+stepY;
+
+      if(left>maxLeft)left=Math.max(margin,preferredRect.left-stepX*2);
+      if(top>maxTop)top=Math.max(margin,preferredRect.top-stepY*2);
+
+      return {
+        left:Math.min(maxLeft,Math.max(margin,left)),
+        top:Math.min(maxTop,Math.max(margin,top))
+      };
+    }
+
+    // 서로 다른 팝업도 모두 중앙에 완전히 포개지지 않도록 단계적으로 배치
+    const slot=floatingPlacementCounter++;
+    const col=slot%6;
+    const row=Math.floor(slot/6)%4;
+    const baseLeft=Math.max(margin,Math.round((window.innerWidth-card.offsetWidth)/2));
+    const baseTop=Math.max(margin,Math.round((window.innerHeight-card.offsetHeight)/2));
+
+    let left=baseLeft+(col-2)*stepX;
+    let top=baseTop+(row-1)*stepY;
+
+    if(left>maxLeft)left=maxLeft;
+    if(left<margin)left=margin;
+    if(top>maxTop)top=maxTop;
+    if(top<margin)top=margin;
+
+    return {left,top};
+  }
+
+  function placeFloatingWindow(el,preferredRect=null){
     if(!el||!isPcFloatingMode())return;
     const card=modalWindowCard(el);
     if(!card)return;
@@ -2311,12 +2361,11 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     card.style.bottom="";
     card.style.transform="";
     card.style.position="fixed";
+
     requestAnimationFrame(()=>{
-      const r=card.getBoundingClientRect();
-      const left=Math.max(10,Math.round((window.innerWidth-r.width)/2));
-      const top=Math.max(10,Math.round((window.innerHeight-r.height)/2));
-      card.style.left=left+"px";
-      card.style.top=top+"px";
+      const pos=nextFloatingPosition(card,preferredRect);
+      card.style.left=Math.round(pos.left)+"px";
+      card.style.top=Math.round(pos.top)+"px";
     });
   }
 
@@ -2373,7 +2422,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
 
     // PC에서는 팝업 바깥을 눌러도 닫히지 않음.
     // 창을 연 상태로 뒤쪽 업무보드도 계속 클릭 가능.
-    centerFloatingWindow(el);
+    if(!card.style.left || !card.style.top)placeFloatingWindow(el,null);
   }
 
 
@@ -2447,13 +2496,27 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     if(!el)return;
 
     const wasAlreadyOpen=!el.classList.contains("hidden");
+    let previousRect=null;
+
     if(isPcFloatingMode() && wasAlreadyOpen){
+      const existingCard=modalWindowCard(el);
+      if(existingCard)previousRect=existingCard.getBoundingClientRect();
       makeIndependentSnapshot(el);
     }
 
     if(!isPcFloatingMode())lockPageScroll();
     el.classList.remove("hidden");
-    if(isPcFloatingMode())setupFloatingWindow(el);
+
+    if(isPcFloatingMode()){
+      const card=modalWindowCard(el);
+      if(card){
+        // 재사용되는 실제 팝업은 기존 위치를 지우고 새 위치 계산
+        card.style.left="";
+        card.style.top="";
+      }
+      setupFloatingWindow(el);
+      if(previousRect)placeFloatingWindow(el,previousRect);
+    }
 
     // 같은 DOM 팝업을 다시 열 때 history stack 중복은 만들지 않음
     if(!wasAlreadyOpen){
