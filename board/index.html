@@ -901,6 +901,23 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   border-bottom:1px solid #f2e7b4;
 }
 
+.shared-doc-buttons{flex-wrap:wrap}
+.shared-doc-buttons .replace{flex:1 1 100%;background:#e8f1ff!important;border-color:#8bb8f5!important;color:#0b57b7!important;padding:7px 8px!important;font-size:10px!important}
+.shared-doc-buttons .versions{color:#5b3aa4!important;background:#f6f1ff!important;border-color:#cfc0f5!important}
+.shared-doc-version-badge{display:inline-block;margin-left:5px;padding:1px 5px;border-radius:999px;background:#eef2ff;color:#4f46e5;font-size:8px;font-weight:900;vertical-align:1px}
+.shared-version-overlay{position:fixed;inset:0;background:rgba(15,23,42,.22);z-index:99999;display:flex;align-items:center;justify-content:center;padding:18px}
+.shared-version-card{width:min(720px,94vw);max-height:82vh;background:#fff;border-radius:14px;box-shadow:0 20px 60px rgba(15,23,42,.28);overflow:hidden;display:flex;flex-direction:column}
+.shared-version-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 15px;border-bottom:1px solid #e2e8f0;background:#f8fafc}
+.shared-version-head strong{font-size:15px}.shared-version-head button{border:0;background:#e2e8f0;border-radius:7px;padding:6px 9px;font-weight:900;cursor:pointer}
+.shared-version-list{overflow:auto;padding:8px}
+.shared-version-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:10px;border-bottom:1px solid #e5e7eb}
+.shared-version-row.current{background:#f0fdf4;border-radius:8px}
+.shared-version-title{font-size:12px;font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.shared-version-meta{font-size:10px;color:#64748b;margin-top:4px;line-height:1.45}
+.shared-version-actions{display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+.shared-version-actions button{border:1px solid #cbd5e1;background:#fff;border-radius:6px;padding:5px 7px;font-size:9px;font-weight:900;cursor:pointer}
+.shared-version-actions .restore{color:#1557a8;background:#eef6ff}
+
 </style>
 </head>
 <body>
@@ -1312,8 +1329,8 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     return {cfg,memoPath};
   }
 
-  let db,storage,memoPath="bankMap/memos",historyPath="bankMap/memoHistory",officeMemoPath="bankMap/officeMemos",officeCalendarPath="bankMap/officeCalendar",sharedDocsPath="bankMap/sharedDocs";
-  const state={memos:{},weekHistory:[],officeMemos:{},officeCalendar:{},sharedDocs:{},sharedDocReplaceKey:null,main:"office",sub:"active",staff:null,bankFilter:"",writerFilter:"",search:"",page:1,pageSize:20,selected:null,bulkSelected:new Set(),bulkSearch:"",detailSelected:new Set(),listSelected:new Set(),editMemo:null,calendarCursor:new Date(),calendarEditKey:null,officeDetailKey:null,calendarViewKey:null,officeEditKey:null,calendarDayKey:null,calendarDaySelected:new Set()};
+  let db,storage,memoPath="bankMap/memos",historyPath="bankMap/memoHistory",officeMemoPath="bankMap/officeMemos",officeCalendarPath="bankMap/officeCalendar",sharedDocsPath="bankMap/sharedDocs",sharedDocVersionsPath="bankMap/sharedDocVersions";
+  const state={memos:{},weekHistory:[],officeMemos:{},officeCalendar:{},sharedDocs:{},sharedDocVersions:{},sharedDocReplaceKey:null,main:"office",sub:"active",staff:null,bankFilter:"",writerFilter:"",search:"",page:1,pageSize:20,selected:null,bulkSelected:new Set(),bulkSearch:"",detailSelected:new Set(),listSelected:new Set(),editMemo:null,calendarCursor:new Date(),calendarEditKey:null,officeDetailKey:null,calendarViewKey:null,officeEditKey:null,calendarDayKey:null,calendarDaySelected:new Set()};
 
   const esc=s=>String(s??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
   const fmt=ms=>{if(!ms)return "";try{return new Intl.DateTimeFormat("ko-KR",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}).format(new Date(ms))}catch{return ""}};
@@ -1503,6 +1520,16 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       .sort((a,b)=>(Number(b.updatedAt)||0)-(Number(a.updatedAt)||0));
   }
 
+  function sharedDocVersionItems(docKey){
+    return Object.entries((state.sharedDocVersions||{})[docKey]||{})
+      .map(([key,v])=>({key,...(v||{})}))
+      .sort((a,b)=>(Number(b.archivedAt)||Number(b.updatedAt)||0)-(Number(a.archivedAt)||Number(a.updatedAt)||0));
+  }
+
+  function sharedDocVersionCount(docKey){
+    return sharedDocVersionItems(docKey).length;
+  }
+
   function sharedDocSize(n){
     n=Number(n)||0;
     if(n<1024)return n+" B";
@@ -1550,6 +1577,52 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     window.open(url,"_blank","noopener,noreferrer");
   }
 
+  function closeSharedDocVersions(){
+    const el=document.getElementById("sharedDocVersionOverlay");
+    if(el)el.remove();
+  }
+
+  async function restoreSharedDocVersion(doc,ver){
+    if(!confirm(`"${ver.name||doc.name||"문서"}" 버전을 현재 최신 파일로 복원할까요?\n현재 최신 파일도 이전 버전으로 보관됩니다.`))return;
+    try{
+      const current=(state.sharedDocs||{})[doc.key]||doc;
+      const archiveKey=db.ref(`${sharedDocVersionsPath}/${doc.key}`).push().key;
+      const restoredBy=localStorage.getItem("bankBoardWriter")||current.uploader||"";
+      const archive={...current,archivedAt:firebase.database.ServerValue.TIMESTAMP,archivedBy:restoredBy,archiveReason:"restore"};
+      delete archive.key;
+      const payload={name:ver.name||current.name||"문서",type:ver.type||"",size:Number(ver.size)||0,ext:ver.ext||sharedDocExt(ver.name||""),storagePath:ver.storagePath||"",downloadURL:ver.downloadURL||"",uploader:ver.uploader||restoredBy,createdAt:current.createdAt||ver.createdAt||firebase.database.ServerValue.TIMESTAMP,updatedAt:firebase.database.ServerValue.TIMESTAMP,restoredFromVersion:ver.key||""};
+      const updates={};
+      updates[`${sharedDocVersionsPath}/${doc.key}/${archiveKey}`]=archive;
+      updates[`${sharedDocsPath}/${doc.key}`]=payload;
+      await db.ref().update(updates);
+      closeSharedDocVersions();
+      alert("이전 버전을 최신 파일로 복원했습니다.");
+    }catch(err){alert("버전 복원 실패\n"+err.message);}
+  }
+
+  function openSharedDocVersions(doc){
+    closeSharedDocVersions();
+    const versions=sharedDocVersionItems(doc.key);
+    const overlay=document.createElement("div");
+    overlay.id="sharedDocVersionOverlay"; overlay.className="shared-version-overlay";
+    const card=document.createElement("div"); card.className="shared-version-card";
+    card.innerHTML=`<div class="shared-version-head"><strong>📚 ${esc(doc.name||"문서")} · 버전 기록</strong><button type="button" class="close">✕ 닫기</button></div><div class="shared-version-list"></div>`;
+    overlay.appendChild(card); document.body.appendChild(overlay);
+    card.querySelector(".close").onclick=closeSharedDocVersions;
+    overlay.onclick=e=>{if(e.target===overlay)closeSharedDocVersions();};
+    const list=card.querySelector(".shared-version-list");
+    const rows=[{...doc,_current:true},...versions];
+    rows.forEach((v,i)=>{
+      const r=document.createElement("div"); r.className="shared-version-row"+(v._current?" current":"");
+      const when=v._current?(v.updatedAt||v.createdAt):(v.archivedAt||v.updatedAt||v.createdAt);
+      r.innerHTML=`<div><div class="shared-version-title">${v._current?"✅ 현재 최신 · ":`이전 ${i} · `}${esc(v.name||"문서")}</div><div class="shared-version-meta">${esc(sharedDocSize(v.size))} · ${esc(v.uploader||v.archivedBy||"등록자 미지정")}<br>${esc(fmt(when))}</div></div><div class="shared-version-actions"><button type="button" class="open">열기</button><button type="button" class="web">웹</button>${v._current?"":'<button type="button" class="restore">이 버전 복원</button>'}</div>`;
+      r.querySelector(".open").onclick=()=>openSharedDocInApp(v); r.querySelector(".web").onclick=()=>openSharedDocWeb(v);
+      const restore=r.querySelector(".restore"); if(restore)restore.onclick=()=>restoreSharedDocVersion(doc,v);
+      list.appendChild(r);
+    });
+    if(!versions.length){const note=document.createElement("div");note.style.cssText="padding:12px;color:#64748b;font-size:11px;text-align:center";note.textContent="아직 교체된 이전 버전이 없습니다.";list.appendChild(note);}
+  }
+
   function renderSharedDocs(){
     const list=$("sharedDocList"),count=$("sharedDocCount");
     if(!list||!count)return;
@@ -1565,17 +1638,20 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       row.className="shared-doc-row";
       row.title="더블클릭하면 앱으로 바로 열기를 시도합니다.";
       const office=!!sharedDocOfficeProtocol(doc);
-      row.innerHTML=`<div class="shared-doc-name">📎 ${esc(doc.name||"문서")}</div>
+      const versionCount=sharedDocVersionCount(doc.key);
+      row.innerHTML=`<div class="shared-doc-name">📎 ${esc(doc.name||"문서")}${versionCount?`<span class="shared-doc-version-badge">이전 ${versionCount}</span>`:""}</div>
         <div class="shared-doc-meta">${esc(sharedDocSize(doc.size))} · ${esc(doc.uploader||"등록자 미지정")}<br>${esc(fmt(doc.updatedAt||doc.createdAt))}</div>
         <div class="shared-doc-buttons">
+          <button class="replace" type="button">↻ 최신 파일로 교체</button>
           <button class="open-app" type="button">${office?"앱으로 열기":"바로 열기"}</button>
           <button class="open-web" type="button">웹 열기</button>
-          <button class="replace" type="button">새 파일로 교체</button>
+          <button class="versions" type="button">이전 버전${versionCount?` (${versionCount})`:""}</button>
           <button class="delete" type="button">삭제</button>
         </div>`;
       row.ondblclick=()=>openSharedDocInApp(doc);
       row.querySelector(".open-app").onclick=e=>{e.stopPropagation();openSharedDocInApp(doc);};
       row.querySelector(".open-web").onclick=e=>{e.stopPropagation();openSharedDocWeb(doc);};
+      row.querySelector(".versions").onclick=e=>{e.stopPropagation();openSharedDocVersions(doc);};
       row.querySelector(".replace").onclick=e=>{
         e.stopPropagation();
         state.sharedDocReplaceKey=doc.key;
@@ -1586,12 +1662,11 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
         e.stopPropagation();
         if(!confirm(`"${doc.name||"문서"}"을(를) 공용 문서함에서 삭제할까요?`))return;
         try{
-          if(storage && doc.storagePath){
-            await storage.ref(doc.storagePath).delete().catch(err=>{
-              console.warn("Storage 파일 삭제는 건너뜁니다.",err);
-            });
-          }
-          await db.ref(`${sharedDocsPath}/${doc.key}`).remove();
+          const versions=sharedDocVersionItems(doc.key);
+          const paths=[doc.storagePath,...versions.map(v=>v.storagePath)].filter(Boolean);
+          if(storage)await Promise.all(paths.map(path=>storage.ref(path).delete().catch(err=>console.warn("Storage 파일 삭제는 건너뜁니다.",path,err))));
+          const updates={}; updates[`${sharedDocsPath}/${doc.key}`]=null; updates[`${sharedDocVersionsPath}/${doc.key}`]=null;
+          await db.ref().update(updates);
         }catch(err){
           alert("문서 삭제 실패\n"+err.message);
         }
@@ -1621,11 +1696,12 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       return;
     }
 
-    const uploader=prompt("등록자 이름을 입력해주세요.",localStorage.getItem("bankBoardWriter")||"")||"";
-    if(uploader)localStorage.setItem("bankBoardWriter",uploader);
-
     const key=replaceKey || db.ref(sharedDocsPath).push().key;
     const old=replaceKey?((state.sharedDocs||{})[replaceKey]||{}):{};
+    let uploader="";
+    if(replaceKey){uploader=localStorage.getItem("bankBoardWriter")||old.uploader||"";}
+    else{uploader=prompt("등록자 이름을 입력해주세요.",localStorage.getItem("bankBoardWriter")||"")||"";if(uploader)localStorage.setItem("bankBoardWriter",uploader);}
+
     const ext=sharedDocExt(file.name);
     const storagePath=`bankBoard/sharedDocs/${key}/${Date.now()}_${safeStorageName(file.name)}`;
     const ref=storage.ref(storagePath);
@@ -1653,12 +1729,13 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       updatedAt:firebase.database.ServerValue.TIMESTAMP
     };
 
-    await db.ref(`${sharedDocsPath}/${key}`).set(payload);
+    if(replaceKey){
+      const versionKey=db.ref(`${sharedDocVersionsPath}/${key}`).push().key;
+      const archived={...old,archivedAt:firebase.database.ServerValue.TIMESTAMP,archivedBy:uploader||old.uploader||"",archiveReason:"replace"}; delete archived.key;
+      const updates={}; updates[`${sharedDocVersionsPath}/${key}/${versionKey}`]=archived; updates[`${sharedDocsPath}/${key}`]=payload;
+      await db.ref().update(updates);
+    }else{await db.ref(`${sharedDocsPath}/${key}`).set(payload);}
 
-    // 교체 전 파일은 새 파일 등록이 성공한 뒤 삭제
-    if(replaceKey && old.storagePath && old.storagePath!==storagePath){
-      storage.ref(old.storagePath).delete().catch(err=>console.warn("이전 파일 삭제 실패",err));
-    }
   }
 
   function renderOfficeMemos(){
@@ -1671,7 +1748,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       <section class="shared-doc-panel">
         <div class="shared-doc-head"><strong>공용 문서</strong><span id="sharedDocCount" class="shared-doc-count">0개</span></div>
         <div class="shared-doc-actions"><button id="sharedDocUpload" class="shared-doc-upload" type="button">+ 문서 올리기</button></div>
-        <div class="shared-doc-storage-note">Excel/PPT/Word는 앱 바로열기 · PDF는 브라우저 열기</div>
+        <div class="shared-doc-storage-note">Excel/PPT/Word 앱 바로열기 · 교체 전 파일은 이전 버전 자동보관</div>
         <div id="sharedDocList" class="shared-doc-list"></div>
       </section>
       <section class="office-panel">
@@ -3666,6 +3743,11 @@ db.ref(officeMemoPath).on("value",snap=>{
 
       db.ref(sharedDocsPath).on("value",snap=>{
         state.sharedDocs=snap.val()||{};
+        if(state.main==="office")renderSharedDocs();
+      });
+
+      db.ref(sharedDocVersionsPath).on("value",snap=>{
+        state.sharedDocVersions=snap.val()||{};
         if(state.main==="office")renderSharedDocs();
       });
 
