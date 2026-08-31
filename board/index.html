@@ -764,6 +764,58 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     box-shadow:0 16px 44px rgba(15,23,42,.36);
   }
 }
+
+/* v2.41 PC 독립 팝업 강화 */
+.floating-form-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin:-17px -17px 12px;
+  padding:12px 12px 12px 17px;
+  border-bottom:1px solid #e2e8f0;
+  background:#f8fafc;
+  position:sticky;
+  top:-17px;
+  z-index:4;
+}
+.floating-form-head h2{margin:0!important;padding:0!important;border:0!important;background:transparent!important;position:static!important}
+.floating-form-head .close-x{flex:0 0 auto}
+
+@media(min-width:901px){
+  .modal.pc-floating-window .floating-form-head{cursor:move;user-select:none}
+  .floating-snapshot{
+    position:fixed;
+    z-index:450;
+    background:#fff;
+    border:1px solid #b9c5d6;
+    border-radius:16px;
+    box-shadow:0 14px 38px rgba(15,23,42,.30);
+    max-height:88vh;
+    overflow:auto;
+    resize:both;
+    min-width:360px;
+    min-height:160px;
+  }
+  .floating-snapshot .detail-head,
+  .floating-snapshot .floating-form-head,
+  .floating-snapshot .bulk-head{
+    cursor:move;
+    user-select:none;
+  }
+  .floating-snapshot .snapshot-close{
+    position:absolute;
+    top:8px;
+    right:8px;
+    z-index:20;
+  }
+  .floating-snapshot input,
+  .floating-snapshot select,
+  .floating-snapshot textarea,
+  .floating-snapshot button:not(.snapshot-close){
+    pointer-events:none;
+  }
+}
 </style>
 </head>
 <body>
@@ -935,7 +987,10 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
 
 <div id="calendarMemoModal" class="modal hidden">
   <div class="memo-modal-card">
-    <h2 id="calendarModalTitle">업무일정 추가</h2>
+    <div class="floating-form-head">
+      <h2 id="calendarModalTitle">업무일정 추가</h2>
+      <button id="calendarModalCloseX" class="close-x" type="button">×</button>
+    </div>
     <input id="calendarDateInput" type="date" class="calendar-form-input">
     <input id="calendarTitleInput" type="text" class="calendar-form-input" placeholder="일정 제목">
     <select id="calendarWriterInput" class="calendar-form-input">
@@ -1004,7 +1059,10 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
 
 <div id="officeMemoModal" class="modal hidden">
   <div class="memo-modal-card">
-    <h2 id="officeMemoModalTitle">순천지사메모 추가</h2>
+    <div class="floating-form-head">
+      <h2 id="officeMemoModalTitle">순천지사메모 추가</h2>
+      <button id="officeMemoCloseX" class="close-x" type="button">×</button>
+    </div>
     <select id="officeMemoWriter" style="width:100%;height:42px;border:1px solid #ccd3db;border-radius:9px;padding:0 10px;margin-bottom:8px;background:#fff">
       <option value="">작성자 선택</option>
       <option>김준호</option>
@@ -1038,7 +1096,10 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
 
 <div id="workAddModal" class="modal hidden">
   <div class="memo-modal-card work-add-stable">
-    <h2 id="workAddTitle">장애 추가</h2>
+    <div class="floating-form-head">
+      <h2 id="workAddTitle">장애 추가</h2>
+      <button id="workAddCloseX" class="close-x" type="button">×</button>
+    </div>
     <select id="workAddBank" style="width:100%;height:42px;border:1px solid #ccd3db;border-radius:9px;padding:0 10px;margin-bottom:8px;background:#fff">
       <option value="">은행 선택</option>
     </select>
@@ -1069,7 +1130,10 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
 
 <div id="memoModal" class="modal hidden">
   <div class="memo-modal-card">
-    <h2 id="memoModalTitle">메모 추가</h2>
+    <div class="floating-form-head">
+      <h2 id="memoModalTitle">메모 추가</h2>
+      <button id="memoModalCloseX" class="close-x" type="button">×</button>
+    </div>
     <select id="memoWorkType" style="width:100%;height:42px;border:1px solid #ccd3db;border-radius:9px;padding:0 10px;margin-bottom:8px;background:#fff">
       <option value="장애">장애</option>
       <option value="설치">설치</option>
@@ -2271,6 +2335,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
 
       const handle=
         card.querySelector(".detail-head") ||
+        card.querySelector(".floating-form-head") ||
         card.querySelector(".bulk-head") ||
         card.querySelector(":scope > h2");
 
@@ -2311,14 +2376,90 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     centerFloatingWindow(el);
   }
 
+
+  function makeIndependentSnapshot(el){
+    if(!el||!isPcFloatingMode()||el.classList.contains("hidden"))return null;
+    const card=modalWindowCard(el);
+    if(!card)return null;
+
+    const rect=card.getBoundingClientRect();
+    const snap=card.cloneNode(true);
+    snap.removeAttribute("id");
+    snap.querySelectorAll("[id]").forEach(x=>x.removeAttribute("id"));
+    snap.classList.add("floating-snapshot");
+    snap.style.left=Math.max(0,rect.left)+"px";
+    snap.style.top=Math.max(0,rect.top)+"px";
+    snap.style.width=Math.max(360,rect.width)+"px";
+    snap.style.height="auto";
+    snap.style.zIndex=String(++floatingWindowZ);
+
+    // 이전 창은 내용 확인용 독립 창으로 유지.
+    // 같은 계열 새 창이 열려도 이 창은 사라지지 않음.
+    const x=document.createElement("button");
+    x.type="button";
+    x.className="close-x snapshot-close";
+    x.textContent="×";
+    x.onclick=()=>snap.remove();
+    snap.appendChild(x);
+
+    document.body.appendChild(snap);
+
+    const handle=
+      snap.querySelector(".detail-head") ||
+      snap.querySelector(".floating-form-head") ||
+      snap.querySelector(".bulk-head") ||
+      snap.querySelector("h2");
+
+    if(handle){
+      handle.addEventListener("pointerdown",e=>{
+        if(e.button!==0)return;
+        if(e.target.closest("button,input,select,textarea,a"))return;
+        floatingWindowZ+=1;
+        snap.style.zIndex=String(floatingWindowZ);
+        const r=snap.getBoundingClientRect();
+        const sx=e.clientX,sy=e.clientY,sl=r.left,st=r.top;
+        document.body.style.userSelect="none";
+        const move=ev=>{
+          const maxLeft=Math.max(0,window.innerWidth-snap.offsetWidth);
+          const maxTop=Math.max(0,window.innerHeight-60);
+          snap.style.left=Math.min(maxLeft,Math.max(0,sl+(ev.clientX-sx)))+"px";
+          snap.style.top=Math.min(maxTop,Math.max(0,st+(ev.clientY-sy)))+"px";
+        };
+        const up=()=>{
+          document.removeEventListener("pointermove",move);
+          document.removeEventListener("pointerup",up);
+          document.body.style.userSelect="";
+        };
+        document.addEventListener("pointermove",move);
+        document.addEventListener("pointerup",up,{once:true});
+        e.preventDefault();
+      });
+    }
+    snap.addEventListener("pointerdown",()=>{
+      floatingWindowZ+=1;
+      snap.style.zIndex=String(floatingWindowZ);
+    });
+    return snap;
+  }
+
   function showBoardModal(id){
     const el=$(id);
     if(!el)return;
+
+    const wasAlreadyOpen=!el.classList.contains("hidden");
+    if(isPcFloatingMode() && wasAlreadyOpen){
+      makeIndependentSnapshot(el);
+    }
+
     if(!isPcFloatingMode())lockPageScroll();
     el.classList.remove("hidden");
     if(isPcFloatingMode())setupFloatingWindow(el);
-    modalHistoryStack.push(id);
-    history.pushState({bankBoardModal:true,id,nonce:Date.now()},"");
+
+    // 같은 DOM 팝업을 다시 열 때 history stack 중복은 만들지 않음
+    if(!wasAlreadyOpen){
+      modalHistoryStack.push(id);
+      history.pushState({bankBoardModal:true,id,nonce:Date.now()},"");
+    }
   }
 
   function hideBoardModalDirect(id){
@@ -2953,6 +3094,11 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   };
 
   $("officeMemoCancel").onclick=closeOfficeMemoModal;
+  $("officeMemoCloseX").onclick=closeOfficeMemoModal;
+  $("calendarModalCloseX").onclick=()=>requestCloseBoardModal("calendarMemoModal");
+  $("workAddCloseX").onclick=closeWorkAddModal;
+  $("memoModalCloseX").onclick=closeMemoModal;
+
 
   $("officeMemoDetailClose").onclick=()=>requestCloseBoardModal("officeMemoDetailModal");
   if($("officeMemoDetailCloseBtn"))$("officeMemoDetailCloseBtn").onclick=()=>requestCloseBoardModal("officeMemoDetailModal");
