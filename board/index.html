@@ -851,6 +851,36 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   font-weight:1000;
   vertical-align:1px;
 }
+
+/* v2.43 PC 공용 문서함 */
+@media(min-width:1200px){
+  body.office-wide .page{max-width:1760px!important}
+  body.office-wide .office-dashboard{
+    grid-template-columns:minmax(220px,.62fr) minmax(250px,.72fr) minmax(560px,1.45fr) minmax(270px,.72fr)!important;
+  }
+  .shared-doc-panel{
+    display:flex;background:#fff;border:1px solid #d9e0e9;border-radius:12px;
+    overflow:hidden;box-shadow:0 2px 10px rgba(15,23,42,.04);flex-direction:column
+  }
+  .shared-doc-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;border-bottom:1px solid #e2e8f0;background:#f8fafc}
+  .shared-doc-head strong{font-size:14px;font-weight:900;color:#1f2937}
+  .shared-doc-count{font-size:11px;color:#64748b;font-weight:800}
+  .shared-doc-actions{padding:9px;border-bottom:1px solid #e2e8f0}
+  .shared-doc-upload{width:100%;border:0;background:#1f6fe5;color:#fff;border-radius:8px;padding:9px 10px;font-weight:900;cursor:pointer}
+  .shared-doc-list{max-height:650px;overflow:auto}
+  .shared-doc-row{padding:10px 11px;border-bottom:1px solid #e2e8f0;background:#fff}
+  .shared-doc-row:nth-child(even){background:#effafa}
+  .shared-doc-row:hover{background:#eef6ff}
+  .shared-doc-name{font-size:12px;font-weight:900;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .shared-doc-meta{font-size:9px;color:#7b8794;margin-top:4px;line-height:1.4}
+  .shared-doc-buttons{display:flex;gap:5px;margin-top:7px}
+  .shared-doc-buttons button{border:1px solid #cbd5e1;background:#fff;border-radius:6px;padding:5px 7px;font-size:9px;font-weight:900;cursor:pointer}
+  .shared-doc-buttons .replace{color:#1557a8}
+  .shared-doc-buttons .delete{color:#b42318;background:#fff5f5;border-color:#f3b5b5}
+  .shared-doc-empty{padding:34px 10px;text-align:center;color:#94a3b8;font-size:11px;line-height:1.6}
+}
+@media(max-width:1199px){.shared-doc-panel{display:none!important}}
+
 </style>
 </head>
 <body>
@@ -1191,6 +1221,8 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   </div>
 </div>
 
+<input id="sharedDocFileInput" type="file" hidden multiple>
+<input id="sharedDocReplaceInput" type="file" hidden>
 <script src="../config.js"></script>
 <script src="../data.js"></script>
 <script src="./branches.js"></script>
@@ -1259,8 +1291,8 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     return {cfg,memoPath};
   }
 
-  let db,memoPath="bankMap/memos",historyPath="bankMap/memoHistory",officeMemoPath="bankMap/officeMemos",officeCalendarPath="bankMap/officeCalendar";
-  const state={memos:{},weekHistory:[],officeMemos:{},officeCalendar:{},main:"office",sub:"active",staff:null,bankFilter:"",writerFilter:"",search:"",page:1,pageSize:20,selected:null,bulkSelected:new Set(),bulkSearch:"",detailSelected:new Set(),listSelected:new Set(),editMemo:null,calendarCursor:new Date(),calendarEditKey:null,officeDetailKey:null,calendarViewKey:null,officeEditKey:null,calendarDayKey:null,calendarDaySelected:new Set()};
+  let db,memoPath="bankMap/memos",historyPath="bankMap/memoHistory",officeMemoPath="bankMap/officeMemos",officeCalendarPath="bankMap/officeCalendar",sharedDocsPath="bankMap/sharedDocs";
+  const state={memos:{},weekHistory:[],officeMemos:{},officeCalendar:{},sharedDocs:{},sharedDocReplaceKey:null,main:"office",sub:"active",staff:null,bankFilter:"",writerFilter:"",search:"",page:1,pageSize:20,selected:null,bulkSelected:new Set(),bulkSearch:"",detailSelected:new Set(),listSelected:new Set(),editMemo:null,calendarCursor:new Date(),calendarEditKey:null,officeDetailKey:null,calendarViewKey:null,officeEditKey:null,calendarDayKey:null,calendarDaySelected:new Set()};
 
   const esc=s=>String(s??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
   const fmt=ms=>{if(!ms)return "";try{return new Intl.DateTimeFormat("ko-KR",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}).format(new Date(ms))}catch{return ""}};
@@ -1444,6 +1476,115 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     return officeMemoItems().filter(m=>state.sub==="done"?!!m.done:!m.done);
   }
 
+
+  function sharedDocItems(){
+    return Object.entries(state.sharedDocs||{}).map(([key,v])=>({key,...(v||{})}))
+      .sort((a,b)=>(Number(b.updatedAt)||0)-(Number(a.updatedAt)||0));
+  }
+
+  function sharedDocSize(n){
+    n=Number(n)||0;
+    if(n<1024)return n+" B";
+    if(n<1024*1024)return (n/1024).toFixed(1)+" KB";
+    return (n/1024/1024).toFixed(1)+" MB";
+  }
+
+  function sharedDocBlob(doc){
+    const raw=String(doc.data||"");
+    const comma=raw.indexOf(",");
+    const b64=comma>=0?raw.slice(comma+1):raw;
+    const bin=atob(b64);
+    const bytes=new Uint8Array(bin.length);
+    for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
+    return new Blob([bytes],{type:doc.type||"application/octet-stream"});
+  }
+
+  function openSharedDoc(doc){
+    try{
+      const blob=sharedDocBlob(doc);
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement("a");
+      a.href=url;
+      a.download=doc.name||"document";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),30000);
+    }catch(err){
+      alert("문서를 여는 중 오류가 발생했습니다.\\n"+err.message);
+    }
+  }
+
+  function renderSharedDocs(){
+    const list=$("sharedDocList"),count=$("sharedDocCount");
+    if(!list||!count)return;
+    const items=sharedDocItems();
+    count.textContent=`${items.length}개`;
+    if(!items.length){
+      list.innerHTML='<div class="shared-doc-empty">등록된 공용 문서가 없습니다.<br>문서 올리기로 Excel, PowerPoint, PDF 등을 등록할 수 있습니다.</div>';
+      return;
+    }
+    list.innerHTML="";
+    items.forEach(doc=>{
+      const row=document.createElement("div");
+      row.className="shared-doc-row";
+      row.title="더블클릭하면 파일을 엽니다.";
+      row.innerHTML=`<div class="shared-doc-name">📎 ${esc(doc.name||"문서")}</div>
+        <div class="shared-doc-meta">${esc(sharedDocSize(doc.size))} · ${esc(doc.uploader||"등록자 미지정")}<br>${esc(fmt(doc.updatedAt||doc.createdAt))}</div>
+        <div class="shared-doc-buttons">
+          <button class="open" type="button">열기</button>
+          <button class="replace" type="button">새 파일로 교체</button>
+          <button class="delete" type="button">삭제</button>
+        </div>`;
+      row.ondblclick=()=>openSharedDoc(doc);
+      row.querySelector(".open").onclick=e=>{e.stopPropagation();openSharedDoc(doc);};
+      row.querySelector(".replace").onclick=e=>{
+        e.stopPropagation();
+        state.sharedDocReplaceKey=doc.key;
+        $("sharedDocReplaceInput").value="";
+        $("sharedDocReplaceInput").click();
+      };
+      row.querySelector(".delete").onclick=async e=>{
+        e.stopPropagation();
+        if(confirm(`"${doc.name||"문서"}"을(를) 공용 문서함에서 삭제할까요?`)){
+          await db.ref(`${sharedDocsPath}/${doc.key}`).remove();
+        }
+      };
+      list.appendChild(row);
+    });
+  }
+
+  async function fileToDataUrl(file){
+    return await new Promise((resolve,reject)=>{
+      const r=new FileReader();
+      r.onload=()=>resolve(String(r.result||""));
+      r.onerror=()=>reject(r.error||new Error("파일 읽기 실패"));
+      r.readAsDataURL(file);
+    });
+  }
+
+  async function uploadSharedDocFile(file,replaceKey=null){
+    const MAX=3*1024*1024;
+    if(!file)return;
+    if(file.size>MAX){
+      alert(`"${file.name}"은 ${(file.size/1024/1024).toFixed(1)}MB입니다.\\n현재 공용 문서함은 파일당 3MB까지 등록할 수 있습니다.`);
+      return;
+    }
+    const uploader=prompt("등록자 이름을 입력해주세요.","")||"";
+    const data=await fileToDataUrl(file);
+    const now=firebase.database.ServerValue.TIMESTAMP;
+    if(replaceKey){
+      const old=(state.sharedDocs||{})[replaceKey]||{};
+      await db.ref(`${sharedDocsPath}/${replaceKey}`).update({
+        name:file.name,type:file.type||"",size:file.size,data,uploader,
+        createdAt:old.createdAt||now,updatedAt:now
+      });
+    }else{
+      const ref=db.ref(sharedDocsPath).push();
+      await ref.set({name:file.name,type:file.type||"",size:file.size,data,uploader,createdAt:now,updatedAt:now});
+    }
+  }
+
   function renderOfficeMemos(){
     const items=officeVisibleItems();
     const el=$("list");
@@ -1451,6 +1592,11 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     $("viewCount").textContent=`${items.length}건`;
 
     el.innerHTML=`<div class="office-dashboard">
+      <section class="shared-doc-panel">
+        <div class="shared-doc-head"><strong>공용 문서</strong><span id="sharedDocCount" class="shared-doc-count">0개</span></div>
+        <div class="shared-doc-actions"><button id="sharedDocUpload" class="shared-doc-upload" type="button">+ 문서 올리기</button></div>
+        <div id="sharedDocList" class="shared-doc-list"></div>
+      </section>
       <section class="office-panel">
         <div class="office-panel-head">
           <div><strong>${state.sub==="done"?"완료 메모":"메모 현황"}</strong> <span class="office-panel-count">${items.length}건</span></div>
@@ -1476,6 +1622,8 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     </div>`;
 
     $("officeInlineAdd").onclick=openOfficeMemoModal;
+    $("sharedDocUpload").onclick=()=>$("sharedDocFileInput").click();
+    renderSharedDocs();
     const list=$("officeList");
     if(!items.length){
       list.innerHTML='<div class="office-empty-v235">표시할 지사메모가 없습니다.</div>';
@@ -2148,6 +2296,8 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   function setActiveNav(){}
 
   function render(){
+    document.body.classList.toggle("office-wide",state.main==="office");
+
     if($("pageSizeFilter"))$("pageSizeFilter").value=String(state.pageSize);
     renderTopTabs();
     renderDrawer();
@@ -3404,9 +3554,33 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       bindWeeklyHistory();
       setInterval(bindWeeklyHistory,60000);
 
-      db.ref(officeMemoPath).on("value",snap=>{
+      
+  $("sharedDocFileInput").onchange=async e=>{
+    const files=Array.from(e.target.files||[]);
+    e.target.value="";
+    for(const file of files){
+      try{await uploadSharedDocFile(file,null);}
+      catch(err){alert(`"${file.name}" 업로드 실패\\n${err.message}`);}
+    }
+  };
+  $("sharedDocReplaceInput").onchange=async e=>{
+    const file=(e.target.files||[])[0];
+    e.target.value="";
+    const key=state.sharedDocReplaceKey;
+    state.sharedDocReplaceKey=null;
+    if(!file||!key)return;
+    try{await uploadSharedDocFile(file,key);}
+    catch(err){alert(`파일 교체 실패\\n${err.message}`);}
+  };
+
+db.ref(officeMemoPath).on("value",snap=>{
         state.officeMemos=snap.val()||{};
         render();
+      });
+
+      db.ref(sharedDocsPath).on("value",snap=>{
+        state.sharedDocs=snap.val()||{};
+        if(state.main==="office")renderSharedDocs();
       });
 
       db.ref(officeCalendarPath).on("value",snap=>{
