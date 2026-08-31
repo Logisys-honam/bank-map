@@ -582,6 +582,35 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   .calendar-day-list{margin:0 7px 10px}
   .calendar-day-item{grid-template-columns:34px 1fr}
 }
+
+/* v2.38 달력 완료/휴일 표시 */
+#calendarDayAdd{
+  background:#1f6fe5!important;
+  color:#fff!important;
+  border-color:#1f6fe5!important;
+}
+.calendar-dow.weekend,.calendar-day.weekend .calendar-day-num{color:#d92d20!important}
+.calendar-day.holiday .calendar-day-num{color:#d92d20!important;font-weight:1000}
+.calendar-holiday-name{
+  font-size:9px;color:#d92d20;font-weight:900;line-height:1.1;margin-top:2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+}
+.calendar-event.done{
+  text-decoration:line-through;
+  color:#7b8794!important;
+  opacity:.78
+}
+.calendar-day-title.done{
+  text-decoration:line-through;
+  color:#7b8794
+}
+.mini-action.calendar-complete{
+  background:#d9f7e5;color:#087a42
+}
+.calendar-view-done{
+  display:inline-block;padding:2px 7px;border-radius:999px;
+  font-size:10px;font-weight:900;background:#d9f7e5;color:#087a42
+}
 </style>
 </head>
 <body>
@@ -806,10 +835,12 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       <div class="info-label">일자</div><div id="calendarViewDate" class="info-value">-</div>
       <div class="info-label">작성자</div><div id="calendarViewWriter" class="info-value">-</div>
       <div class="info-label">일정 제목</div><div id="calendarViewSubject" class="info-value">-</div>
+      <div class="info-label">상태</div><div id="calendarViewState" class="info-value">진행중</div>
       <div class="info-label">메모</div><div id="calendarViewMemo" class="info-value detail-summary-value">-</div>
     </div>
 
     <div class="modal-buttons calendar-view-buttons">
+      <button id="calendarViewComplete" class="btn primary">완료</button>
       <button id="calendarViewEdit" class="btn primary">수정</button>
       <button id="calendarViewDelete" class="btn danger">삭제</button>
       <span class="calendar-modal-spacer"></span>
@@ -1266,6 +1297,31 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     showBoardModal("officeMemoModal");
   }
 
+  const KR_HOLIDAYS_2026={
+    "2026-01-01":"신정",
+    "2026-02-16":"설날 연휴",
+    "2026-02-17":"설날",
+    "2026-02-18":"설날 연휴",
+    "2026-03-01":"삼일절",
+    "2026-03-02":"대체공휴일",
+    "2026-05-05":"어린이날",
+    "2026-05-24":"부처님오신날",
+    "2026-05-25":"대체공휴일",
+    "2026-06-03":"지방선거",
+    "2026-06-06":"현충일",
+    "2026-08-15":"광복절",
+    "2026-08-17":"대체공휴일",
+    "2026-09-24":"추석 연휴",
+    "2026-09-25":"추석",
+    "2026-09-26":"추석 연휴",
+    "2026-10-03":"개천절",
+    "2026-10-05":"대체공휴일",
+    "2026-10-09":"한글날",
+    "2026-12-25":"성탄절"
+  };
+  function holidayName(key){return KR_HOLIDAYS_2026[key]||""}
+  function isWeekendDate(d){const n=d.getDay();return n===0||n===6}
+
   function monthKeyParts(d){return {y:d.getFullYear(),m:d.getMonth()}}
   function dateKeyLocal(y,m,d){return `${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`}
   function calendarItemsForDate(key){return Object.entries(state.officeCalendar||{}).map(([id,v])=>({id,...(v||{})})).filter(x=>x.date===key).sort((a,b)=>(Number(a.createdAt)||0)-(Number(b.createdAt)||0))}
@@ -1275,7 +1331,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     const cur=state.calendarCursor instanceof Date?state.calendarCursor:new Date();
     const y=cur.getFullYear(),m=cur.getMonth();
     $("calendarTitle").textContent=`${y}년 ${m+1}월`;
-    grid.innerHTML=["일","월","화","수","목","금","토"].map(x=>`<div class="calendar-dow">${x}</div>`).join("");
+    grid.innerHTML=["일","월","화","수","목","금","토"].map((x,i)=>`<div class="calendar-dow${i===0||i===6?" weekend":""}">${x}</div>`).join("");
     const first=new Date(y,m,1), start=new Date(y,m,1-first.getDay());
     const today=todayKey();
     for(let i=0;i<42;i++){
@@ -1283,8 +1339,12 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       const key=dateKeyLocal(d.getFullYear(),d.getMonth(),d.getDate());
       const events=calendarItemsForDate(key);
       const cell=document.createElement("div");
-      cell.className="calendar-day"+(d.getMonth()!==m?" other":"")+(key===today?" today":"");
-      cell.innerHTML=`<div class="calendar-day-num">${d.getDate()}</div>`+events.slice(0,3).map(ev=>`<div class="calendar-event" data-event-id="${esc(ev.id)}">${esc(ev.title||ev.memo||"일정")}</div>`).join("")+(events.length>3?`<div class="calendar-more">+${events.length-3}건</div>`:"");
+      const hName=holidayName(key);
+      cell.className="calendar-day"+(d.getMonth()!==m?" other":"")+(key===today?" today":"")+(isWeekendDate(d)?" weekend":"")+(hName?" holiday":"");
+      cell.innerHTML=`<div class="calendar-day-num">${d.getDate()}</div>`+
+        (hName?`<div class="calendar-holiday-name">${esc(hName)}</div>`:"")+
+        events.slice(0,3).map(ev=>`<div class="calendar-event${ev.done?" done":""}" data-event-id="${esc(ev.id)}">${esc(ev.title||ev.memo||"일정")}</div>`).join("")+
+        (events.length>3?`<div class="calendar-more">+${events.length-3}건</div>`:"");
       cell.onclick=()=>{
         if(events.length)openCalendarDayList(key);
         else openCalendarModal(key,null);
@@ -1324,10 +1384,11 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
             <input type="checkbox" class="calendar-day-check-input" ${state.calendarDaySelected.has(ev.id)?"checked":""}>
           </div>
           <div class="calendar-day-body">
-            <div class="calendar-day-title">${esc(ev.title||"일정")}</div>
+            <div class="calendar-day-title${ev.done?" done":""}">${esc(ev.title||"일정")}</div>
             <div class="calendar-day-memo">${esc(ev.memo||"")}</div>
-            <div class="calendar-day-meta">${esc(ev.writer||"작성자 미지정")}</div>
+            <div class="calendar-day-meta">${esc(ev.writer||"작성자 미지정")}${ev.done?" · 완료":""}</div>
             <div class="calendar-day-actions">
+              ${ev.done?"":'<button type="button" class="mini-action calendar-complete calendar-day-complete">완료</button>'}
               <button type="button" class="mini-action edit calendar-day-edit">수정</button>
               <button type="button" class="mini-action delete calendar-day-delete">삭제</button>
             </div>
@@ -1344,6 +1405,13 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
           updateCalendarDaySelection();
         };
         row.querySelector(".calendar-day-title").onclick=()=>openCalendarView(id);
+        const completeBtn=row.querySelector(".calendar-day-complete");
+        if(completeBtn)completeBtn.onclick=async()=>{
+          await db.ref(`${officeCalendarPath}/${id}`).update({
+            done:true,
+            completedAt:firebase.database.ServerValue.TIMESTAMP
+          });
+        };
         row.querySelector(".calendar-day-edit").onclick=()=>{
           requestCloseBoardModal("calendarDayListModal");
           setTimeout(()=>openCalendarModal(key,id),30);
@@ -1375,7 +1443,9 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     $("calendarViewDate").textContent=ev.date||"-";
     $("calendarViewWriter").textContent=ev.writer||"작성자 미지정";
     $("calendarViewSubject").textContent=ev.title||"-";
+    $("calendarViewState").innerHTML=ev.done?'<span class="calendar-view-done">완료</span>':"진행중";
     $("calendarViewMemo").textContent=ev.memo||"-";
+    $("calendarViewComplete").classList.toggle("hidden",!!ev.done);
     showBoardModal("calendarViewModal");
   }
 
@@ -2515,8 +2585,16 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     if(!db){alert("Firebase 연결이 완료되지 않았습니다.");return}
     const payload={date,title,memo,writer,updatedAt:firebase.database.ServerValue.TIMESTAMP};
     try{
-      if(state.calendarEditKey)await db.ref(`${officeCalendarPath}/${state.calendarEditKey}`).update(payload);
-      else await db.ref(officeCalendarPath).push().set({...payload,createdAt:firebase.database.ServerValue.TIMESTAMP});
+      if(state.calendarEditKey){
+        await db.ref(`${officeCalendarPath}/${state.calendarEditKey}`).update(payload);
+      }else{
+        await db.ref(officeCalendarPath).push().set({
+          ...payload,
+          done:false,
+          completedAt:null,
+          createdAt:firebase.database.ServerValue.TIMESTAMP
+        });
+      }
       state.calendarEditKey=null;requestCloseBoardModal("calendarMemoModal");
     }catch(e){console.error(e);alert("일정 저장에 실패했습니다.")}
   };
@@ -2573,6 +2651,15 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   $("calendarViewClose").onclick=()=>requestCloseBoardModal("calendarViewModal");
   $("calendarViewCloseBtn").onclick=()=>requestCloseBoardModal("calendarViewModal");
   $("calendarViewModal").onclick=e=>{if(e.target.id==="calendarViewModal")requestCloseBoardModal("calendarViewModal")};
+  $("calendarViewComplete").onclick=async()=>{
+    const ev=currentCalendarViewEvent();
+    if(!ev||ev.done)return;
+    await db.ref(`${officeCalendarPath}/${ev.id}`).update({
+      done:true,
+      completedAt:firebase.database.ServerValue.TIMESTAMP
+    });
+  };
+
   $("calendarViewEdit").onclick=()=>{
     const ev=currentCalendarViewEvent();
     if(!ev)return;
