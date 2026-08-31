@@ -256,7 +256,7 @@ button{cursor:pointer}
 .status-site{font-size:14px;font-weight:900;line-height:1.25;color:#1f2937}
 .status-site.overdue-text{color:#c62828}.status-memo.overdue-text{color:#2f3f54}
 .status-sub{font-size:10px;color:#667085;margin-top:2px}
-.status-memo{font-size:12px;font-weight:800;color:#2f3f54;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.status-memo{font-size:12px;font-weight:400;color:#2f3f54;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .status-staff,.status-writer{font-size:13px;font-weight:900;color:#27364a}
 .empty-board{padding:48px 16px;text-align:center;color:#8b95a5;font-weight:700}
 .page-note{padding:8px 10px;font-size:11px;color:#687386;text-align:right}
@@ -825,6 +825,31 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   .floating-snapshot{
     transition:box-shadow .12s ease;
   }
+}
+
+/* v2.42.3 오늘 일정 배경 강조 */
+.schedule-status-row.today-schedule{
+  background:#fff3b0!important;
+  border-left:4px solid #e0a800;
+}
+.schedule-status-row.today-schedule:hover{
+  background:#ffe98a!important;
+}
+.schedule-status-row.today-schedule .schedule-status-date,
+.schedule-status-row.today-schedule .schedule-status-title{
+  color:#5f4300;
+}
+
+.schedule-today-badge{
+  display:inline-block;
+  margin-left:6px;
+  padding:2px 7px;
+  border-radius:999px;
+  background:#e0a800;
+  color:#fff;
+  font-size:9px;
+  font-weight:1000;
+  vertical-align:1px;
 }
 </style>
 </head>
@@ -1595,10 +1620,11 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       list.innerHTML='<div class="schedule-status-empty">진행중인 일정이 없습니다.</div>';
       return;
     }
+    const today=todayKey();
     list.innerHTML=items.map(ev=>`
-      <div class="schedule-status-row" data-event-id="${esc(ev.id)}">
+      <div class="schedule-status-row${String(ev.date||"")===today?" today-schedule":""}" data-event-id="${esc(ev.id)}">
         <div class="schedule-status-top">
-          <span class="schedule-status-date">${esc(scheduleDateWithWeekday(ev.date))}</span>
+          <span class="schedule-status-date">${esc(scheduleDateWithWeekday(ev.date))}${String(ev.date||"")===today?'<span class="schedule-today-badge">오늘</span>':""}</span>
           <span class="schedule-status-state">진행중</span>
         </div>
         <div class="schedule-status-title">${esc(ev.title||"일정")}</div>
