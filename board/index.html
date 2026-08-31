@@ -881,6 +881,26 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
 }
 @media(max-width:1199px){.shared-doc-panel{display:none!important}}
 
+
+/* v2.44 Firebase Storage 공용 문서함 */
+.shared-doc-buttons .open-app{
+  background:#e8f1ff!important;
+  color:#1557a8!important;
+  border-color:#b9d3ff!important;
+}
+.shared-doc-buttons .open-web{
+  background:#f8fafc!important;
+  color:#344054!important;
+}
+.shared-doc-storage-note{
+  padding:7px 9px;
+  font-size:9px;
+  line-height:1.45;
+  color:#667085;
+  background:#fffdf2;
+  border-bottom:1px solid #f2e7b4;
+}
+
 </style>
 </head>
 <body>
@@ -1230,6 +1250,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
 
 <script>
 (() => {
@@ -1291,7 +1312,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     return {cfg,memoPath};
   }
 
-  let db,memoPath="bankMap/memos",historyPath="bankMap/memoHistory",officeMemoPath="bankMap/officeMemos",officeCalendarPath="bankMap/officeCalendar",sharedDocsPath="bankMap/sharedDocs";
+  let db,storage,memoPath="bankMap/memos",historyPath="bankMap/memoHistory",officeMemoPath="bankMap/officeMemos",officeCalendarPath="bankMap/officeCalendar",sharedDocsPath="bankMap/sharedDocs";
   const state={memos:{},weekHistory:[],officeMemos:{},officeCalendar:{},sharedDocs:{},sharedDocReplaceKey:null,main:"office",sub:"active",staff:null,bankFilter:"",writerFilter:"",search:"",page:1,pageSize:20,selected:null,bulkSelected:new Set(),bulkSearch:"",detailSelected:new Set(),listSelected:new Set(),editMemo:null,calendarCursor:new Date(),calendarEditKey:null,officeDetailKey:null,calendarViewKey:null,officeEditKey:null,calendarDayKey:null,calendarDaySelected:new Set()};
 
   const esc=s=>String(s??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
@@ -1489,30 +1510,44 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     return (n/1024/1024).toFixed(1)+" MB";
   }
 
-  function sharedDocBlob(doc){
-    const raw=String(doc.data||"");
-    const comma=raw.indexOf(",");
-    const b64=comma>=0?raw.slice(comma+1):raw;
-    const bin=atob(b64);
-    const bytes=new Uint8Array(bin.length);
-    for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
-    return new Blob([bytes],{type:doc.type||"application/octet-stream"});
+  function sharedDocExt(name){
+    const s=String(name||"").toLowerCase();
+    const i=s.lastIndexOf(".");
+    return i>=0?s.slice(i):"";
   }
 
-  function openSharedDoc(doc){
-    try{
-      const blob=sharedDocBlob(doc);
-      const url=URL.createObjectURL(blob);
-      const a=document.createElement("a");
-      a.href=url;
-      a.download=doc.name||"document";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(()=>URL.revokeObjectURL(url),30000);
-    }catch(err){
-      alert("문서를 여는 중 오류가 발생했습니다.\\n"+err.message);
+  function sharedDocOfficeProtocol(doc){
+    const ext=sharedDocExt(doc.name);
+    if([".xlsx",".xls",".xlsm",".csv"].includes(ext))return "ms-excel:ofe|u|";
+    if([".pptx",".ppt",".ppsx"].includes(ext))return "ms-powerpoint:ofe|u|";
+    if([".docx",".doc",".rtf"].includes(ext))return "ms-word:ofe|u|";
+    return "";
+  }
+
+  function openSharedDocInApp(doc){
+    const url=String(doc.downloadURL||"");
+    if(!url){
+      alert("이 문서는 이전 방식으로 등록된 파일입니다.\\n'새 파일로 교체'를 한 번 실행하면 앱 바로열기를 사용할 수 있습니다.");
+      return;
     }
+    const proto=sharedDocOfficeProtocol(doc);
+    if(proto){
+      // Windows Office URI scheme: Excel/PPT/Word 데스크톱 앱으로 바로 열기 시도
+      // 최초 1회 브라우저가 '외부 앱을 여시겠습니까?' 확인을 표시할 수 있습니다.
+      window.location.href=proto+url;
+      return;
+    }
+    // PDF, 이미지 등은 새 탭에서 바로 열기
+    window.open(url,"_blank","noopener,noreferrer");
+  }
+
+  function openSharedDocWeb(doc){
+    const url=String(doc.downloadURL||"");
+    if(!url){
+      alert("이 문서는 이전 DB 저장 방식입니다.\\n'새 파일로 교체' 후 다시 시도해주세요.");
+      return;
+    }
+    window.open(url,"_blank","noopener,noreferrer");
   }
 
   function renderSharedDocs(){
@@ -1528,16 +1563,19 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     items.forEach(doc=>{
       const row=document.createElement("div");
       row.className="shared-doc-row";
-      row.title="더블클릭하면 파일을 엽니다.";
+      row.title="더블클릭하면 앱으로 바로 열기를 시도합니다.";
+      const office=!!sharedDocOfficeProtocol(doc);
       row.innerHTML=`<div class="shared-doc-name">📎 ${esc(doc.name||"문서")}</div>
         <div class="shared-doc-meta">${esc(sharedDocSize(doc.size))} · ${esc(doc.uploader||"등록자 미지정")}<br>${esc(fmt(doc.updatedAt||doc.createdAt))}</div>
         <div class="shared-doc-buttons">
-          <button class="open" type="button">열기</button>
+          <button class="open-app" type="button">${office?"앱으로 열기":"바로 열기"}</button>
+          <button class="open-web" type="button">웹 열기</button>
           <button class="replace" type="button">새 파일로 교체</button>
           <button class="delete" type="button">삭제</button>
         </div>`;
-      row.ondblclick=()=>openSharedDoc(doc);
-      row.querySelector(".open").onclick=e=>{e.stopPropagation();openSharedDoc(doc);};
+      row.ondblclick=()=>openSharedDocInApp(doc);
+      row.querySelector(".open-app").onclick=e=>{e.stopPropagation();openSharedDocInApp(doc);};
+      row.querySelector(".open-web").onclick=e=>{e.stopPropagation();openSharedDocWeb(doc);};
       row.querySelector(".replace").onclick=e=>{
         e.stopPropagation();
         state.sharedDocReplaceKey=doc.key;
@@ -1546,42 +1584,80 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       };
       row.querySelector(".delete").onclick=async e=>{
         e.stopPropagation();
-        if(confirm(`"${doc.name||"문서"}"을(를) 공용 문서함에서 삭제할까요?`)){
+        if(!confirm(`"${doc.name||"문서"}"을(를) 공용 문서함에서 삭제할까요?`))return;
+        try{
+          if(storage && doc.storagePath){
+            await storage.ref(doc.storagePath).delete().catch(err=>{
+              console.warn("Storage 파일 삭제는 건너뜁니다.",err);
+            });
+          }
           await db.ref(`${sharedDocsPath}/${doc.key}`).remove();
+        }catch(err){
+          alert("문서 삭제 실패\n"+err.message);
         }
       };
       list.appendChild(row);
     });
   }
 
-  async function fileToDataUrl(file){
-    return await new Promise((resolve,reject)=>{
-      const r=new FileReader();
-      r.onload=()=>resolve(String(r.result||""));
-      r.onerror=()=>reject(r.error||new Error("파일 읽기 실패"));
-      r.readAsDataURL(file);
-    });
+  function safeStorageName(name){
+    return String(name||"file")
+      .replace(/[\\/#?[\]]/g,"_")
+      .replace(/\s+/g," ")
+      .trim();
   }
 
   async function uploadSharedDocFile(file,replaceKey=null){
-    const MAX=3*1024*1024;
     if(!file)return;
-    if(file.size>MAX){
-      alert(`"${file.name}"은 ${(file.size/1024/1024).toFixed(1)}MB입니다.\\n현재 공용 문서함은 파일당 3MB까지 등록할 수 있습니다.`);
+    if(!db||!storage){
+      alert("Firebase Storage 연결이 아직 준비되지 않았습니다.");
       return;
     }
-    const uploader=prompt("등록자 이름을 입력해주세요.","")||"";
-    const data=await fileToDataUrl(file);
-    const now=firebase.database.ServerValue.TIMESTAMP;
-    if(replaceKey){
-      const old=(state.sharedDocs||{})[replaceKey]||{};
-      await db.ref(`${sharedDocsPath}/${replaceKey}`).update({
-        name:file.name,type:file.type||"",size:file.size,data,uploader,
-        createdAt:old.createdAt||now,updatedAt:now
-      });
-    }else{
-      const ref=db.ref(sharedDocsPath).push();
-      await ref.set({name:file.name,type:file.type||"",size:file.size,data,uploader,createdAt:now,updatedAt:now});
+
+    // 실사용 문서 크기를 고려해 50MB 제한
+    const MAX=50*1024*1024;
+    if(file.size>MAX){
+      alert(`"${file.name}"은 ${(file.size/1024/1024).toFixed(1)}MB입니다.\\n현재 공용 문서함은 파일당 50MB까지 등록할 수 있습니다.`);
+      return;
+    }
+
+    const uploader=prompt("등록자 이름을 입력해주세요.",localStorage.getItem("bankBoardWriter")||"")||"";
+    if(uploader)localStorage.setItem("bankBoardWriter",uploader);
+
+    const key=replaceKey || db.ref(sharedDocsPath).push().key;
+    const old=replaceKey?((state.sharedDocs||{})[replaceKey]||{}):{};
+    const ext=sharedDocExt(file.name);
+    const storagePath=`bankBoard/sharedDocs/${key}/${Date.now()}_${safeStorageName(file.name)}`;
+    const ref=storage.ref(storagePath);
+
+    const metadata={
+      contentType:file.type||"application/octet-stream",
+      customMetadata:{
+        originalName:file.name,
+        uploader:uploader||""
+      }
+    };
+
+    const snap=await ref.put(file,metadata);
+    const downloadURL=await snap.ref.getDownloadURL();
+
+    const payload={
+      name:file.name,
+      type:file.type||"",
+      size:file.size,
+      ext,
+      storagePath,
+      downloadURL,
+      uploader,
+      createdAt:old.createdAt||firebase.database.ServerValue.TIMESTAMP,
+      updatedAt:firebase.database.ServerValue.TIMESTAMP
+    };
+
+    await db.ref(`${sharedDocsPath}/${key}`).set(payload);
+
+    // 교체 전 파일은 새 파일 등록이 성공한 뒤 삭제
+    if(replaceKey && old.storagePath && old.storagePath!==storagePath){
+      storage.ref(old.storagePath).delete().catch(err=>console.warn("이전 파일 삭제 실패",err));
     }
   }
 
@@ -1595,6 +1671,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       <section class="shared-doc-panel">
         <div class="shared-doc-head"><strong>공용 문서</strong><span id="sharedDocCount" class="shared-doc-count">0개</span></div>
         <div class="shared-doc-actions"><button id="sharedDocUpload" class="shared-doc-upload" type="button">+ 문서 올리기</button></div>
+        <div class="shared-doc-storage-note">Excel/PPT/Word는 앱 바로열기 · PDF는 브라우저 열기</div>
         <div id="sharedDocList" class="shared-doc-list"></div>
       </section>
       <section class="office-panel">
@@ -3524,6 +3601,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
 
       const app=firebase.initializeApp(loaded.cfg,"bankWorkBoard");
       db=app.database();
+      storage=app.storage();
       await app.auth().signInAnonymously();
 
       db.ref(memoPath).on("value",snap=>{
