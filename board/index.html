@@ -715,6 +715,55 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   #calendarViewSubject{font-size:14px}
   #calendarViewMemo{font-size:14px;line-height:1.55}
 }
+
+/* v2.40 PC 팝업 = 이동 가능한 독립 창 */
+@media(min-width:901px){
+  .modal{
+    background:transparent!important;
+    pointer-events:none;
+    align-items:flex-start!important;
+    justify-content:flex-start!important;
+    padding:0!important;
+  }
+  .modal > .detail-card,
+  .modal > .memo-modal-card,
+  .modal > .bulk-modal-card{
+    pointer-events:auto;
+  }
+  .modal.pc-floating-window > .detail-card,
+  .modal.pc-floating-window > .memo-modal-card,
+  .modal.pc-floating-window > .bulk-modal-card{
+    position:fixed!important;
+    margin:0!important;
+    max-height:88vh;
+    resize:both;
+    overflow:auto;
+    min-width:360px;
+    min-height:160px;
+    border:1px solid #b9c5d6;
+    box-shadow:0 12px 34px rgba(15,23,42,.28);
+  }
+  .modal.pc-floating-window .detail-head,
+  .modal.pc-floating-window .bulk-head,
+  .modal.pc-floating-window .memo-modal-card > h2{
+    cursor:move;
+    user-select:none;
+  }
+  .modal.pc-floating-window .memo-modal-card > h2{
+    margin:-17px -17px 12px!important;
+    padding:14px 17px 12px;
+    border-bottom:1px solid #e2e8f0;
+    background:#f8fafc;
+    position:sticky;
+    top:-17px;
+    z-index:3;
+  }
+  .modal.pc-floating-window.window-active > .detail-card,
+  .modal.pc-floating-window.window-active > .memo-modal-card,
+  .modal.pc-floating-window.window-active > .bulk-modal-card{
+    box-shadow:0 16px 44px rgba(15,23,42,.36);
+  }
+}
 </style>
 </head>
 <body>
@@ -2168,18 +2217,116 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     }
   }
 
+
+  let floatingWindowZ=300;
+
+  function isPcFloatingMode(){
+    return window.matchMedia("(min-width:901px)").matches;
+  }
+
+  function modalWindowCard(el){
+    if(!el)return null;
+    return el.querySelector(":scope > .detail-card, :scope > .memo-modal-card, :scope > .bulk-modal-card");
+  }
+
+  function bringFloatingWindowToFront(el){
+    if(!el||!isPcFloatingMode())return;
+    document.querySelectorAll(".modal.pc-floating-window").forEach(m=>m.classList.remove("window-active"));
+    floatingWindowZ+=1;
+    el.style.zIndex=String(floatingWindowZ);
+    el.classList.add("window-active");
+  }
+
+  function centerFloatingWindow(el){
+    if(!el||!isPcFloatingMode())return;
+    const card=modalWindowCard(el);
+    if(!card)return;
+    card.style.left="";
+    card.style.top="";
+    card.style.right="";
+    card.style.bottom="";
+    card.style.transform="";
+    card.style.position="fixed";
+    requestAnimationFrame(()=>{
+      const r=card.getBoundingClientRect();
+      const left=Math.max(10,Math.round((window.innerWidth-r.width)/2));
+      const top=Math.max(10,Math.round((window.innerHeight-r.height)/2));
+      card.style.left=left+"px";
+      card.style.top=top+"px";
+    });
+  }
+
+  function setupFloatingWindow(el){
+    if(!el||!isPcFloatingMode())return;
+    const card=modalWindowCard(el);
+    if(!card)return;
+
+    el.classList.add("pc-floating-window");
+    bringFloatingWindowToFront(el);
+
+    if(!card.dataset.pcFloatingReady){
+      card.dataset.pcFloatingReady="1";
+
+      card.addEventListener("pointerdown",()=>bringFloatingWindowToFront(el));
+
+      const handle=
+        card.querySelector(".detail-head") ||
+        card.querySelector(".bulk-head") ||
+        card.querySelector(":scope > h2");
+
+      if(handle){
+        handle.addEventListener("pointerdown",e=>{
+          if(e.button!==0)return;
+          if(e.target.closest("button,input,select,textarea,a"))return;
+
+          bringFloatingWindowToFront(el);
+          const rect=card.getBoundingClientRect();
+          const startX=e.clientX,startY=e.clientY;
+          const startLeft=rect.left,startTop=rect.top;
+          handle.setPointerCapture?.(e.pointerId);
+          document.body.style.userSelect="none";
+
+          const move=ev=>{
+            const maxLeft=Math.max(0,window.innerWidth-card.offsetWidth);
+            const maxTop=Math.max(0,window.innerHeight-60);
+            const left=Math.min(maxLeft,Math.max(0,startLeft+(ev.clientX-startX)));
+            const top=Math.min(maxTop,Math.max(0,startTop+(ev.clientY-startY)));
+            card.style.left=left+"px";
+            card.style.top=top+"px";
+          };
+          const up=()=>{
+            document.removeEventListener("pointermove",move);
+            document.removeEventListener("pointerup",up);
+            document.body.style.userSelect="";
+          };
+          document.addEventListener("pointermove",move);
+          document.addEventListener("pointerup",up,{once:true});
+          e.preventDefault();
+        });
+      }
+    }
+
+    // PC에서는 팝업 바깥을 눌러도 닫히지 않음.
+    // 창을 연 상태로 뒤쪽 업무보드도 계속 클릭 가능.
+    centerFloatingWindow(el);
+  }
+
   function showBoardModal(id){
     const el=$(id);
     if(!el)return;
-    lockPageScroll();
+    if(!isPcFloatingMode())lockPageScroll();
     el.classList.remove("hidden");
+    if(isPcFloatingMode())setupFloatingWindow(el);
     modalHistoryStack.push(id);
     history.pushState({bankBoardModal:true,id,nonce:Date.now()},"");
   }
 
   function hideBoardModalDirect(id){
     const el=$(id);
-    if(el)el.classList.add("hidden");
+    if(el){
+      el.classList.add("hidden");
+      el.classList.remove("window-active");
+    }
     const idx=modalHistoryStack.lastIndexOf(id);
     if(idx>=0)modalHistoryStack.splice(idx,1);
     afterModalHidden(id);
@@ -2195,13 +2342,53 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     }
   }
 
+
+  // PC: 팝업 바깥 클릭으로 닫히지 않게 함.
+  // 모바일은 기존 방식 그대로 유지.
+  document.addEventListener("click",e=>{
+    if(!isPcFloatingMode())return;
+    const modal=e.target.closest(".modal");
+    if(!modal)return;
+    if(e.target===modal){
+      e.stopImmediatePropagation();
+      e.preventDefault();
+    }
+  },true);
+
   window.addEventListener("popstate",()=>{
     const id=modalHistoryStack.pop();
     if(!id)return;
     const el=$(id);
-    if(el)el.classList.add("hidden");
+    if(el){
+      el.classList.add("hidden");
+      el.classList.remove("window-active");
+    }
     afterModalHidden(id);
     unlockIfNoModal();
+  });
+
+
+  window.addEventListener("resize",()=>{
+    document.querySelectorAll(".modal").forEach(el=>{
+      if(el.classList.contains("hidden"))return;
+      const card=modalWindowCard(el);
+      if(!card)return;
+      if(isPcFloatingMode()){
+        el.classList.add("pc-floating-window");
+        const r=card.getBoundingClientRect();
+        const left=Math.max(0,Math.min(r.left,window.innerWidth-Math.min(card.offsetWidth,window.innerWidth)));
+        const top=Math.max(0,Math.min(r.top,window.innerHeight-60));
+        card.style.left=left+"px";
+        card.style.top=top+"px";
+      }else{
+        el.classList.remove("pc-floating-window","window-active");
+        card.style.left="";
+        card.style.top="";
+        card.style.position="";
+        card.style.width="";
+        card.style.height="";
+      }
+    });
   });
 
   function openDetail(b){
