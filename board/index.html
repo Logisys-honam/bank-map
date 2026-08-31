@@ -487,6 +487,41 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   .important-check-row{min-height:36px;font-size:12px}
   .status-time .important-mark{font-size:14px}
 }
+
+/* v2.35 지사메모 + 달력 통합 */
+.office-dashboard{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(340px,.85fr);gap:14px;align-items:start;padding:8px 0 20px}
+.office-panel,.calendar-panel{background:#fff;border:1px solid #d9e0e9;border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(15,23,42,.04)}
+.office-panel-head,.calendar-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;border-bottom:1px solid #e2e8f0;background:#f8fafc}
+.office-panel-head strong,.calendar-title{font-size:14px;font-weight:900;color:#1f2937}
+.office-panel-count{font-size:11px;color:#64748b;font-weight:800}
+.office-row.v235{padding:0;border-bottom:1px solid #e2e8f0;cursor:pointer}
+.office-row.v235:last-child{border-bottom:0}
+.office-row.v235 .office-row-main{padding:12px 14px}
+.office-row.v235:nth-child(even){background:#effafa}
+.office-row.v235.done{opacity:.72;background:#f8fafc}
+.office-row.v235 .office-text-summary{font-size:13px;font-weight:800;color:#24344d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:6px 0}
+.office-row.v235.expanded .office-text-summary{white-space:pre-wrap;overflow:visible}
+.office-row.v235 .office-expand-hint{font-size:10px;color:#94a3b8;margin-left:8px}
+.office-row.v235 .office-actions{display:none;margin-top:8px}
+.office-row.v235.expanded .office-actions{display:flex}
+.office-row.v235 .office-actions button{cursor:pointer}
+.office-empty-v235{padding:42px 16px;text-align:center;color:#94a3b8;font-size:12px}
+.calendar-nav{display:flex;align-items:center;gap:6px}
+.calendar-nav button{width:30px;height:30px;border:1px solid #cbd5e1;border-radius:7px;background:#fff;font-weight:900;cursor:pointer}
+.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);padding:8px}
+.calendar-dow{padding:7px 2px;text-align:center;font-size:10px;font-weight:900;color:#64748b}
+.calendar-day{min-height:86px;border-top:1px solid #eef2f6;border-left:1px solid #eef2f6;padding:5px;position:relative;background:#fff;cursor:pointer;overflow:hidden}
+.calendar-day:nth-child(7n){border-right:1px solid #eef2f6}
+.calendar-day.other{background:#f8fafc;color:#a0aec0}
+.calendar-day.today{background:#eef6ff}
+.calendar-day-num{font-size:11px;font-weight:900}
+.calendar-event{display:block;margin-top:4px;padding:3px 4px;border-radius:5px;background:#e8f3ff;color:#1859a9;font-size:9px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.calendar-event.important{background:#fff0f0;color:#c62828}
+.calendar-more{font-size:9px;color:#64748b;margin-top:3px;font-weight:800}
+.calendar-form-input{width:100%;height:42px;border:1px solid #ccd3db;border-radius:9px;padding:0 10px;margin-bottom:8px;background:#fff}
+.calendar-modal-buttons{display:flex;align-items:center}.calendar-modal-spacer{flex:1}.btn.danger{background:#fee2e2;color:#b91c1c}.btn.danger.hidden{display:none}
+@media(max-width:900px){.office-dashboard{grid-template-columns:1fr}.calendar-panel{order:2}.office-panel{order:1}}
+@media(max-width:700px){.office-dashboard{gap:8px;padding:4px 0 12px}.calendar-day{min-height:68px;padding:3px}.calendar-event{font-size:8px}.office-panel-head,.calendar-head{padding:10px}.office-row.v235 .office-row-main{padding:10px}}
 </style>
 </head>
 <body>
@@ -609,6 +644,26 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       <div class="info-label">작성자</div><div id="historyWriter" class="info-value">-</div>
       <div class="info-label">업무구분</div><div id="historyWorkType" class="info-value">-</div>
       <div class="info-label">메모</div><div id="historyText" class="info-value detail-summary-value">-</div>
+    </div>
+  </div>
+</div>
+
+
+<div id="calendarMemoModal" class="modal hidden">
+  <div class="memo-modal-card">
+    <h2 id="calendarModalTitle">업무일정 추가</h2>
+    <input id="calendarDateInput" type="date" class="calendar-form-input">
+    <input id="calendarTitleInput" type="text" class="calendar-form-input" placeholder="일정 제목">
+    <select id="calendarWriterInput" class="calendar-form-input">
+      <option value="">작성자 선택</option>
+      <option>김준호</option><option>장창형</option><option>김대한</option>
+    </select>
+    <textarea id="calendarMemoInput" placeholder="업무일정 메모를 입력하세요."></textarea>
+    <div class="modal-buttons calendar-modal-buttons">
+      <button id="calendarDeleteBtn" class="btn danger hidden">삭제</button>
+      <span class="calendar-modal-spacer"></span>
+      <button id="calendarCancelBtn" class="btn secondary">취소</button>
+      <button id="calendarSaveBtn" class="btn primary">저장</button>
     </div>
   </div>
 </div>
@@ -771,8 +826,8 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     return {cfg,memoPath};
   }
 
-  let db,memoPath="bankMap/memos",historyPath="bankMap/memoHistory",officeMemoPath="bankMap/officeMemos";
-  const state={memos:{},weekHistory:[],officeMemos:{},main:"office",sub:"",staff:null,bankFilter:"",writerFilter:"",search:"",page:1,pageSize:20,selected:null,bulkSelected:new Set(),bulkSearch:"",detailSelected:new Set(),listSelected:new Set(),editMemo:null};
+  let db,memoPath="bankMap/memos",historyPath="bankMap/memoHistory",officeMemoPath="bankMap/officeMemos",officeCalendarPath="bankMap/officeCalendar";
+  const state={memos:{},weekHistory:[],officeMemos:{},officeCalendar:{},main:"office",sub:"active",staff:null,bankFilter:"",writerFilter:"",search:"",page:1,pageSize:20,selected:null,bulkSelected:new Set(),bulkSearch:"",detailSelected:new Set(),listSelected:new Set(),editMemo:null,calendarCursor:new Date(),calendarEditKey:null};
 
   const esc=s=>String(s??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
   const fmt=ms=>{if(!ms)return "";try{return new Intl.DateTimeFormat("ko-KR",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}).format(new Date(ms))}catch{return ""}};
@@ -952,76 +1007,107 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       });
   }
 
+  function officeVisibleItems(){
+    return officeMemoItems().filter(m=>state.sub==="done"?!!m.done:!m.done);
+  }
+
   function renderOfficeMemos(){
-    const items=officeMemoItems();
+    const items=officeVisibleItems();
+    const el=$("list");
     $("viewTitle").textContent="순천지사메모";
     $("viewCount").textContent=`${items.length}건`;
 
-    const el=$("list");
-    el.innerHTML=`
-      <div class="office-wrap">
-        <div class="office-head">
-          <strong>순천지사 공용 메모</strong>
-          <button id="officeAddBtn" class="office-add">메모 추가</button>
+    el.innerHTML=`<div class="office-dashboard">
+      <section class="office-panel">
+        <div class="office-panel-head">
+          <div><strong>${state.sub==="done"?"완료 메모":"메모 현황"}</strong> <span class="office-panel-count">${items.length}건</span></div>
+          <button id="officeInlineAdd" class="office-add">메모 추가</button>
         </div>
         <div id="officeList"></div>
-      </div>`;
+      </section>
+      <section class="calendar-panel">
+        <div class="calendar-head">
+          <div class="calendar-nav"><button id="calPrev" type="button">‹</button><button id="calToday" type="button">오늘</button><button id="calNext" type="button">›</button></div>
+          <div id="calendarTitle" class="calendar-title"></div>
+          <button id="calAdd" class="office-add" type="button">일정 추가</button>
+        </div>
+        <div id="calendarGrid" class="calendar-grid"></div>
+      </section>
+    </div>`;
 
-    $("officeAddBtn").onclick=openOfficeMemoModal;
+    $("officeInlineAdd").onclick=openOfficeMemoModal;
     const list=$("officeList");
-
     if(!items.length){
-      list.innerHTML='<div class="office-empty">등록된 지사메모가 없습니다.</div>';
-      return;
+      list.innerHTML='<div class="office-empty-v235">표시할 지사메모가 없습니다.</div>';
+    }else{
+      items.forEach(m=>{
+        const row=document.createElement("div");
+        row.className="office-row v235"+(m.done?" done":"");
+        row.innerHTML=`<div class="office-row-main">
+          <div class="office-top"><span class="office-writer">${esc(m.writer||"작성자 미지정")}</span><span class="office-state ${m.done?"done":"todo"}">${m.done?"완료":"진행중"}</span></div>
+          <div class="office-text-summary">${esc(m.text||"")}<span class="office-expand-hint">눌러서 펼치기</span></div>
+          <div class="office-meta">${esc(fmt(m.createdAt))}${m.done&&m.completedAt?` · 완료 ${esc(fmt(m.completedAt))}`:""}</div>
+          <div class="office-actions">${m.done?"":'<button class="office-complete">완료</button>'}<button class="office-delete">삭제</button></div>
+        </div>`;
+        row.onclick=()=>row.classList.toggle("expanded");
+        const complete=row.querySelector(".office-complete");
+        if(complete)complete.onclick=async e=>{e.stopPropagation();await db.ref(`${officeMemoPath}/${m.key}`).update({done:true,completedAt:firebase.database.ServerValue.TIMESTAMP});};
+        row.querySelector(".office-delete").onclick=async e=>{e.stopPropagation();if(confirm("이 지사메모를 삭제할까요?"))await db.ref(`${officeMemoPath}/${m.key}`).remove();};
+        list.appendChild(row);
+      });
     }
 
-    items.forEach(m=>{
-      const row=document.createElement("div");
-      row.className="office-row"+(m.done?" done":"");
-      row.innerHTML=`
-        <div class="office-top">
-          <span class="office-writer">${esc(m.writer||"작성자 미지정")}</span>
-          <span class="office-state ${m.done?"done":"todo"}">${m.done?"완료":"진행중"}</span>
-        </div>
-        <div class="office-text">${esc(m.text||"")}</div>
-        <div class="office-meta">
-          ${esc(fmt(m.createdAt))}
-          ${m.done&&m.completedAt?` · 완료 ${esc(fmt(m.completedAt))}`:""}
-        </div>
-        <div class="office-actions">
-          ${m.done?"":'<button class="office-complete">완료</button>'}
-          <button class="office-delete">삭제</button>
-        </div>`;
+    renderOfficeCalendar();
+  }
 
-      const complete=row.querySelector(".office-complete");
-      if(complete){
-        complete.onclick=async()=>{
-          await db.ref(`${officeMemoPath}/${m.key}`).update({
-            done:true,
-            completedAt:firebase.database.ServerValue.TIMESTAMP
-          });
-        };
-      }
+  function monthKeyParts(d){return {y:d.getFullYear(),m:d.getMonth()}}
+  function dateKeyLocal(y,m,d){return `${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`}
+  function calendarItemsForDate(key){return Object.entries(state.officeCalendar||{}).map(([id,v])=>({id,...(v||{})})).filter(x=>x.date===key).sort((a,b)=>(Number(a.createdAt)||0)-(Number(b.createdAt)||0))}
 
-      row.querySelector(".office-delete").onclick=async()=>{
-        if(confirm("이 지사메모를 삭제할까요?")){
-          await db.ref(`${officeMemoPath}/${m.key}`).remove();
-        }
-      };
+  function renderOfficeCalendar(){
+    const grid=$("calendarGrid"); if(!grid)return;
+    const cur=state.calendarCursor instanceof Date?state.calendarCursor:new Date();
+    const y=cur.getFullYear(),m=cur.getMonth();
+    $("calendarTitle").textContent=`${y}년 ${m+1}월`;
+    grid.innerHTML=["일","월","화","수","목","금","토"].map(x=>`<div class="calendar-dow">${x}</div>`).join("");
+    const first=new Date(y,m,1), start=new Date(y,m,1-first.getDay());
+    const today=todayKey();
+    for(let i=0;i<42;i++){
+      const d=new Date(start);d.setDate(start.getDate()+i);
+      const key=dateKeyLocal(d.getFullYear(),d.getMonth(),d.getDate());
+      const events=calendarItemsForDate(key);
+      const cell=document.createElement("div");
+      cell.className="calendar-day"+(d.getMonth()!==m?" other":"")+(key===today?" today":"");
+      cell.innerHTML=`<div class="calendar-day-num">${d.getDate()}</div>`+events.slice(0,3).map(ev=>`<div class="calendar-event" data-event-id="${esc(ev.id)}">${esc(ev.title||ev.memo||"일정")}</div>`).join("")+(events.length>3?`<div class="calendar-more">+${events.length-3}건</div>`:"");
+      cell.onclick=()=>openCalendarModal(key,null);
+      cell.querySelectorAll(".calendar-event").forEach(evEl=>evEl.onclick=e=>{e.stopPropagation();openCalendarModal(key,evEl.dataset.eventId)});
+      grid.appendChild(cell);
+    }
+    $("calPrev").onclick=()=>{state.calendarCursor=new Date(y,m-1,1);renderOfficeCalendar()};
+    $("calNext").onclick=()=>{state.calendarCursor=new Date(y,m+1,1);renderOfficeCalendar()};
+    $("calToday").onclick=()=>{state.calendarCursor=new Date();renderOfficeCalendar()};
+    $("calAdd").onclick=()=>openCalendarModal(todayKey(),null);
+  }
 
-      list.appendChild(row);
-    });
+  function openCalendarModal(dateKey,eventId){
+    state.calendarEditKey=eventId||null;
+    const ev=eventId?(state.officeCalendar||{})[eventId]:null;
+    $("calendarModalTitle").textContent=ev?"업무일정 수정":"업무일정 추가";
+    $("calendarDateInput").value=(ev&&ev.date)||dateKey||todayKey();
+    $("calendarTitleInput").value=(ev&&ev.title)||"";
+    $("calendarWriterInput").value=(ev&&ev.writer)||localStorage.getItem("bankBoardWriter")||"";
+    $("calendarMemoInput").value=(ev&&ev.memo)||"";
+    $("calendarDeleteBtn").classList.toggle("hidden",!ev);
+    showBoardModal("calendarMemoModal");
   }
 
   function openOfficeMemoModal(){
     $("officeMemoWriter").value=localStorage.getItem("bankBoardWriter")||"";
     $("officeMemoText").value="";
-    $("officeMemoModal").classList.remove("hidden");
+    showBoardModal("officeMemoModal");
   }
 
-  function closeOfficeMemoModal(){
-    $("officeMemoModal").classList.add("hidden");
-  }
+  function closeOfficeMemoModal(){requestCloseBoardModal("officeMemoModal")}
 
   function filterBaseBranches(){
     return branches.filter(b=>{
@@ -1145,6 +1231,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   function renderSubTabs(){
     const el=$("subTabs");el.innerHTML="";
     let defs=[];
+    if(state.main==="office")defs=[["active","현황"],["done","완료"],["add","추가"]];
     if(state.main==="issue")defs=[["active","현황"],["done","완료"],["add","추가"]];
     if(state.main==="install")defs=[["active","일정"],["done","완료"],["add","추가"]];
     if(!defs.length)return;
@@ -1155,7 +1242,8 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       b.textContent=label;
       b.onclick=()=>{
         if(key==="add"){
-          openWorkAddModal();
+          if(state.main==="office")openOfficeMemoModal();
+          else openWorkAddModal();
           return;
         }
         state.sub=key;state.page=1;render();
@@ -1385,7 +1473,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
 
     if(state.main==="office"){
       $("filterBar").style.display="none";
-      state.sub="";
+      if(state.sub!=="active"&&state.sub!=="done")state.sub="active";
       renderOfficeMemos();
       return;
     }
@@ -1999,7 +2087,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     btn.onclick=()=>{
       state.main=btn.dataset.main;
       state.listSelected.clear();
-      state.sub=state.main==="issue"?"active":state.main==="install"?"active":"";
+      state.sub=(state.main==="office"||state.main==="issue"||state.main==="install")?"active":"";
       state.page=1;
       render();
     };
@@ -2009,7 +2097,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     btn.onclick=()=>{
       state.main=btn.dataset.mainMenu;
       state.listSelected.clear();
-      state.sub=state.main==="issue"?"active":state.main==="install"?"active":"";
+      state.sub=(state.main==="office"||state.main==="issue"||state.main==="install")?"active":"";
       state.page=1;
       keepOrCloseDrawerAfterSelect();
       render();
@@ -2102,6 +2190,30 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       $("workAddSave").disabled=false;
       $("workAddSave").textContent="추가";
     }
+  };
+
+  $("calendarCancelBtn").onclick=()=>requestCloseBoardModal("calendarMemoModal");
+  $("calendarMemoModal").onclick=e=>{if(e.target.id==="calendarMemoModal")requestCloseBoardModal("calendarMemoModal")};
+  $("calendarWriterInput").onchange=e=>{if(e.target.value)localStorage.setItem("bankBoardWriter",e.target.value)};
+  $("calendarSaveBtn").onclick=async()=>{
+    const date=$("calendarDateInput").value;
+    const title=$("calendarTitleInput").value.trim();
+    const memo=$("calendarMemoInput").value.trim();
+    const writer=$("calendarWriterInput").value||null;
+    if(!date){alert("날짜를 선택해주세요.");return}
+    if(!title&&!memo){alert("일정 제목이나 메모를 입력해주세요.");return}
+    if(!db){alert("Firebase 연결이 완료되지 않았습니다.");return}
+    const payload={date,title,memo,writer,updatedAt:firebase.database.ServerValue.TIMESTAMP};
+    try{
+      if(state.calendarEditKey)await db.ref(`${officeCalendarPath}/${state.calendarEditKey}`).update(payload);
+      else await db.ref(officeCalendarPath).push().set({...payload,createdAt:firebase.database.ServerValue.TIMESTAMP});
+      state.calendarEditKey=null;requestCloseBoardModal("calendarMemoModal");
+    }catch(e){console.error(e);alert("일정 저장에 실패했습니다.")}
+  };
+  $("calendarDeleteBtn").onclick=async()=>{
+    if(!state.calendarEditKey)return;
+    if(!confirm("이 업무일정을 삭제할까요?"))return;
+    try{await db.ref(`${officeCalendarPath}/${state.calendarEditKey}`).remove();state.calendarEditKey=null;requestCloseBoardModal("calendarMemoModal")}catch(e){console.error(e);alert("일정 삭제에 실패했습니다.")}
   };
 
   $("officeMemoCancel").onclick=closeOfficeMemoModal;
@@ -2246,6 +2358,11 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       db.ref(officeMemoPath).on("value",snap=>{
         state.officeMemos=snap.val()||{};
         render();
+      });
+
+      db.ref(officeCalendarPath).on("value",snap=>{
+        state.officeCalendar=snap.val()||{};
+        if(state.main==="office")render();
       });
     }catch(e){
       console.error(e);
