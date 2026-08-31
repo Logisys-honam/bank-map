@@ -866,10 +866,10 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
 
 <main class="page">
   <section id="filterBar" class="filter-bar">
-    <select id="staffFilter"><option value="">담당자</option></select>
-    <select id="branchFilter"><option value="">전체</option></select>
+    <select id="staffFilter"><option value="">전체 (담당자)</option></select>
+    <select id="branchFilter"><option value="">전체 (지점)</option></select>
     <select id="writerFilter">
-      <option value="">작성자</option>
+      <option value="">전체 (작성자)</option>
       <option>김준호</option>
       <option>장창형</option>
       <option>김대한</option>
@@ -1864,13 +1864,13 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     const staffSel=$("staffFilter"),bankSel=$("branchFilter");
     const staffList=uniqueStaff().filter(x=>x!=="미지정"&&x!=="관리자").sort((a,b)=>a.localeCompare(b,"ko"));
     const oldStaff=state.staff||"";
-    staffSel.innerHTML='<option value="">담당자</option>'+staffList.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join("");
+    staffSel.innerHTML='<option value="">전체 (담당자)</option>'+staffList.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join("");
     staffSel.value=staffList.includes(oldStaff)?oldStaff:"";
     state.staff=staffSel.value||null;
 
     const banks=bankCategories();
     const oldBank=state.bankFilter||"";
-    bankSel.innerHTML='<option value="">전체</option>'+banks.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join("");
+    bankSel.innerHTML='<option value="">전체 (지점)</option>'+banks.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join("");
     bankSel.value=banks.includes(oldBank)?oldBank:"";
     state.bankFilter=bankSel.value||"";
   }
