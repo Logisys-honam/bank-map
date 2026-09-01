@@ -924,6 +924,66 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
 
 /* v2.44.3: 지사Home 명칭, 헤더 홈 이동, 햄버거 메뉴 제거 */
 </style>
+
+<style id="v2446-mobile-office-additions">
+/* v2.44.6 모바일 지사Home: 공용문서 + 일정현황 표시 */
+@media(max-width:900px){
+  .office-dashboard{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:10px!important;
+    padding:6px 8px 16px!important;
+  }
+  .shared-doc-panel{
+    display:flex!important;
+    order:1!important;
+    background:#fff;
+    border:1px solid #d9e0e9;
+    border-radius:12px;
+    overflow:hidden;
+    box-shadow:0 2px 10px rgba(15,23,42,.04);
+    flex-direction:column;
+    min-width:0;
+  }
+  .office-panel{order:2!important;min-width:0}
+  .calendar-panel{order:3!important;min-width:0}
+  .schedule-status-panel{
+    display:block!important;
+    order:4!important;
+    min-width:0;
+  }
+  .shared-doc-head{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+    padding:11px 12px;border-bottom:1px solid #e2e8f0;background:#f8fafc;
+  }
+  .shared-doc-head strong{font-size:14px;font-weight:900;color:#1f2937}
+  .shared-doc-count{font-size:11px;color:#64748b;font-weight:800}
+  .shared-doc-actions{padding:9px;border-bottom:1px solid #e2e8f0}
+  .shared-doc-upload{
+    width:100%;border:0;background:#1f6fe5;color:#fff;border-radius:8px;
+    padding:11px 10px;font-size:13px;font-weight:900;cursor:pointer;
+  }
+  .shared-doc-dropzone{display:none!important}
+  .shared-doc-storage-note{font-size:9px!important;padding:7px 9px!important}
+  .shared-doc-list{max-height:360px;overflow:auto;-webkit-overflow-scrolling:touch}
+  .shared-doc-row{padding:10px 11px;border-bottom:1px solid #e2e8f0;background:#fff}
+  .shared-doc-row:nth-child(even){background:#effafa}
+  .shared-doc-title{font-size:12px;font-weight:900;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .shared-doc-name{font-size:9px;font-weight:700;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+  .shared-doc-meta{font-size:9px;color:#7b8794;margin-top:4px;line-height:1.4}
+  .shared-doc-buttons{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap}
+  .shared-doc-buttons button{border:1px solid #cbd5e1;background:#fff;border-radius:6px;padding:6px 7px;font-size:9px;font-weight:900;cursor:pointer}
+  .shared-doc-buttons .replace{flex:1 1 100%!important}
+  .shared-doc-empty{padding:28px 10px;text-align:center;color:#94a3b8;font-size:11px;line-height:1.6}
+  .schedule-status-list{max-height:390px;overflow:auto;-webkit-overflow-scrolling:touch}
+}
+@media(max-width:520px){
+  .office-dashboard{padding:5px 5px 14px!important;gap:8px!important}
+  .shared-doc-buttons button{padding:6px 6px;font-size:9px}
+  .schedule-status-row{padding:10px 11px}
+  .schedule-status-title{font-size:12px}
+}
+</style>
 </head>
 <body>
 
@@ -1768,7 +1828,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       <section class="shared-doc-panel">
         <div class="shared-doc-head"><strong>공용 문서</strong><span id="sharedDocCount" class="shared-doc-count">0개</span></div>
         <div class="shared-doc-actions"><button id="sharedDocUpload" class="shared-doc-upload" type="button">+ 문서 올리기</button><div id="sharedDocDropzone" class="shared-doc-dropzone"><strong>파일을 여기에 끌어다 놓기</strong><br>여러 파일도 한 번에 가능</div></div>
-        <div class="shared-doc-storage-note">Excel/PPT/Word 앱 바로열기 · 교체 전 파일은 이전 버전 자동보관</div>
+        <div class="shared-doc-storage-note">읽기전용 열기 · 다운로드 후 수정 · 교체 전 파일은 이전 버전 자동보관</div>
         <div id="sharedDocList" class="shared-doc-list"></div>
       </section>
       <section class="office-panel">
