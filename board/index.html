@@ -1785,7 +1785,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     items.forEach(doc=>{
       const row=document.createElement("div");
       row.className="shared-doc-row";
-      row.title="더블클릭하면 읽기전용으로 앱 열기를 시도합니다.";
+      row.title=isMobileDevice()?"다운로드 열기로 파일을 받아 편집할 수 있습니다.":"더블클릭하면 읽기전용으로 앱 열기를 시도합니다.";
       const office=!!sharedDocOfficeProtocol(doc);
       const versionCount=sharedDocVersionCount(doc.key);
       row.innerHTML=`<div class="shared-doc-title">📎 ${esc(doc.title||String(doc.name||"문서").replace(/\.[^.]+$/, ""))}${versionCount?`<span class="shared-doc-version-badge">이전 ${versionCount}</span>`:""}</div>
@@ -1793,16 +1793,14 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
         <div class="shared-doc-meta">${esc(sharedDocSize(doc.size))} · ${esc(doc.uploader||"등록자 미지정")}<br>${esc(fmt(doc.updatedAt||doc.createdAt))}</div>
         <div class="shared-doc-buttons">
           <button class="replace" type="button">↻ 최신 파일로 교체</button>
-          <button class="open-app" type="button">${office?"읽기전용 열기":"바로 열기"}</button>
-          <button class="open-web" type="button">다운로드</button>
-          <button class="proxy-test" type="button">중계 테스트</button>
+          ${isMobileDevice()?`<button class="open-web" type="button">다운로드 열기</button>`:`<button class="open-app" type="button">${office?"읽기전용 열기":"바로 열기"}</button><button class="open-web" type="button">다운로드</button>`}
           <button class="versions" type="button">이전 버전${versionCount?` (${versionCount})`:""}</button>
           <button class="delete" type="button">삭제</button>
         </div>`;
-      row.ondblclick=()=>openSharedDocInApp(doc);
-      row.querySelector(".open-app").onclick=e=>{e.stopPropagation();openSharedDocInApp(doc);};
+      row.ondblclick=()=>{if(!isMobileDevice())openSharedDocInApp(doc);};
+      const openAppBtn=row.querySelector(".open-app");
+      if(openAppBtn)openAppBtn.onclick=e=>{e.stopPropagation();openSharedDocInApp(doc);};
       row.querySelector(".open-web").onclick=e=>{e.stopPropagation();downloadSharedDoc(doc);};
-      row.querySelector(".proxy-test").onclick=e=>{e.stopPropagation();testSharedDocProxy(doc);};
       row.querySelector(".versions").onclick=e=>{e.stopPropagation();openSharedDocVersions(doc);};
       row.querySelector(".replace").onclick=e=>{
         e.stopPropagation();
@@ -1919,7 +1917,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       <section class="shared-doc-panel">
         <div class="shared-doc-head"><strong>공용 문서</strong><span id="sharedDocCount" class="shared-doc-count">0개</span></div>
         <div class="shared-doc-actions"><button id="sharedDocUpload" class="shared-doc-upload" type="button">+ 문서 올리기</button><div id="sharedDocDropzone" class="shared-doc-dropzone"><strong>파일을 여기에 끌어다 놓기</strong><br>여러 파일도 한 번에 가능</div></div>
-        <div class="shared-doc-storage-note">읽기전용 열기 · 다운로드 후 수정 · 중계 테스트 버튼은 진단용 · 모바일 Office 축약URI 테스트 · 교체 전 파일은 이전 버전 자동보관</div>
+        <div class="shared-doc-storage-note">PC: 읽기전용 열기 · 모바일: 다운로드 열기 · 수정 후 최신 파일로 교체 · 교체 전 파일은 이전 버전 자동보관</div>
         <div id="sharedDocList" class="shared-doc-list"></div>
       </section>
       <section class="office-panel">
