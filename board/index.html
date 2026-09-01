@@ -4181,6 +4181,12 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       if(!firebaseCfg.storageBucket && firebaseCfg.projectId==="dealer-map-status") {
         firebaseCfg.storageBucket="dealer-map-status.firebasestorage.app";
       }
+      // FCM(Web Push)에 필요한 Firebase 앱 설정 보완.
+      // 기존 config.js / 루트 index.html에 값이 없어도 현재 프로젝트 값을 사용한다.
+      if(firebaseCfg.projectId==="dealer-map-status") {
+        if(!firebaseCfg.messagingSenderId) firebaseCfg.messagingSenderId="967752424466";
+        if(!firebaseCfg.appId) firebaseCfg.appId="1:967752424466:web:3464de3190a41f1b7c0ccb";
+      }
 
       const app=firebase.initializeApp(firebaseCfg,"bankWorkBoard");
       boardFirebaseApp=app;
