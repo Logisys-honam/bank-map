@@ -1071,6 +1071,46 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   .site-watch-toast-actions button{flex:1;min-height:42px}
 }
 </style>
+
+<style id="v247-push-notification">
+/* v2.47 모바일/웹 푸시 + 업무알림 보관함 */
+.header-alerts{display:flex;align-items:center;gap:7px}
+.push-enable-btn,.alert-center-btn{position:relative;border:1px solid #cbd5e1;background:#fff;color:#1f2937;border-radius:9px;padding:7px 10px;font-size:12px;font-weight:900;cursor:pointer;white-space:nowrap}
+.push-enable-btn.enabled{border-color:#97d7b0;background:#eefbf3;color:#15733c}
+.push-enable-btn.denied{border-color:#f0b2b2;background:#fff3f3;color:#b52222}
+.alert-center-badge{position:absolute;right:-5px;top:-6px;min-width:18px;height:18px;padding:0 5px;border-radius:10px;background:#e32929;color:#fff;font-size:10px;line-height:18px;font-weight:900;text-align:center}
+.alert-center-badge.hidden{display:none}
+.watch-alert-modal{position:fixed;inset:0;z-index:26000;background:rgba(18,27,44,.25);display:flex;align-items:center;justify-content:center;padding:18px}
+.watch-alert-modal.hidden{display:none}
+.watch-alert-card{width:min(620px,96vw);max-height:min(720px,88vh);display:flex;flex-direction:column;background:#fff;border:1px solid #cfd7e6;border-radius:16px;box-shadow:0 18px 55px rgba(0,0,0,.25);overflow:hidden}
+.watch-alert-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #e2e8f0}
+.watch-alert-head strong{font-size:18px}
+.watch-alert-head button{border:0;background:#f1f5f9;border-radius:8px;height:34px;font-size:13px;font-weight:850;cursor:pointer}.watch-alert-head #watchAlertClose{width:34px;font-size:19px;margin-left:5px}.watch-alert-head .push-test-btn{padding:0 10px;color:#175bb0}
+.watch-alert-list{overflow:auto;padding:8px}
+.watch-alert-empty{padding:28px 12px;color:#738096;text-align:center}
+.watch-alert-row{border:1px solid #dbe2ec;border-radius:12px;padding:11px 12px;margin:7px 0;background:#fff}
+.watch-alert-row.unread{background:#f2f7ff;border-color:#b8d0f6}
+.watch-alert-row-top{display:flex;align-items:center;gap:7px}
+.watch-alert-kind{font-weight:950;color:#1e4ea8}
+.watch-alert-row.issue .watch-alert-kind{color:#c62828}
+.watch-alert-row.install .watch-alert-kind{color:#1664c0}
+.watch-alert-row.regular .watch-alert-kind{color:#237448}
+.watch-alert-time{margin-left:auto;color:#7c8797;font-size:11px}
+.watch-alert-message{margin-top:7px;line-height:1.45;font-size:13px;color:#293241}
+.watch-alert-actions{display:flex;justify-content:flex-end;gap:7px;margin-top:9px}
+.watch-alert-actions button{border:1px solid #c9d3e1;background:#fff;border-radius:8px;padding:7px 9px;font-weight:850;cursor:pointer}
+.watch-alert-actions .company{background:#2674df;border-color:#2674df;color:#fff}
+@media(max-width:900px){
+  .topbar{gap:8px}
+  .header-alerts{gap:5px;align-self:flex-start;margin-top:2px}
+  .push-enable-btn,.alert-center-btn{padding:6px 8px;font-size:11px}
+  .watch-alert-modal{align-items:flex-end;padding:0}
+  .watch-alert-card{width:100vw;max-height:82vh;border-radius:18px 18px 0 0}
+  .watch-alert-head{padding:15px}
+  .watch-alert-list{padding:8px 10px 18px}
+}
+</style>
+
 </head>
 <body>
 
@@ -1079,6 +1119,10 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     <h1 id="homeTitle" role="button" tabindex="0" title="지사Home으로 이동">순천센터 공용 업무보드</h1>
     <div id="sync" class="sync">연결 중...</div>
     <div id="siteWatchStatusText"></div>
+  </div>
+  <div class="header-alerts">
+    <button id="pushEnableBtn" class="push-enable-btn" type="button">🔔 푸시 알림 켜기</button>
+    <button id="alertCenterBtn" class="alert-center-btn" type="button">알림<span id="alertCenterBadge" class="alert-center-badge hidden">0</span></button>
   </div>
   <div id="headerStat" class="header-stat"></div>
 </header>
@@ -1398,6 +1442,14 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
 
 <input id="sharedDocFileInput" type="file" hidden multiple>
 <input id="sharedDocReplaceInput" type="file" hidden>
+
+<div id="watchAlertModal" class="watch-alert-modal hidden" aria-hidden="true">
+  <div class="watch-alert-card">
+    <div class="watch-alert-head"><strong>업무 알림</strong><div><button id="pushTestBtn" class="push-test-btn" type="button">푸시 테스트</button><button id="watchAlertClose" type="button">×</button></div></div>
+    <div id="watchAlertList" class="watch-alert-list"></div>
+  </div>
+</div>
+
 <script src="../config.js"></script>
 <script src="../data.js"></script>
 <script src="./branches.js"></script>
@@ -1406,6 +1458,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging-compat.js"></script>
 
 <script>
 (() => {
@@ -1467,7 +1520,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     return {cfg,memoPath};
   }
 
-  let db,storage,memoPath="bankMap/memos",historyPath="bankMap/memoHistory",officeMemoPath="bankMap/officeMemos",officeCalendarPath="bankMap/officeCalendar",sharedDocsPath="bankMap/sharedDocs",sharedDocVersionsPath="bankMap/sharedDocVersions",siteWatchAlertsPath="bankMap/siteWatchAlerts",siteWatchStatusPath="bankMap/siteWatchStatus";
+  let db,storage,memoPath="bankMap/memos",historyPath="bankMap/memoHistory",officeMemoPath="bankMap/officeMemos",officeCalendarPath="bankMap/officeCalendar",sharedDocsPath="bankMap/sharedDocs",sharedDocVersionsPath="bankMap/sharedDocVersions",siteWatchAlertsPath="bankMap/siteWatchAlerts",siteWatchStatusPath="bankMap/siteWatchStatus",pushTokensPath="bankMap/pushTokens";
   const state={memos:{},weekHistory:[],officeMemos:{},officeCalendar:{},sharedDocs:{},sharedDocVersions:{},siteWatchAlerts:{},siteWatchStatus:{},sharedDocReplaceKey:null,main:"office",sub:"active",staff:null,bankFilter:"",writerFilter:"",search:"",page:1,pageSize:20,selected:null,bulkSelected:new Set(),bulkSearch:"",detailSelected:new Set(),listSelected:new Set(),editMemo:null,calendarCursor:new Date(),calendarEditKey:null,officeDetailKey:null,calendarViewKey:null,officeEditKey:null,calendarDayKey:null,calendarDaySelected:new Set()};
 
   const esc=s=>String(s??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
@@ -1517,6 +1570,9 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     return false;
   }
   const COMPANY_SITE_URL="http://main.logisys.co.kr/Enterprise.View/m/Default.aspx";
+  const BOARD_PUSH_VAPID_KEY="BLvr4_5piwpJ1FeFHRbly_El052ijmDt-ef_AY4a-eAvtIZjU8AskrOEmOB_0skB1AVVGVIExMiANOoaBwGWfO8";
+  let messaging=null, pushSwReg=null, boardFirebaseApp=null;
+  const PUSH_FUNCTION_URL="https://asia-northeast3-dealer-map-status.cloudfunctions.net/siteWatchPush";
   const watchCategoryMap={issue:"장애",install:"설치",regular:"정기"};
   const watchMainMap={"장애":"issue","설치":"install","정기":"regular"};
   let siteWatchToastTimer=null;
@@ -1550,6 +1606,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       badge.textContent=count>99?"99+":String(count);
       badge.classList.toggle("hidden",count===0);
     });
+    renderAlertCenterBadge();
   }
   function showSiteWatchPopup(a){
     if(!a||!a.category)return;
@@ -1584,6 +1641,143 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   function handleWatchTabClick(main){
     const category=watchCategoryMap[main];
     if(category)markWatchRead(category);
+  }
+
+  function unreadWatchAlertCount(){
+    return siteWatchAlertRows().filter(a=>Number(a.createdAt||0)>watchReadAt(a.category)).length;
+  }
+  function renderAlertCenterBadge(){
+    const badge=$("alertCenterBadge");
+    if(!badge)return;
+    const count=unreadWatchAlertCount();
+    badge.textContent=count>99?"99+":String(count);
+    badge.classList.toggle("hidden",count===0);
+  }
+  function openWatchAlertCenter(category=""){
+    const modal=$("watchAlertModal"),list=$("watchAlertList");
+    if(!modal||!list)return;
+    const rows=siteWatchAlertRows().slice().reverse();
+    list.innerHTML="";
+    if(!rows.length){
+      list.innerHTML='<div class="watch-alert-empty">아직 등록된 신규 업무 알림이 없습니다.</div>';
+    }else{
+      rows.forEach(a=>{
+        const code=watchMainMap[a.category]||"";
+        const row=document.createElement("div");
+        const unread=Number(a.createdAt||0)>watchReadAt(a.category);
+        row.className=`watch-alert-row ${code}${unread?" unread":""}`;
+        row.innerHTML=`<div class="watch-alert-row-top"><span class="watch-alert-kind">${esc(a.category||"업무")} 신규 ${esc(a.delta||1)}건</span><span class="watch-alert-time">${esc(fmt(a.createdAt))}</span></div><div class="watch-alert-message">${esc(a.message||"")}</div><div class="watch-alert-actions"><button class="go-tab" type="button">업무보드에서 보기</button><button class="company" type="button">회사 전산에서 확인</button></div>`;
+        row.querySelector(".company").onclick=()=>window.open(a.sourceUrl||COMPANY_SITE_URL,"_blank","noopener");
+        row.querySelector(".go-tab").onclick=()=>{
+          const main=watchMainMap[a.category];
+          if(main){
+            markWatchRead(a.category);
+            const btn=document.querySelector(`[data-main="${main}"]`);
+            if(btn)btn.click();
+          }
+          closeWatchAlertCenter();
+        };
+        list.appendChild(row);
+      });
+    }
+    if(category)markWatchRead(category);
+    modal.classList.remove("hidden");
+    modal.setAttribute("aria-hidden","false");
+    renderAlertCenterBadge();
+  }
+  function closeWatchAlertCenter(){
+    const modal=$("watchAlertModal");
+    if(!modal)return;
+    modal.classList.add("hidden");
+    modal.setAttribute("aria-hidden","true");
+  }
+  function pushStatusText(){
+    const btn=$("pushEnableBtn");
+    if(!btn)return;
+    if(!("Notification" in window)){btn.textContent="푸시 미지원";btn.className="push-enable-btn denied";btn.disabled=true;return;}
+    if(Notification.permission==="granted"){
+      btn.textContent="🔔 푸시 알림 켜짐";btn.className="push-enable-btn enabled";
+    }else if(Notification.permission==="denied"){
+      btn.textContent="🔕 알림 차단됨";btn.className="push-enable-btn denied";
+    }else{
+      btn.textContent="🔔 푸시 알림 켜기";btn.className="push-enable-btn";
+    }
+  }
+  async function registerPushToken(app){
+    if(!("serviceWorker" in navigator)||!("Notification" in window))return false;
+    if(Notification.permission!=="granted")return false;
+    if(!firebase.messaging.isSupported || !(await firebase.messaging.isSupported()))return false;
+    pushSwReg=await navigator.serviceWorker.register("./firebase-messaging-sw.js",{scope:"./"});
+    await navigator.serviceWorker.ready;
+    messaging=app.messaging();
+    const token=await messaging.getToken({vapidKey:BOARD_PUSH_VAPID_KEY,serviceWorkerRegistration:pushSwReg});
+    if(!token)throw new Error("FCM 기기 토큰을 발급받지 못했습니다.");
+    const uid=app.auth().currentUser && app.auth().currentUser.uid;
+    if(!uid)throw new Error("Firebase 로그인 정보를 찾지 못했습니다.");
+    await db.ref(`${pushTokensPath}/${uid}`).set({
+      token,
+      enabled:true,
+      platform:navigator.userAgent||"",
+      updatedAt:firebase.database.ServerValue.TIMESTAMP
+    });
+    messaging.onMessage(async payload=>{
+      const data=(payload&&payload.data)||{};
+      const title=data.title||"순천센터 업무 알림";
+      const body=data.body||"새 업무가 등록되었습니다.";
+      if(pushSwReg){
+        try{
+          await pushSwReg.showNotification(title,{
+            body,
+            tag:data.tag||`bank-watch-${Date.now()}`,
+            data:{url:data.url||"./",category:data.categoryCode||""},
+            renotify:true
+          });
+        }catch(e){console.warn("전경 푸시 표시 실패",e);}
+      }
+    });
+    return true;
+  }
+  async function sendPushTest(){
+    if(!boardFirebaseApp||!boardFirebaseApp.auth().currentUser){
+      alert("Firebase 연결이 완료된 뒤 다시 시도해주세요.");
+      return;
+    }
+    if(Notification.permission!=="granted"){
+      alert("먼저 푸시 알림을 켜주세요.");
+      return;
+    }
+    try{
+      const token=await boardFirebaseApp.auth().currentUser.getIdToken();
+      const res=await fetch(PUSH_FUNCTION_URL,{
+        method:"POST",
+        headers:{"Content-Type":"application/json","Authorization":`Bearer ${token}`},
+        body:JSON.stringify({categoryCode:"test",delta:1,count:0,alertId:`test_${Date.now()}`})
+      });
+      if(!res.ok)throw new Error(await res.text());
+      alert("테스트 푸시를 전송했습니다. 휴대폰 알림창을 확인해주세요.");
+    }catch(e){
+      console.error(e);
+      alert("테스트 푸시 실패: "+(e&&e.message?e.message:e));
+    }
+  }
+  async function enablePushNotifications(app){
+    if(!("Notification" in window)){alert("이 브라우저는 웹 푸시 알림을 지원하지 않습니다.");return;}
+    if(Notification.permission==="denied"){
+      alert("브라우저에서 알림이 차단되어 있습니다. 사이트 설정에서 알림을 허용해주세요.");
+      pushStatusText();
+      return;
+    }
+    const permission=Notification.permission==="granted"?"granted":await Notification.requestPermission();
+    pushStatusText();
+    if(permission!=="granted")return;
+    try{
+      await registerPushToken(app);
+      pushStatusText();
+      alert("푸시 알림이 등록되었습니다. 업무보드를 닫아도 신규 장애/설치/정기 알림을 받을 수 있습니다.");
+    }catch(e){
+      console.error(e);
+      alert("푸시 알림 등록 실패: "+(e&&e.message?e.message:e));
+    }
   }
 
   function todayKey(){
@@ -3963,6 +4157,11 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   });
   if($("siteWatchToastClose"))$("siteWatchToastClose").onclick=()=>$("siteWatchToast").classList.add("hidden");
   if($("siteWatchOpenCompany"))$("siteWatchOpenCompany").onclick=()=>window.open(COMPANY_SITE_URL,"_blank","noopener");
+  if($("alertCenterBtn"))$("alertCenterBtn").onclick=()=>openWatchAlertCenter();
+  if($("watchAlertClose"))$("watchAlertClose").onclick=closeWatchAlertCenter;
+  if($("pushTestBtn"))$("pushTestBtn").onclick=sendPushTest;
+  if($("watchAlertModal"))$("watchAlertModal").onclick=e=>{if(e.target===$("watchAlertModal"))closeWatchAlertCenter();};
+  pushStatusText();
 
   // Firebase 연결 전에도 탭/필터 UI는 즉시 동작
   render();
@@ -3984,9 +4183,19 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       }
 
       const app=firebase.initializeApp(firebaseCfg,"bankWorkBoard");
+      boardFirebaseApp=app;
       db=app.database();
       storage=app.storage();
       await app.auth().signInAnonymously();
+
+      if($("pushEnableBtn"))$("pushEnableBtn").onclick=()=>enablePushNotifications(app);
+      if(Notification.permission==="granted"){
+        registerPushToken(app).then(pushStatusText).catch(e=>console.warn("푸시 자동 등록 실패",e));
+      }
+      const watchParam=new URLSearchParams(location.search).get("watch");
+      if(watchParam&&watchCategoryMap[watchParam]){
+        setTimeout(()=>openWatchAlertCenter(watchCategoryMap[watchParam]),700);
+      }
 
       db.ref(memoPath).on("value",snap=>{
         state.memos=snap.val()||{};
