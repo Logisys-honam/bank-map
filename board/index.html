@@ -1584,9 +1584,15 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     localStorage.setItem(watchReadKey(category),String(Date.now()));
     renderSiteWatchBadges();
   }
+  function watchTodayStart(){
+    const d=new Date();
+    d.setHours(0,0,0,0);
+    return d.getTime();
+  }
   function siteWatchAlertRows(){
+    const cutoff=watchTodayStart();
     return Object.entries(state.siteWatchAlerts||{}).map(([key,v])=>({key,...(v||{})}))
-      .filter(x=>watchMainMap[x.category])
+      .filter(x=>watchMainMap[x.category] && Number(x.createdAt||0)>=cutoff)
       .sort((a,b)=>(Number(a.createdAt)||0)-(Number(b.createdAt)||0));
   }
   function ensureWatchBadge(btn){
@@ -1666,17 +1672,8 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
         const row=document.createElement("div");
         const unread=Number(a.createdAt||0)>watchReadAt(a.category);
         row.className=`watch-alert-row ${code}${unread?" unread":""}`;
-        row.innerHTML=`<div class="watch-alert-row-top"><span class="watch-alert-kind">${esc(a.category||"업무")} 신규 ${esc(a.delta||1)}건</span><span class="watch-alert-time">${esc(fmt(a.createdAt))}</span></div><div class="watch-alert-message">${esc(a.message||"")}</div><div class="watch-alert-actions"><button class="go-tab" type="button">업무보드에서 보기</button><button class="company" type="button">회사 전산에서 확인</button></div>`;
+        row.innerHTML=`<div class="watch-alert-row-top"><span class="watch-alert-kind">${esc(a.category||"업무")} 신규 ${esc(a.delta||1)}건</span><span class="watch-alert-time">${esc(fmt(a.createdAt))}</span></div><div class="watch-alert-message">${esc(a.message||"")}</div><div class="watch-alert-actions"><button class="company" type="button">회사 전산에서 확인</button></div>`;
         row.querySelector(".company").onclick=()=>window.open(a.sourceUrl||COMPANY_SITE_URL,"_blank","noopener");
-        row.querySelector(".go-tab").onclick=()=>{
-          const main=watchMainMap[a.category];
-          if(main){
-            markWatchRead(a.category);
-            const btn=document.querySelector(`[data-main="${main}"]`);
-            if(btn)btn.click();
-          }
-          closeWatchAlertCenter();
-        };
         list.appendChild(row);
       });
     }
@@ -4225,6 +4222,9 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       db=app.database();
       storage=app.storage();
       await app.auth().signInAnonymously();
+
+      // 업무 알림 화면에는 오늘 알림만 표시한다.
+      // 지난 알림의 실제 삭제는 서버의 자정 예약 함수가 담당한다.
 
       if($("pushEnableBtn"))$("pushEnableBtn").onclick=()=>enablePushNotifications(app);
       if(Notification.permission==="granted" && pushPreferenceEnabled()){
