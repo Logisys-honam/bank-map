@@ -1669,6 +1669,15 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     if(directUrl)window.open(directUrl,"_blank","noopener,noreferrer");
   }
 
+  function testSharedDocProxy(doc){
+    const url=officeProxyUrl(doc);
+    if(!url){
+      alert("이 문서는 중계 테스트에 필요한 Storage 경로가 없습니다.\n'최신 파일로 교체' 후 다시 시도해주세요.");
+      return;
+    }
+    window.open(url,"_blank","noopener,noreferrer");
+  }
+
   async function downloadSharedDoc(doc){
     const url=String(doc.downloadURL||"");
     if(!url){
@@ -1761,12 +1770,14 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
           <button class="replace" type="button">↻ 최신 파일로 교체</button>
           <button class="open-app" type="button">${office?"읽기전용 열기":"바로 열기"}</button>
           <button class="open-web" type="button">다운로드</button>
+          <button class="proxy-test" type="button">중계 테스트</button>
           <button class="versions" type="button">이전 버전${versionCount?` (${versionCount})`:""}</button>
           <button class="delete" type="button">삭제</button>
         </div>`;
       row.ondblclick=()=>openSharedDocInApp(doc);
       row.querySelector(".open-app").onclick=e=>{e.stopPropagation();openSharedDocInApp(doc);};
       row.querySelector(".open-web").onclick=e=>{e.stopPropagation();downloadSharedDoc(doc);};
+      row.querySelector(".proxy-test").onclick=e=>{e.stopPropagation();testSharedDocProxy(doc);};
       row.querySelector(".versions").onclick=e=>{e.stopPropagation();openSharedDocVersions(doc);};
       row.querySelector(".replace").onclick=e=>{
         e.stopPropagation();
@@ -1883,7 +1894,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       <section class="shared-doc-panel">
         <div class="shared-doc-head"><strong>공용 문서</strong><span id="sharedDocCount" class="shared-doc-count">0개</span></div>
         <div class="shared-doc-actions"><button id="sharedDocUpload" class="shared-doc-upload" type="button">+ 문서 올리기</button><div id="sharedDocDropzone" class="shared-doc-dropzone"><strong>파일을 여기에 끌어다 놓기</strong><br>여러 파일도 한 번에 가능</div></div>
-        <div class="shared-doc-storage-note">읽기전용 열기 · 모바일은 브라우저 미리보기 · 다운로드 후 수정 · 교체 전 파일은 이전 버전 자동보관</div>
+        <div class="shared-doc-storage-note">읽기전용 열기 · 다운로드 후 수정 · 중계 테스트 버튼은 진단용 · 교체 전 파일은 이전 버전 자동보관</div>
         <div id="sharedDocList" class="shared-doc-list"></div>
       </section>
       <section class="office-panel">
