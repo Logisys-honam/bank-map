@@ -185,6 +185,8 @@ button{cursor:pointer}
 .quick-filters select:focus{outline:2px solid rgba(30,111,220,.18);border-color:#1e6fdc}
 .toolbar-search{min-width:0}
 @media(max-width:900px){
+  .shared-doc-buttons .doc-primary{flex:1 1 100%!important}
+
   .quick-filters{grid-template-columns:1fr 1fr}
   .quick-filters select{height:44px;font-size:14px}
 }
@@ -883,6 +885,8 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   .shared-doc-buttons button{border:1px solid #cbd5e1;background:#fff;border-radius:6px;padding:5px 7px;font-size:9px;font-weight:900;cursor:pointer}
   .shared-doc-buttons .replace{color:#1557a8}
   .shared-doc-buttons .delete{color:#b42318;background:#fff5f5;border-color:#f3b5b5}
+.shared-doc-buttons .doc-primary{flex:1 1 100%;background:#e8f1ff!important;border-color:#8bb8f5!important;color:#0b57b7!important;padding:7px 8px!important;font-size:10px!important}
+
   .shared-doc-empty{padding:34px 10px;text-align:center;color:#94a3b8;font-size:11px;line-height:1.6}
 }
 @media(max-width:1199px){.shared-doc-panel{display:none!important}}
@@ -1804,8 +1808,8 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
         <div class="shared-doc-name">${esc(doc.name||"문서")}</div>
         <div class="shared-doc-meta">${esc(sharedDocSize(doc.size))} · ${esc(doc.uploader||"등록자 미지정")}<br>${esc(fmt(doc.updatedAt||doc.createdAt))}</div>
         <div class="shared-doc-buttons">
+          ${isMobileDevice()?`<button class="open-web doc-primary" type="button">다운로드 열기</button>`:`<button class="open-app doc-primary" type="button">${office?"읽기전용 열기":"바로 열기"}</button><button class="open-web" type="button">다운로드</button>`}
           <button class="replace" type="button">↻ 최신 파일로 교체</button>
-          ${isMobileDevice()?`<button class="open-web" type="button">다운로드 열기</button>`:`<button class="open-app" type="button">${office?"읽기전용 열기":"바로 열기"}</button><button class="open-web" type="button">다운로드</button>`}
           <button class="versions" type="button">이전 버전${versionCount?` (${versionCount})`:""}</button>
           <button class="delete" type="button">삭제</button>
         </div>`;
