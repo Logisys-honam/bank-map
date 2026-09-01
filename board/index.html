@@ -1121,6 +1121,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     <div id="siteWatchStatusText"></div>
   </div>
   <div class="header-alerts">
+    <button id="companySiteBtn" class="push-enable-btn" type="button">전산사이트 이동</button>
     <button id="pushEnableBtn" class="push-enable-btn" type="button">🔔 푸시 알림 켜기</button>
     <button id="alertCenterBtn" class="alert-center-btn" type="button">알림<span id="alertCenterBadge" class="alert-center-badge hidden">0</span></button>
   </div>
@@ -1570,6 +1571,16 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     return false;
   }
   const COMPANY_SITE_URL="http://main.logisys.co.kr/Enterprise.View/m/Default.aspx";
+  function goCompanySite(){
+    // 전용 확장프로그램이 있으면 이미 열린 회사전산 탭으로 이동한다.
+    // 확장프로그램이 없는 PC/모바일은 기존처럼 새 탭으로 연다.
+    const extReady=document.documentElement.dataset.logisysTabHelper==="1";
+    if(extReady){
+      window.postMessage({type:"LOGISYS_OPEN_COMPANY_SITE"},"*");
+      return;
+    }
+    window.open(COMPANY_SITE_URL,"_blank");
+  }
   const BOARD_PUSH_VAPID_KEY="BLvr4_5piwpJ1FeFHRbly_El052ijmDt-ef_AY4a-eAvtIZjU8AskrOEmOB_0skB1AVVGVIExMiANOoaBwGWfO8";
   let messaging=null, pushSwReg=null, boardFirebaseApp=null, pushForegroundBound=false;
   const PUSH_FUNCTION_URL="https://asia-northeast3-dealer-map-status.cloudfunctions.net/siteWatchPush";
@@ -1621,8 +1632,9 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     $("siteWatchToastMsg").textContent=a.message||`${a.category}에 새 항목이 등록되었습니다.`;
     $("siteWatchToastTime").textContent=a.createdAt?new Date(Number(a.createdAt)).toLocaleString("ko-KR"):"";
     el.classList.remove("hidden");
+    // 신규업무 팝업은 사용자가 직접 닫을 때까지 유지한다.
     clearTimeout(siteWatchToastTimer);
-    siteWatchToastTimer=setTimeout(()=>el.classList.add("hidden"),12000);
+    siteWatchToastTimer=null;
   }
   function renderSiteWatchStatus(){
     const el=$("siteWatchStatusText");
@@ -1681,7 +1693,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
         const unread=Number(a.createdAt||0)>watchReadAt(a.category);
         row.className=`watch-alert-row ${code}${unread?" unread":""}`;
         row.innerHTML=`<div class="watch-alert-row-top"><span class="watch-alert-kind">${esc(a.category||"업무")} 신규 ${esc(a.delta||1)}건</span><span class="watch-alert-time">${esc(fmt(a.createdAt))}</span></div><div class="watch-alert-message">${esc(a.message||"")}</div><div class="watch-alert-actions"><button class="company" type="button">회사 전산에서 확인</button></div>`;
-        row.querySelector(".company").onclick=()=>window.open(a.sourceUrl||COMPANY_SITE_URL,"_blank","noopener");
+        row.querySelector(".company").onclick=goCompanySite;
         list.appendChild(row);
       });
     }
@@ -4193,7 +4205,8 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     btn.addEventListener("click",()=>handleWatchTabClick(btn.dataset.main));
   });
   if($("siteWatchToastClose"))$("siteWatchToastClose").onclick=()=>$("siteWatchToast").classList.add("hidden");
-  if($("siteWatchOpenCompany"))$("siteWatchOpenCompany").onclick=()=>window.open(COMPANY_SITE_URL,"_blank","noopener");
+  if($("siteWatchOpenCompany"))$("siteWatchOpenCompany").onclick=goCompanySite;
+  if($("companySiteBtn"))$("companySiteBtn").onclick=goCompanySite;
   if($("alertCenterBtn"))$("alertCenterBtn").onclick=()=>openWatchAlertCenter();
   if($("watchAlertClose"))$("watchAlertClose").onclick=closeWatchAlertCenter;
   if($("pushTestBtn"))$("pushTestBtn").onclick=sendPushTest;
@@ -4349,7 +4362,7 @@ db.ref(officeMemoPath).on("value",snap=>{
   <div id="siteWatchToastTime" class="site-watch-toast-time"></div>
   <div class="site-watch-toast-actions">
     <button id="siteWatchToastClose" type="button">닫기</button>
-    <button id="siteWatchOpenCompany" class="open" type="button">회사사이트 열기</button>
+    <button id="siteWatchOpenCompany" class="open" type="button">회사 전산에서 확인</button>
   </div>
 </div>
 </body>
