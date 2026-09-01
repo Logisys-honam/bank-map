@@ -1635,9 +1635,9 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
 
   function sharedDocOfficeProtocol(doc){
     const ext=sharedDocExt(doc.name);
-    if([".xlsx",".xls",".xlsm",".csv"].includes(ext))return "ms-excel:ofe|u|";
-    if([".pptx",".ppt",".ppsx"].includes(ext))return "ms-powerpoint:ofe|u|";
-    if([".docx",".doc",".rtf"].includes(ext))return "ms-word:ofe|u|";
+    if([".xlsx",".xls",".xlsm",".csv"].includes(ext))return "ms-excel:ofv|u|";
+    if([".pptx",".ppt",".ppsx"].includes(ext))return "ms-powerpoint:ofv|u|";
+    if([".docx",".doc",".rtf"].includes(ext))return "ms-word:ofv|u|";
     return "";
   }
 
@@ -1652,12 +1652,9 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       return;
     }
     const proto=sharedDocOfficeProtocol(doc);
-    if(proto && isMobileDevice()){
-      const viewer="https://view.officeapps.live.com/op/view.aspx?src="+encodeURIComponent(url);
-      window.open(viewer,"_blank","noopener,noreferrer");
-      return;
-    }
     if(proto){
+      // Office 공식 URI 스킴의 읽기전용(ofv) 모드 사용.
+      // Firebase가 반환한 HTTPS URL 자체의 인코딩은 보존한다.
       window.location.href=proto+url;
       return;
     }
@@ -1827,7 +1824,10 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     }
 
     const ext=sharedDocExt(file.name);
-    const storagePath=`bankBoard/sharedDocs/${key}/${Date.now()}_${safeStorageName(file.name)}`;
+    // 모바일 Office가 Firebase URL의 한글/특수문자 파일명을 파일명으로 오인하는 문제를 줄이기 위해
+    // Storage 실제 객체명은 영문/숫자 ID + 확장자만 사용한다. 화면에는 원본 파일명을 그대로 보관한다.
+    const storageObjectName=`doc_${Date.now()}_${Math.random().toString(36).slice(2,10)}${ext.replace(/[^a-z0-9.]/gi,"")}`;
+    const storagePath=`bankBoard/sharedDocs/${key}/${storageObjectName}`;
     const ref=storage.ref(storagePath);
 
     const metadata={
