@@ -1558,13 +1558,27 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     window.open(url,"_blank","noopener,noreferrer");
   }
 
-  function openSharedDocWeb(doc){
+  async function downloadSharedDoc(doc){
     const url=String(doc.downloadURL||"");
     if(!url){
-      alert("이 문서는 이전 DB 저장 방식입니다.\\n'새 파일로 교체' 후 다시 시도해주세요.");
+      alert("이 문서는 이전 DB 저장 방식입니다.\n'새 파일로 교체' 후 다시 시도해주세요.");
       return;
     }
-    window.open(url,"_blank","noopener,noreferrer");
+    try{
+      const res=await fetch(url);
+      if(!res.ok)throw new Error("HTTP "+res.status);
+      const blob=await res.blob();
+      const blobUrl=URL.createObjectURL(blob);
+      const a=document.createElement("a");
+      a.href=blobUrl;
+      a.download=doc.name||"문서";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(()=>URL.revokeObjectURL(blobUrl),1500);
+    }catch(err){
+      window.open(url,"_blank","noopener,noreferrer");
+    }
   }
 
   function closeSharedDocVersions(){
@@ -1605,8 +1619,8 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     rows.forEach((v,i)=>{
       const r=document.createElement("div"); r.className="shared-version-row"+(v._current?" current":"");
       const when=v._current?(v.updatedAt||v.createdAt):(v.archivedAt||v.updatedAt||v.createdAt);
-      r.innerHTML=`<div><div class="shared-version-title">${v._current?"✅ 현재 최신 · ":`이전 ${i} · `}${esc(v.name||"문서")}</div><div class="shared-version-meta">${esc(sharedDocSize(v.size))} · ${esc(v.uploader||v.archivedBy||"등록자 미지정")}<br>${esc(fmt(when))}</div></div><div class="shared-version-actions"><button type="button" class="open">열기</button><button type="button" class="web">웹</button>${v._current?"":'<button type="button" class="restore">이 버전 복원</button>'}</div>`;
-      r.querySelector(".open").onclick=()=>openSharedDocInApp(v); r.querySelector(".web").onclick=()=>openSharedDocWeb(v);
+      r.innerHTML=`<div><div class="shared-version-title">${v._current?"✅ 현재 최신 · ":`이전 ${i} · `}${esc(v.name||"문서")}</div><div class="shared-version-meta">${esc(sharedDocSize(v.size))} · ${esc(v.uploader||v.archivedBy||"등록자 미지정")}<br>${esc(fmt(when))}</div></div><div class="shared-version-actions"><button type="button" class="open">읽기전용</button><button type="button" class="web">다운로드</button>${v._current?"":'<button type="button" class="restore">이 버전 복원</button>'}</div>`;
+      r.querySelector(".open").onclick=()=>openSharedDocInApp(v); r.querySelector(".web").onclick=()=>downloadSharedDoc(v);
       const restore=r.querySelector(".restore"); if(restore)restore.onclick=()=>restoreSharedDocVersion(doc,v);
       list.appendChild(r);
     });
@@ -1626,7 +1640,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     items.forEach(doc=>{
       const row=document.createElement("div");
       row.className="shared-doc-row";
-      row.title="더블클릭하면 앱으로 바로 열기를 시도합니다.";
+      row.title="더블클릭하면 읽기전용으로 앱 열기를 시도합니다.";
       const office=!!sharedDocOfficeProtocol(doc);
       const versionCount=sharedDocVersionCount(doc.key);
       row.innerHTML=`<div class="shared-doc-title">📎 ${esc(doc.title||String(doc.name||"문서").replace(/\.[^.]+$/, ""))}${versionCount?`<span class="shared-doc-version-badge">이전 ${versionCount}</span>`:""}</div>
@@ -1634,14 +1648,14 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
         <div class="shared-doc-meta">${esc(sharedDocSize(doc.size))} · ${esc(doc.uploader||"등록자 미지정")}<br>${esc(fmt(doc.updatedAt||doc.createdAt))}</div>
         <div class="shared-doc-buttons">
           <button class="replace" type="button">↻ 최신 파일로 교체</button>
-          <button class="open-app" type="button">${office?"앱으로 열기":"바로 열기"}</button>
-          <button class="open-web" type="button">웹 열기</button>
+          <button class="open-app" type="button">${office?"읽기전용 열기":"바로 열기"}</button>
+          <button class="open-web" type="button">다운로드</button>
           <button class="versions" type="button">이전 버전${versionCount?` (${versionCount})`:""}</button>
           <button class="delete" type="button">삭제</button>
         </div>`;
       row.ondblclick=()=>openSharedDocInApp(doc);
       row.querySelector(".open-app").onclick=e=>{e.stopPropagation();openSharedDocInApp(doc);};
-      row.querySelector(".open-web").onclick=e=>{e.stopPropagation();openSharedDocWeb(doc);};
+      row.querySelector(".open-web").onclick=e=>{e.stopPropagation();downloadSharedDoc(doc);};
       row.querySelector(".versions").onclick=e=>{e.stopPropagation();openSharedDocVersions(doc);};
       row.querySelector(".replace").onclick=e=>{
         e.stopPropagation();
