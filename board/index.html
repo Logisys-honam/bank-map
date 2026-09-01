@@ -1654,6 +1654,24 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     return OFFICE_PROXY_BASE+"/"+p.split("/").map(encodeURIComponent).join("/");
   }
 
+  function officeAppScheme(doc){
+    const ext=sharedDocExt(doc.name);
+    if([".xlsx",".xls",".xlsm",".csv"].includes(ext))return "ms-excel:";
+    if([".pptx",".ppt",".ppsx"].includes(ext))return "ms-powerpoint:";
+    if([".docx",".doc",".rtf"].includes(ext))return "ms-word:";
+    return "";
+  }
+
+  function officeMobileIri(url){
+    try{
+      // Office 모바일은 URL의 : / 같은 예약 문자는 그대로 두고,
+      // 한글/공백 등 경로 문자만 브라우저가 처리할 수 있는 IRI 형태로 전달한다.
+      return decodeURI(String(url||""));
+    }catch(e){
+      return String(url||"");
+    }
+  }
+
   function openSharedDocInApp(doc){
     const directUrl=String(doc.downloadURL||"");
     const proto=sharedDocOfficeProtocol(doc);
@@ -1663,7 +1681,14 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
         alert("이 문서는 이전 방식으로 등록된 파일입니다.\n'최신 파일로 교체'를 한 번 실행하면 읽기전용 열기를 사용할 수 있습니다.");
         return;
       }
-      window.location.href=proto+proxyUrl;
+      if(isMobileDevice()){
+        // Android/iOS Office에서는 축약 URI 형식을 사용한다.
+        // ms-excel:https://... 형식은 읽기전용(ofv|u)을 의미한다.
+        const scheme=officeAppScheme(doc);
+        window.location.href=scheme+officeMobileIri(proxyUrl);
+      }else{
+        window.location.href=proto+proxyUrl;
+      }
       return;
     }
     if(directUrl)window.open(directUrl,"_blank","noopener,noreferrer");
@@ -1894,7 +1919,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       <section class="shared-doc-panel">
         <div class="shared-doc-head"><strong>공용 문서</strong><span id="sharedDocCount" class="shared-doc-count">0개</span></div>
         <div class="shared-doc-actions"><button id="sharedDocUpload" class="shared-doc-upload" type="button">+ 문서 올리기</button><div id="sharedDocDropzone" class="shared-doc-dropzone"><strong>파일을 여기에 끌어다 놓기</strong><br>여러 파일도 한 번에 가능</div></div>
-        <div class="shared-doc-storage-note">읽기전용 열기 · 다운로드 후 수정 · 중계 테스트 버튼은 진단용 · 교체 전 파일은 이전 버전 자동보관</div>
+        <div class="shared-doc-storage-note">읽기전용 열기 · 다운로드 후 수정 · 중계 테스트 버튼은 진단용 · 모바일 Office 축약URI 테스트 · 교체 전 파일은 이전 버전 자동보관</div>
         <div id="sharedDocList" class="shared-doc-list"></div>
       </section>
       <section class="office-panel">
