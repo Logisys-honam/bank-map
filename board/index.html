@@ -1645,20 +1645,28 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||"");
   }
 
+  const OFFICE_PROXY_BASE="https://asia-northeast3-dealer-map-status.cloudfunctions.net/officeFile";
+
+  function officeProxyUrl(doc){
+    const p=String(doc.storagePath||"");
+    if(!p)return "";
+    // 쿼리스트링 없이 .xlsx/.pptx/.docx 로 끝나는 깨끗한 중계 URL 생성
+    return OFFICE_PROXY_BASE+"/"+p.split("/").map(encodeURIComponent).join("/");
+  }
+
   function openSharedDocInApp(doc){
-    const url=String(doc.downloadURL||"");
-    if(!url){
-      alert("이 문서는 이전 방식으로 등록된 파일입니다.\n'새 파일로 교체'를 한 번 실행하면 읽기전용 열기를 사용할 수 있습니다.");
-      return;
-    }
+    const directUrl=String(doc.downloadURL||"");
     const proto=sharedDocOfficeProtocol(doc);
     if(proto){
-      // Office 공식 URI 스킴의 읽기전용(ofv) 모드 사용.
-      // Firebase가 반환한 HTTPS URL 자체의 인코딩은 보존한다.
-      window.location.href=proto+url;
+      const proxyUrl=officeProxyUrl(doc);
+      if(!proxyUrl){
+        alert("이 문서는 이전 방식으로 등록된 파일입니다.\n'최신 파일로 교체'를 한 번 실행하면 읽기전용 열기를 사용할 수 있습니다.");
+        return;
+      }
+      window.location.href=proto+proxyUrl;
       return;
     }
-    window.open(url,"_blank","noopener,noreferrer");
+    if(directUrl)window.open(directUrl,"_blank","noopener,noreferrer");
   }
 
   async function downloadSharedDoc(doc){
