@@ -1046,6 +1046,31 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   .shared-doc-secondary .replace{flex:1 1 0!important;width:auto!important;padding:6px 4px!important;font-size:9px!important}
 }
 </style>
+
+<style id="v246-site-watch">
+/* v2.46 회사사이트 신규업무 감시 알림 */
+.work-tab{position:relative}
+.watch-badge{position:absolute;top:5px;right:8px;min-width:18px;height:18px;padding:0 5px;border-radius:10px;background:#e32929;color:#fff;font-size:11px;font-weight:900;line-height:18px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.22)}
+.watch-badge.hidden{display:none}
+#siteWatchStatusText{display:none;margin-top:3px;font-size:11px;font-weight:800}
+#siteWatchStatusText.warn{display:block;color:#b46a00}
+#siteWatchStatusText.error{display:block;color:#c51f1f}
+.site-watch-toast{position:fixed;z-index:25000;right:18px;top:82px;width:min(360px,calc(100vw - 28px));background:#fff;border:1px solid #cfd7e6;border-radius:14px;box-shadow:0 12px 36px rgba(0,0,0,.22);padding:14px 14px 12px}
+.site-watch-toast.hidden{display:none}
+.site-watch-toast-title{font-size:17px;font-weight:900;color:#182235;margin-bottom:6px}
+.site-watch-toast-msg{font-size:14px;line-height:1.5;color:#323b4c;white-space:pre-line}
+.site-watch-toast-time{margin-top:6px;font-size:11px;color:#7b8492}
+.site-watch-toast-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+.site-watch-toast-actions button{border:1px solid #cdd5e2;background:#fff;border-radius:8px;padding:7px 10px;font-weight:800;cursor:pointer}
+.site-watch-toast-actions .open{background:#2674df;border-color:#2674df;color:#fff}
+@media(max-width:900px){
+  .watch-badge{top:3px;right:4px;min-width:17px;height:17px;line-height:17px;font-size:10px;padding:0 4px}
+  .site-watch-toast{left:14px;right:14px;top:auto;bottom:24px;width:auto;border-radius:18px;padding:16px}
+  .site-watch-toast-title{font-size:18px}
+  .site-watch-toast-msg{font-size:15px}
+  .site-watch-toast-actions button{flex:1;min-height:42px}
+}
+</style>
 </head>
 <body>
 
@@ -1053,6 +1078,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   <div class="titlebox">
     <h1 id="homeTitle" role="button" tabindex="0" title="지사Home으로 이동">순천센터 공용 업무보드</h1>
     <div id="sync" class="sync">연결 중...</div>
+    <div id="siteWatchStatusText"></div>
   </div>
   <div id="headerStat" class="header-stat"></div>
 </header>
@@ -1441,8 +1467,8 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     return {cfg,memoPath};
   }
 
-  let db,storage,memoPath="bankMap/memos",historyPath="bankMap/memoHistory",officeMemoPath="bankMap/officeMemos",officeCalendarPath="bankMap/officeCalendar",sharedDocsPath="bankMap/sharedDocs",sharedDocVersionsPath="bankMap/sharedDocVersions";
-  const state={memos:{},weekHistory:[],officeMemos:{},officeCalendar:{},sharedDocs:{},sharedDocVersions:{},sharedDocReplaceKey:null,main:"office",sub:"active",staff:null,bankFilter:"",writerFilter:"",search:"",page:1,pageSize:20,selected:null,bulkSelected:new Set(),bulkSearch:"",detailSelected:new Set(),listSelected:new Set(),editMemo:null,calendarCursor:new Date(),calendarEditKey:null,officeDetailKey:null,calendarViewKey:null,officeEditKey:null,calendarDayKey:null,calendarDaySelected:new Set()};
+  let db,storage,memoPath="bankMap/memos",historyPath="bankMap/memoHistory",officeMemoPath="bankMap/officeMemos",officeCalendarPath="bankMap/officeCalendar",sharedDocsPath="bankMap/sharedDocs",sharedDocVersionsPath="bankMap/sharedDocVersions",siteWatchAlertsPath="bankMap/siteWatchAlerts",siteWatchStatusPath="bankMap/siteWatchStatus";
+  const state={memos:{},weekHistory:[],officeMemos:{},officeCalendar:{},sharedDocs:{},sharedDocVersions:{},siteWatchAlerts:{},siteWatchStatus:{},sharedDocReplaceKey:null,main:"office",sub:"active",staff:null,bankFilter:"",writerFilter:"",search:"",page:1,pageSize:20,selected:null,bulkSelected:new Set(),bulkSearch:"",detailSelected:new Set(),listSelected:new Set(),editMemo:null,calendarCursor:new Date(),calendarEditKey:null,officeDetailKey:null,calendarViewKey:null,officeEditKey:null,calendarDayKey:null,calendarDaySelected:new Set()};
 
   const esc=s=>String(s??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
   const linkifyText=s=>{
@@ -1490,6 +1516,76 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
 
     return false;
   }
+  const COMPANY_SITE_URL="http://main.logisys.co.kr/Enterprise.View/m/Default.aspx";
+  const watchCategoryMap={issue:"장애",install:"설치",regular:"정기"};
+  const watchMainMap={"장애":"issue","설치":"install","정기":"regular"};
+  let siteWatchToastTimer=null;
+  let siteWatchAttachedAt=0;
+
+  function watchReadKey(category){return `bankBoardWatchRead_${category}`;}
+  function watchReadAt(category){return Number(localStorage.getItem(watchReadKey(category))||0);}
+  function markWatchRead(category){
+    localStorage.setItem(watchReadKey(category),String(Date.now()));
+    renderSiteWatchBadges();
+  }
+  function siteWatchAlertRows(){
+    return Object.entries(state.siteWatchAlerts||{}).map(([key,v])=>({key,...(v||{})}))
+      .filter(x=>watchMainMap[x.category])
+      .sort((a,b)=>(Number(a.createdAt)||0)-(Number(b.createdAt)||0));
+  }
+  function ensureWatchBadge(btn){
+    if(!btn)return null;
+    let badge=btn.querySelector(".watch-badge");
+    if(!badge){badge=document.createElement("span");badge.className="watch-badge hidden";btn.appendChild(badge);}
+    return badge;
+  }
+  function renderSiteWatchBadges(){
+    const rows=siteWatchAlertRows();
+    Object.entries(watchCategoryMap).forEach(([main,category])=>{
+      const btn=document.querySelector(`[data-main="${main}"]`);
+      const badge=ensureWatchBadge(btn);
+      if(!badge)return;
+      const readAt=watchReadAt(category);
+      const count=rows.filter(x=>x.category===category && Number(x.createdAt||0)>readAt).length;
+      badge.textContent=count>99?"99+":String(count);
+      badge.classList.toggle("hidden",count===0);
+    });
+  }
+  function showSiteWatchPopup(a){
+    if(!a||!a.category)return;
+    const el=$("siteWatchToast");
+    $("siteWatchToastTitle").textContent=`새 ${a.category} 알림`;
+    $("siteWatchToastMsg").textContent=a.message||`${a.category}에 새 항목이 등록되었습니다.`;
+    $("siteWatchToastTime").textContent=a.createdAt?new Date(Number(a.createdAt)).toLocaleString("ko-KR"):"";
+    el.classList.remove("hidden");
+    clearTimeout(siteWatchToastTimer);
+    siteWatchToastTimer=setTimeout(()=>el.classList.add("hidden"),12000);
+  }
+  function renderSiteWatchStatus(){
+    const el=$("siteWatchStatusText");
+    if(!el)return;
+    const rows=Object.values(state.siteWatchStatus||{}).filter(Boolean);
+    if(!rows.length){el.className="";el.textContent="";return;}
+    const now=Date.now();
+    const recent=rows.filter(x=>now-Number(x.lastHeartbeat||0)<180000);
+    const loginBad=recent.find(x=>x.loggedIn===false);
+    if(loginBad){
+      el.className="error";
+      el.textContent="회사사이트 감시 · 로그인 필요";
+      return;
+    }
+    if(recent.length<3){
+      el.className="warn";
+      el.textContent=`회사사이트 감시 · 연결 ${recent.length}/3`;
+      return;
+    }
+    el.className="";el.textContent="";
+  }
+  function handleWatchTabClick(main){
+    const category=watchCategoryMap[main];
+    if(category)markWatchRead(category);
+  }
+
   function todayKey(){
     const p=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Seoul",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
     const o={};p.forEach(x=>o[x.type]=x.value);return `${o.year}-${o.month}-${o.day}`;
@@ -2458,6 +2554,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     document.querySelectorAll("[data-main]").forEach(btn=>btn.classList.toggle("active",btn.dataset.main===state.main));
     document.querySelectorAll("[data-main-menu]").forEach(btn=>btn.classList.toggle("active",btn.dataset.mainMenu===state.main));
     renderSubTabs();
+    renderSiteWatchBadges();
   }
 
   function renderStatusTable(rows,isDone){
@@ -3860,6 +3957,13 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     localStorage.setItem("bankBoardWriter",e.target.value);
   };
 
+
+  document.querySelectorAll("[data-main]").forEach(btn=>{
+    btn.addEventListener("click",()=>handleWatchTabClick(btn.dataset.main));
+  });
+  if($("siteWatchToastClose"))$("siteWatchToastClose").onclick=()=>$("siteWatchToast").classList.add("hidden");
+  if($("siteWatchOpenCompany"))$("siteWatchOpenCompany").onclick=()=>window.open(COMPANY_SITE_URL,"_blank","noopener");
+
   // Firebase 연결 전에도 탭/필터 UI는 즉시 동작
   render();
 
@@ -3931,6 +4035,23 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     catch(err){alert(`파일 교체 실패\\n${err.message}`);}
   };
 
+      siteWatchAttachedAt=Date.now();
+      db.ref(siteWatchAlertsPath).limitToLast(100).on("value",snap=>{
+        state.siteWatchAlerts=snap.val()||{};
+        renderSiteWatchBadges();
+      });
+      db.ref(siteWatchAlertsPath).limitToLast(10).on("child_added",snap=>{
+        const a={key:snap.key,...(snap.val()||{})};
+        const ts=Number(a.createdAt||0);
+        if(ts && ts>=siteWatchAttachedAt-3000){
+          showSiteWatchPopup(a);
+        }
+      });
+      db.ref(siteWatchStatusPath).on("value",snap=>{
+        state.siteWatchStatus=snap.val()||{};
+        renderSiteWatchStatus();
+      });
+
 db.ref(officeMemoPath).on("value",snap=>{
         state.officeMemos=snap.val()||{};
         render();
@@ -3964,5 +4085,15 @@ db.ref(officeMemoPath).on("value",snap=>{
   })();
 })();
 </script>
+
+<div id="siteWatchToast" class="site-watch-toast hidden" role="alert" aria-live="assertive">
+  <div id="siteWatchToastTitle" class="site-watch-toast-title">새 업무 알림</div>
+  <div id="siteWatchToastMsg" class="site-watch-toast-msg"></div>
+  <div id="siteWatchToastTime" class="site-watch-toast-time"></div>
+  <div class="site-watch-toast-actions">
+    <button id="siteWatchToastClose" type="button">닫기</button>
+    <button id="siteWatchOpenCompany" class="open" type="button">회사사이트 열기</button>
+  </div>
+</div>
 </body>
 </html>
