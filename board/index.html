@@ -1571,7 +1571,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   }
   const COMPANY_SITE_URL="http://main.logisys.co.kr/Enterprise.View/m/Default.aspx";
   const BOARD_PUSH_VAPID_KEY="BLvr4_5piwpJ1FeFHRbly_El052ijmDt-ef_AY4a-eAvtIZjU8AskrOEmOB_0skB1AVVGVIExMiANOoaBwGWfO8";
-  let messaging=null, pushSwReg=null, boardFirebaseApp=null;
+  let messaging=null, pushSwReg=null, boardFirebaseApp=null, pushForegroundBound=false;
   const PUSH_FUNCTION_URL="https://asia-northeast3-dealer-map-status.cloudfunctions.net/siteWatchPush";
   const watchCategoryMap={issue:"장애",install:"설치",regular:"정기"};
   const watchMainMap={"장애":"issue","설치":"install","정기":"regular"};
@@ -1691,16 +1691,26 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     modal.classList.add("hidden");
     modal.setAttribute("aria-hidden","true");
   }
+  function pushPreferenceEnabled(){
+    return localStorage.getItem("bankBoardPushEnabled")!=="0";
+  }
   function pushStatusText(){
     const btn=$("pushEnableBtn");
     if(!btn)return;
+    btn.disabled=false;
     if(!("Notification" in window)){btn.textContent="푸시 미지원";btn.className="push-enable-btn denied";btn.disabled=true;return;}
-    if(Notification.permission==="granted"){
+    if(Notification.permission==="granted" && pushPreferenceEnabled()){
       btn.textContent="🔔 푸시 알림 켜짐";btn.className="push-enable-btn enabled";
+      btn.title="눌러서 이 기기의 푸시 알림을 끕니다.";
+    }else if(Notification.permission==="granted"){
+      btn.textContent="🔕 푸시 알림 꺼짐";btn.className="push-enable-btn";
+      btn.title="눌러서 이 기기의 푸시 알림을 다시 켭니다.";
     }else if(Notification.permission==="denied"){
       btn.textContent="🔕 알림 차단됨";btn.className="push-enable-btn denied";
+      btn.title="브라우저 사이트 설정에서 알림 권한을 허용해야 합니다.";
     }else{
       btn.textContent="🔔 푸시 알림 켜기";btn.className="push-enable-btn";
+      btn.title="이 기기에서 신규 업무 푸시 알림을 받습니다.";
     }
   }
   async function registerPushToken(app){
@@ -1720,30 +1730,49 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       platform:navigator.userAgent||"",
       updatedAt:firebase.database.ServerValue.TIMESTAMP
     });
-    messaging.onMessage(async payload=>{
-      const data=(payload&&payload.data)||{};
-      const title=data.title||"순천센터 업무 알림";
-      const body=data.body||"새 업무가 등록되었습니다.";
-      if(pushSwReg){
-        try{
-          await pushSwReg.showNotification(title,{
-            body,
-            tag:data.tag||`bank-watch-${Date.now()}`,
-            data:{url:data.url||"./",category:data.categoryCode||""},
-            renotify:true
-          });
-        }catch(e){console.warn("전경 푸시 표시 실패",e);}
-      }
-    });
+    localStorage.setItem("bankBoardPushEnabled","1");
+    if(!pushForegroundBound){
+      messaging.onMessage(async payload=>{
+        if(!pushPreferenceEnabled())return;
+        const data=(payload&&payload.data)||{};
+        const title=data.title||"순천센터 업무 알림";
+        const body=data.body||"새 업무가 등록되었습니다.";
+        if(pushSwReg){
+          try{
+            await pushSwReg.showNotification(title,{
+              body,
+              tag:data.tag||`bank-watch-${Date.now()}`,
+              data:{url:data.url||"./",category:data.categoryCode||""},
+              renotify:true
+            });
+          }catch(e){console.warn("전경 푸시 표시 실패",e);}
+        }
+      });
+      pushForegroundBound=true;
+    }
     return true;
+  }
+  async function disablePushNotifications(app){
+    localStorage.setItem("bankBoardPushEnabled","0");
+    try{
+      const uid=app.auth().currentUser && app.auth().currentUser.uid;
+      if(uid && db)await db.ref(`${pushTokensPath}/${uid}/enabled`).set(false);
+      pushStatusText();
+      alert("이 기기의 푸시 알림을 껐습니다. 다시 누르면 언제든 켤 수 있습니다.");
+    }catch(e){
+      console.error(e);
+      localStorage.setItem("bankBoardPushEnabled","1");
+      pushStatusText();
+      alert("푸시 알림 끄기 실패: "+(e&&e.message?e.message:e));
+    }
   }
   async function sendPushTest(){
     if(!boardFirebaseApp||!boardFirebaseApp.auth().currentUser){
       alert("Firebase 연결이 완료된 뒤 다시 시도해주세요.");
       return;
     }
-    if(Notification.permission!=="granted"){
-      alert("먼저 푸시 알림을 켜주세요.");
+    if(Notification.permission!=="granted" || !pushPreferenceEnabled()){
+      alert("먼저 이 기기의 푸시 알림을 켜주세요.");
       return;
     }
     try{
@@ -1762,18 +1791,21 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   }
   async function enablePushNotifications(app){
     if(!("Notification" in window)){alert("이 브라우저는 웹 푸시 알림을 지원하지 않습니다.");return;}
+    if(Notification.permission==="granted" && pushPreferenceEnabled()){
+      await disablePushNotifications(app);
+      return;
+    }
     if(Notification.permission==="denied"){
       alert("브라우저에서 알림이 차단되어 있습니다. 사이트 설정에서 알림을 허용해주세요.");
       pushStatusText();
       return;
     }
     const permission=Notification.permission==="granted"?"granted":await Notification.requestPermission();
-    pushStatusText();
-    if(permission!=="granted")return;
+    if(permission!=="granted"){pushStatusText();return;}
     try{
       await registerPushToken(app);
       pushStatusText();
-      alert("푸시 알림이 등록되었습니다. 업무보드를 닫아도 신규 장애/설치/정기 알림을 받을 수 있습니다.");
+      alert("이 기기의 푸시 알림을 켰습니다. 업무보드가 열려 있거나 닫혀 있어도 신규 장애/설치/정기 알림을 받습니다.");
     }catch(e){
       console.error(e);
       alert("푸시 알림 등록 실패: "+(e&&e.message?e.message:e));
@@ -4195,8 +4227,10 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       await app.auth().signInAnonymously();
 
       if($("pushEnableBtn"))$("pushEnableBtn").onclick=()=>enablePushNotifications(app);
-      if(Notification.permission==="granted"){
+      if(Notification.permission==="granted" && pushPreferenceEnabled()){
         registerPushToken(app).then(pushStatusText).catch(e=>console.warn("푸시 자동 등록 실패",e));
+      }else{
+        pushStatusText();
       }
       const watchParam=new URLSearchParams(location.search).get("watch");
       if(watchParam&&watchCategoryMap[watchParam]){
