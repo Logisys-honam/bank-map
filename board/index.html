@@ -984,6 +984,46 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   .schedule-status-title{font-size:12px}
 }
 </style>
+<style id="v2447-mobile-office-tabs">
+/* v2.44.7 모바일 지사Home 전용 탭 분리 */
+@media(max-width:900px){
+  body.office-wide .sub-tabs{
+    position:sticky;top:0;z-index:20;
+    display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr));
+    min-height:46px;background:#eff1f5;
+  }
+  body.office-wide .sub-tab{
+    min-width:0!important;max-width:none!important;padding:0 3px!important;
+    font-size:11px!important;white-space:nowrap;
+  }
+  body.office-wide .office-dashboard.mobile-office-schedule .shared-doc-panel,
+  body.office-wide .office-dashboard.mobile-office-schedule .office-panel{display:none!important}
+  body.office-wide .office-dashboard.mobile-office-schedule .calendar-panel,
+  body.office-wide .office-dashboard.mobile-office-schedule .schedule-status-panel{display:block!important}
+
+  body.office-wide .office-dashboard.mobile-office-active .shared-doc-panel,
+  body.office-wide .office-dashboard.mobile-office-active .calendar-panel,
+  body.office-wide .office-dashboard.mobile-office-active .schedule-status-panel{display:none!important}
+  body.office-wide .office-dashboard.mobile-office-active .office-panel{display:block!important}
+
+  body.office-wide .office-dashboard.mobile-office-done .shared-doc-panel,
+  body.office-wide .office-dashboard.mobile-office-done .calendar-panel,
+  body.office-wide .office-dashboard.mobile-office-done .schedule-status-panel{display:none!important}
+  body.office-wide .office-dashboard.mobile-office-done .office-panel{display:block!important}
+
+  body.office-wide .office-dashboard.mobile-office-docs .office-panel,
+  body.office-wide .office-dashboard.mobile-office-docs .calendar-panel,
+  body.office-wide .office-dashboard.mobile-office-docs .schedule-status-panel{display:none!important}
+  body.office-wide .office-dashboard.mobile-office-docs .shared-doc-panel{display:block!important}
+
+  body.office-wide .office-dashboard.mobile-office-schedule .calendar-panel{order:1!important}
+  body.office-wide .office-dashboard.mobile-office-schedule .schedule-status-panel{order:2!important}
+  body.office-wide .office-dashboard.mobile-office-active .office-panel,
+  body.office-wide .office-dashboard.mobile-office-done .office-panel,
+  body.office-wide .office-dashboard.mobile-office-docs .shared-doc-panel{order:1!important}
+}
+</style>
+
 </head>
 <body>
 
@@ -1824,7 +1864,8 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     $("viewTitle").textContent="순천지사메모";
     $("viewCount").textContent=`${items.length}건`;
 
-    el.innerHTML=`<div class="office-dashboard">
+    const mobileOfficeClass=!isDesktop()?` mobile-office-${state.sub||"schedule"}`:"";
+    el.innerHTML=`<div class="office-dashboard${mobileOfficeClass}">
       <section class="shared-doc-panel">
         <div class="shared-doc-head"><strong>공용 문서</strong><span id="sharedDocCount" class="shared-doc-count">0개</span></div>
         <div class="shared-doc-actions"><button id="sharedDocUpload" class="shared-doc-upload" type="button">+ 문서 올리기</button><div id="sharedDocDropzone" class="shared-doc-dropzone"><strong>파일을 여기에 끌어다 놓기</strong><br>여러 파일도 한 번에 가능</div></div>
@@ -2307,7 +2348,9 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   function renderSubTabs(){
     const el=$("subTabs");el.innerHTML="";
     let defs=[];
-    if(state.main==="office")defs=[["active","현황"],["done","완료"],["add","추가"]];
+    if(state.main==="office")defs=isDesktop()
+      ? [["active","현황"],["done","완료"],["add","추가"]]
+      : [["schedule","일정현황"],["active","메모현황"],["done","완료"],["add","추가"],["docs","공용문서"]];
     if(state.main==="issue")defs=[["active","현황"],["done","완료"],["add","추가"]];
     if(state.main==="install")defs=[["active","일정"],["done","완료"],["add","추가"]];
     if(!defs.length)return;
@@ -2516,7 +2559,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       await db.ref().update(updates);
       state.listSelected.clear();
       if(target==="office"){
-        state.main="office";state.sub="";
+        state.main="office";state.sub=isDesktop()?"active":"schedule";
       }else{
         state.main=target==="장애"?"issue":target==="설치"?"install":"regular";
         state.sub=state.main==="regular"?"":"active";
@@ -2551,7 +2594,11 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
 
     if(state.main==="office"){
       $("filterBar").style.display="none";
-      if(state.sub!=="active"&&state.sub!=="done")state.sub="active";
+      if(isDesktop()){
+        if(state.sub!=="active"&&state.sub!=="done")state.sub="active";
+      }else{
+        if(!["schedule","active","done","docs"].includes(state.sub))state.sub="schedule";
+      }
       renderOfficeMemos();
       return;
     }
@@ -3402,7 +3449,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   function goOfficeHome(){
     state.main="office";
     state.listSelected.clear();
-    state.sub="active";
+    state.sub=isDesktop()?"active":"schedule";
     state.page=1;
     render();
     window.scrollTo({top:0,behavior:"smooth"});
@@ -3415,7 +3462,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     btn.onclick=()=>{
       state.main=btn.dataset.main;
       state.listSelected.clear();
-      state.sub=(state.main==="office"||state.main==="issue"||state.main==="install")?"active":"";
+      state.sub=state.main==="office"?(isDesktop()?"active":"schedule"):(state.main==="issue"||state.main==="install")?"active":"";
       state.page=1;
       render();
     };
@@ -3425,7 +3472,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     btn.onclick=()=>{
       state.main=btn.dataset.mainMenu;
       state.listSelected.clear();
-      state.sub=(state.main==="office"||state.main==="issue"||state.main==="install")?"active":"";
+      state.sub=state.main==="office"?(isDesktop()?"active":"schedule"):(state.main==="issue"||state.main==="install")?"active":"";
       state.page=1;
       render();
     };
