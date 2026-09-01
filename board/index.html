@@ -1633,13 +1633,21 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     const recent=rows.filter(x=>now-Number(x.lastHeartbeat||0)<180000);
     const loginBad=recent.find(x=>x.loggedIn===false);
     if(loginBad){
-      el.className="error";
-      el.textContent="회사사이트 감시 · 로그인 필요";
+      el.className="warn";
+      el.textContent="회사사이트 감시 · 로그인 복구 중";
       return;
     }
-    if(recent.length<3){
-      el.className="warn";
-      el.textContent=`회사사이트 감시 · 연결 ${recent.length}/3`;
+    if(recent.length){
+      // 장애/설치/정기 각각의 heartbeat 개수를 3/3으로 판단하지 않는다.
+      // 감시 PC에서 하나라도 최근 상태가 들어오면 감시 프로세스는 살아있는 것으로 본다.
+      el.className="";
+      el.textContent="";
+      return;
+    }
+    const latest=Math.max(...rows.map(x=>Number(x.lastHeartbeat||0)));
+    if(latest && now-latest>=180000){
+      el.className="error";
+      el.textContent="회사사이트 감시 · 연결 끊김";
       return;
     }
     el.className="";el.textContent="";
