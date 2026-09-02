@@ -1150,6 +1150,14 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
 }
 </style>
 
+
+<style id="v250-site-operations">
+/* v2.50.0 회사 전산의 '요약 → 담당 → 대상 상세' 흐름을 참고한 사이트 운영관리 */
+.v250 .site-ops-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}.v250 .site-mode-tabs{margin-bottom:10px}
+.ops-overview-layout{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(330px,.9fr);gap:10px;align-items:start}.ops-panel{background:#fff;border:1px solid #dce4ee;border-radius:13px;overflow:hidden;min-width:0}.ops-customer{grid-row:span 2}.ops-panel-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px 12px;background:#f6f9fc;border-bottom:1px solid #e5eaf1}.ops-panel-head>div{display:flex;flex-direction:column;gap:2px}.ops-panel-head strong{font-size:13px;color:#1d2939}.ops-panel-head span{font-size:9px;color:#98a2b3;font-weight:800}.ops-table-wrap{overflow:auto;max-height:530px}.ops-table-wrap.compact{max-height:285px}.ops-table{width:100%;border-collapse:collapse;font-size:10px;white-space:nowrap}.ops-table th{position:sticky;top:0;z-index:1;background:#edf3fa;color:#475467;font-weight:950;padding:8px 7px;border-bottom:1px solid #d8e1ec;text-align:center}.ops-table th:first-child,.ops-table td:first-child{text-align:left}.ops-table td{padding:8px 7px;border-bottom:1px solid #edf0f4;text-align:center;color:#475467}.ops-table tbody tr{cursor:pointer}.ops-table tbody tr:hover{background:#f5f9ff}.ops-table td.issue{color:#c4320a;font-weight:900}.ops-table td.install{color:#175cd3;font-weight:900}.ops-table td.regular{color:#067647;font-weight:900}.ops-table td.warn{color:#b54708;font-weight:950;background:#fff8f0}.ops-cycle-list{padding:8px 10px 11px}.ops-cycle-list button{display:grid;grid-template-columns:92px 1fr 30px;gap:7px;align-items:center;width:100%;border:0;background:transparent;padding:6px 2px}.ops-cycle-list span{font-size:10px;font-weight:850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}.ops-cycle-list div{height:7px;background:#edf1f6;border-radius:999px;overflow:hidden}.ops-cycle-list i{display:block;height:100%;background:#56a07a;border-radius:999px}.ops-cycle-list strong{font-size:10px;text-align:right}.site-work-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:9px 0 7px}.site-work-strip button,.site-work-strip .total{border:0;border-radius:8px;padding:6px 4px;text-align:center;background:#f5f7fa}.site-work-strip button{cursor:pointer}.site-work-strip span{display:block;font-size:8px;color:#667085;font-weight:850}.site-work-strip strong{display:block;font-size:13px;margin-top:1px}.site-work-strip .issue strong{color:#c4320a}.site-work-strip .install strong{color:#175cd3}.site-work-strip .regular strong{color:#067647}.site-work-strip .total{background:#eef2f7}.site-work-strip .total strong{color:#1d2939}
+@media(max-width:1000px){.ops-overview-layout{grid-template-columns:1fr}.ops-customer{grid-row:auto}.ops-table-wrap{max-height:380px}.ops-table-wrap.compact{max-height:300px}}
+@media(max-width:760px){.v250 .site-ops-kpis{grid-template-columns:1fr 1fr}.ops-panel-head{padding:10px}.ops-table{font-size:9px}.ops-table th,.ops-table td{padding:7px 6px}.ops-table th:nth-child(3),.ops-table td:nth-child(3),.ops-table th:nth-child(4),.ops-table td:nth-child(4){display:none}.ops-customer .ops-table th:nth-child(3),.ops-customer .ops-table td:nth-child(3){display:table-cell}.site-work-strip{gap:3px}.site-work-strip strong{font-size:12px}}
+</style>
 </head>
 <body>
 
@@ -2563,11 +2571,38 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     return chips.join("");
   }
 
+  function siteWorkStats(b){
+    const out={issue:0,install:0,regular:0,total:0};
+    memosFor(b).forEach(m=>{
+      const t=String(m.workType||"장애");
+      if(t==="설치")out.install++;
+      else if(t==="정기")out.regular++;
+      else out.issue++;
+      out.total++;
+    });
+    return out;
+  }
+
+  function openSiteWork(b,type){
+    if(!b)return;
+    state.main=type==="설치"?"install":type==="정기"?"regular":"issue";
+    state.sub=state.main==="regular"?"":"active";
+    state.branchId=String(b.id||"");
+    state.search="";state.page=1;
+    saveUiState();render();window.scrollTo({top:0,behavior:"smooth"});
+  }
+
   function siteCardHtml(b){
-    const h=siteHealthInfo(b);
+    const h=siteHealthInfo(b),w=siteWorkStats(b);
     const sub=[b.branchNo?`점번 ${b.branchNo}`:"",b.center,b.quarter].filter(Boolean).join(" · ");
     return `<article class="site-card${h.ok?"":" needs-attention"}" data-site="${esc(b.memoId)}">
-      <div class="site-card-top"><div><div class="site-card-bank">${esc(b.bank||"고객사 미등록")}</div><div class="site-card-name">${esc(b.name||"이름 없음")}</div><div class="site-card-sub">${esc(sub||"추가 식별정보 없음")}</div></div><div class="site-health ${h.ok?"good":"warn"}">${h.score}</div></div>
+      <div class="site-card-top"><div><div class="site-card-bank">${esc(b.bank||"고객사 미등록")}</div><div class="site-card-name">${esc(b.name||"이름 없음")}</div><div class="site-card-sub">${esc(sub||"추가 식별정보 없음")}</div></div><div class="site-health ${h.ok?"good":"warn"}" title="기본정보 완성도">${h.score}</div></div>
+      <div class="site-work-strip">
+        <button data-work="장애" class="issue"><span>장애</span><strong>${w.issue}</strong></button>
+        <button data-work="설치" class="install"><span>설치</span><strong>${w.install}</strong></button>
+        <button data-work="정기" class="regular"><span>정기</span><strong>${w.regular}</strong></button>
+        <div class="total"><span>진행업무</span><strong>${w.total}</strong></div>
+      </div>
       <div class="site-card-chips">${siteStatusChips(b)}</div>
       <div class="site-card-info"><div><span>담당</span><strong>${esc(b.staff||"미지정")}</strong></div><div><span>전화</span><strong>${esc(b.phone||"-")}</strong></div><div class="wide"><span>주소</span><strong>${esc(b.address||"주소 미등록")}</strong></div></div>
       <div class="site-card-actions"><button class="site-card-edit" type="button">정보 수정</button><button class="site-card-hide" type="button">숨김</button></div>
@@ -2576,23 +2611,33 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
 
   function bindSiteCards(root){
     root.querySelectorAll(".site-card").forEach(card=>{
-      const id=card.dataset.site;
+      const id=card.dataset.site,b=branches.find(x=>x.memoId===id);
       card.querySelector(".site-card-edit")?.addEventListener("click",()=>openSiteEdit(id));
       card.querySelector(".site-card-hide")?.addEventListener("click",()=>archiveManagedSite(id));
+      card.querySelectorAll("[data-work]").forEach(btn=>btn.addEventListener("click",()=>openSiteWork(b,btn.dataset.work)));
     });
   }
 
+  function siteGroupStats(items){
+    const r={sites:items.length,assigned:0,attention:0,issue:0,install:0,regular:0,total:0};
+    items.forEach(b=>{
+      if(b.staff&&b.staff!=="미지정")r.assigned++;
+      if(!siteHealthInfo(b).ok)r.attention++;
+      const w=siteWorkStats(b);r.issue+=w.issue;r.install+=w.install;r.regular+=w.regular;r.total+=w.total;
+    });
+    return r;
+  }
+
   function renderSiteManager(){
-    const el=$("list");
-    const all=branches.slice();
-    const filtered=siteManagerFiltered();
+    const el=$("list"),all=branches.slice(),filtered=siteManagerFiltered();
+    if(state.siteManagerMode==="dashboard")state.siteManagerMode="overview";
+    const mode=state.siteManagerMode||"overview";
     const banks=[...new Set(all.map(b=>b.bank).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ko"));
     const staffs=[...new Set(all.map(b=>b.staff).filter(x=>x&&x!=="미지정"))].sort((a,b)=>a.localeCompare(b,"ko"));
-    const attention=all.filter(b=>!siteHealthInfo(b).ok);
-    const unassigned=all.filter(b=>!b.staff||b.staff==="미지정");
+    const attention=all.filter(b=>!siteHealthInfo(b).ok),unassigned=all.filter(b=>!b.staff||b.staff==="미지정");
     const managed=all.filter(b=>(state.siteMaster||{})[b.memoId]);
-    const mode=state.siteManagerMode||"dashboard";
-    $("viewTitle").textContent="사이트 운영센터";$("viewCount").textContent=`${all.length}개`;
+    const activeTotal=all.reduce((n,b)=>n+siteWorkStats(b).total,0);
+    $("viewTitle").textContent="사이트 운영관리";$("viewCount").textContent=`${all.length}개`;
 
     const controls=`<div class="site-commandbar">
       <div class="site-search-wrap"><input id="siteManagerSearch" value="${esc(state.siteManagerSearch||"")}" placeholder="사이트명 · 점번 · 주소 · 담당자 통합검색"></div>
@@ -2602,47 +2647,51 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     </div>`;
 
     let body="";
-    if(mode==="dashboard"){
-      const attentionRows=attention.slice().sort((a,b)=>siteHealthInfo(b).missing.length-siteHealthInfo(a).missing.length||(a.name||"").localeCompare(b.name||"","ko")).slice(0,8);
-      const recent=managed.slice().sort((a,b)=>siteManagedAt(b)-siteManagedAt(a)).slice(0,8);
-      const staffMap={};all.forEach(b=>{const k=b.staff||"미지정";staffMap[k]=(staffMap[k]||0)+1;});
-      const staffRows=Object.entries(staffMap).sort((a,b)=>b[1]-a[1]).slice(0,10);
-      body=`<div class="site-dashboard-grid">
-        <section class="site-dash-panel attention"><div class="site-dash-head"><div><strong>정리 필요한 사이트</strong><span>${attention.length}개</span></div><button data-mode="attention">전체 보기</button></div>
-          <div class="site-attention-list">${attentionRows.length?attentionRows.map(b=>{const h=siteHealthInfo(b);return `<button class="site-attention-row" data-edit="${esc(b.memoId)}"><div><strong>${esc(b.name)}</strong><span>${esc(b.bank||"고객사 미등록")} · ${esc(b.staff||"미지정")}</span></div><div class="site-missing-tags">${h.missing.map(x=>`<em>${esc(x)}</em>`).join("")}</div></button>`}).join(""):'<div class="site-dash-empty">정리할 사이트가 없습니다.</div>'}</div>
+    if(mode==="overview"){
+      const bankMap={};all.forEach(b=>{const k=b.bank||"고객사 미등록";(bankMap[k]||(bankMap[k]=[])).push(b);});
+      const bankRows=Object.entries(bankMap).map(([name,items])=>[name,siteGroupStats(items)]).sort((a,b)=>b[1].total-a[1].total||b[1].sites-a[1].sites||a[0].localeCompare(b[0],"ko"));
+      const staffMap={};all.forEach(b=>{const k=b.staff||"미지정";(staffMap[k]||(staffMap[k]=[])).push(b);});
+      const staffRows=Object.entries(staffMap).map(([name,items])=>[name,siteGroupStats(items)]).sort((a,b)=>b[1].total-a[1].total||b[1].sites-a[1].sites);
+      const quarterMap={};all.forEach(b=>{const q=String(b.quarter||"").trim()||"주기 미등록";quarterMap[q]=(quarterMap[q]||0)+1;});
+      const quarterRows=Object.entries(quarterMap).sort((a,b)=>b[1]-a[1]).slice(0,12);
+      const maxQuarter=Math.max(1,...quarterRows.map(x=>x[1]));
+      body=`<div class="ops-overview-layout">
+        <section class="ops-panel ops-customer"><div class="ops-panel-head"><div><strong>고객사 운영 현황</strong><span>회사 전산처럼 요약 → 상세로 내려가는 구조</span></div><span>${bankRows.length}개 고객사</span></div>
+          <div class="ops-table-wrap"><table class="ops-table"><thead><tr><th>고객사</th><th>사이트</th><th>담당</th><th>정리필요</th><th>장애</th><th>설치</th><th>정기</th><th>진행</th></tr></thead><tbody>${bankRows.map(([name,r])=>`<tr data-bank="${esc(name)}"><td><strong>${esc(name)}</strong></td><td>${r.sites}</td><td>${r.assigned}</td><td class="${r.attention?'warn':''}">${r.attention}</td><td class="issue">${r.issue}</td><td class="install">${r.install}</td><td class="regular">${r.regular}</td><td><strong>${r.total}</strong></td></tr>`).join("")}</tbody></table></div>
         </section>
-        <section class="site-dash-panel"><div class="site-dash-head"><div><strong>최근 수정</strong><span>Firebase 기준</span></div><button data-mode="all">전체 목록</button></div>
-          <div class="site-recent-list">${recent.length?recent.map(b=>`<button class="site-recent-row" data-edit="${esc(b.memoId)}"><div><strong>${esc(b.name)}</strong><span>${esc(b.bank||"-")} · ${esc(b.staff||"미지정")}</span></div><time>${siteManagedAt(b)?fmtTime(siteManagedAt(b)):"-"}</time></button>`).join(""):'<div class="site-dash-empty">아직 웹에서 수정한 사이트가 없습니다.</div>'}</div>
+        <section class="ops-panel"><div class="ops-panel-head"><div><strong>담당자 현황</strong><span>담당 사이트와 현재 진행업무</span></div></div>
+          <div class="ops-table-wrap compact"><table class="ops-table"><thead><tr><th>담당자</th><th>사이트</th><th>장애</th><th>설치</th><th>정기</th><th>진행</th></tr></thead><tbody>${staffRows.map(([name,r])=>`<tr data-staff="${esc(name)}"><td><strong>${esc(name)}</strong></td><td>${r.sites}</td><td class="issue">${r.issue}</td><td class="install">${r.install}</td><td class="regular">${r.regular}</td><td><strong>${r.total}</strong></td></tr>`).join("")}</tbody></table></div>
         </section>
-        <section class="site-dash-panel staff"><div class="site-dash-head"><div><strong>담당자별 사이트</strong><span>업무 분포</span></div></div><div class="site-staff-bars">${staffRows.map(([name,count])=>`<button data-staff="${esc(name)}"><span>${esc(name)}</span><div><i style="width:${Math.max(8,Math.round(count/Math.max(1,all.length)*100))}%"></i></div><strong>${count}</strong></button>`).join("")}</div></section>
+        <section class="ops-panel"><div class="ops-panel-head"><div><strong>점검주기 분포</strong><span>사이트 마스터의 점검주기 기준</span></div></div>
+          <div class="ops-cycle-list">${quarterRows.map(([name,count])=>`<button data-cycle="${esc(name)}"><span>${esc(name)}</span><div><i style="width:${Math.max(5,Math.round(count/maxQuarter*100))}%"></i></div><strong>${count}</strong></button>`).join("")}</div>
+        </section>
       </div>`;
     }else{
-      let rows=filtered;
-      if(mode==="attention")rows=rows.filter(b=>!siteHealthInfo(b).ok);
-      body=`<div class="site-list-summary"><strong>${mode==="attention"?"정리 필요":"전체 사이트"}</strong><span>${rows.length}개 표시</span></div><div class="site-card-grid">${rows.length?rows.map(siteCardHtml).join(""):'<div class="site-empty">조건에 맞는 사이트가 없습니다.</div>'}</div>`;
+      let rows=filtered;if(mode==="attention")rows=rows.filter(b=>!siteHealthInfo(b).ok);
+      body=`<div class="site-list-summary"><strong>${mode==="attention"?"정보 정리 필요":"사이트 상세 목록"}</strong><span>${rows.length}개 표시</span></div><div class="site-card-grid">${rows.length?rows.map(siteCardHtml).join(""):'<div class="site-empty">조건에 맞는 사이트가 없습니다.</div>'}</div>`;
     }
 
-    el.innerHTML=`<div class="site-manager site-ops">
-      <div class="site-manager-head"><div><div class="site-manager-title">사이트 운영센터</div><div class="site-manager-desc">표를 채우는 방식보다, “지금 손볼 곳 → 최근 변경 → 담당 분포 → 사이트 상세” 순서로 관리하도록 구성했습니다.</div></div><button id="siteManagerAdd" class="site-manager-add" type="button">+ 새 사이트</button></div>
+    el.innerHTML=`<div class="site-manager site-ops v250">
+      <div class="site-manager-head"><div><div class="site-manager-title">사이트 운영관리</div><div class="site-manager-desc">사이트를 단순 목록으로 관리하지 않고, 고객사 → 담당자 → 사이트 → 진행업무 순서로 내려가며 관리합니다.</div></div><button id="siteManagerAdd" class="site-manager-add" type="button">+ 새 사이트</button></div>
       <div class="site-ops-kpis">
-        <button class="site-ops-kpi total" data-mode="all"><span>운영 사이트</span><strong>${all.length}</strong><em>전체 목록 보기</em></button>
-        <button class="site-ops-kpi attention" data-mode="attention"><span>정리 필요</span><strong>${attention.length}</strong><em>정보 누락 확인</em></button>
-        <button class="site-ops-kpi managed" data-mode="dashboard"><span>웹에서 관리</span><strong>${managed.length}</strong><em>Firebase 수정 이력</em></button>
+        <button class="site-ops-kpi total" data-mode="sites"><span>운영 사이트</span><strong>${all.length}</strong><em>전체 사이트</em></button>
+        <button class="site-ops-kpi managed" data-mode="overview"><span>진행 업무</span><strong>${activeTotal}</strong><em>장애 · 설치 · 정기 합계</em></button>
+        <button class="site-ops-kpi attention" data-mode="attention"><span>정보 정리 필요</span><strong>${attention.length}</strong><em>주소 · 전화 · 담당 등</em></button>
         <button class="site-ops-kpi unassigned" data-mode="attention"><span>담당 미지정</span><strong>${unassigned.length}</strong><em>담당 배정 필요</em></button>
       </div>
-      <div class="site-mode-tabs"><button data-mode="dashboard" class="${mode==="dashboard"?"active":""}">운영 대시보드</button><button data-mode="all" class="${mode==="all"?"active":""}">사이트 찾기</button><button data-mode="attention" class="${mode==="attention"?"active":""}">정리 필요</button></div>
+      <div class="site-mode-tabs"><button data-mode="overview" class="${mode==="overview"?"active":""}">운영 현황</button><button data-mode="sites" class="${mode==="sites"?"active":""}">사이트 상세</button><button data-mode="attention" class="${mode==="attention"?"active":""}">정리 필요</button></div>
       ${controls}${body}
-      <div class="site-manager-foot">기존 branches.js는 초기 기준자료로 두고, 앞으로 수정·신규 등록은 Firebase 사이트 마스터를 우선 사용합니다. 삭제 대신 숨김 처리하여 과거 업무 이력은 보존합니다.</div>
+      <div class="site-manager-foot">기존 branches.js는 초기 기준자료로 유지하고, 웹/앱에서 수정한 사이트 정보는 Firebase 사이트 마스터를 우선 적용합니다. 진행업무 수치는 현재 업무보드의 장애·설치·정기 데이터를 실시간 집계합니다.</div>
     </div>`;
 
     $("siteManagerAdd").onclick=()=>openSiteEdit(null);
-    let searchTimer=null;$("siteManagerSearch").oninput=e=>{clearTimeout(searchTimer);state.siteManagerSearch=e.target.value;searchTimer=setTimeout(()=>{if(state.siteManagerMode==="dashboard")state.siteManagerMode="all";renderSiteManager();},180);};
-    $("siteManagerBank").onchange=e=>{state.siteManagerBank=e.target.value;if(state.siteManagerMode==="dashboard")state.siteManagerMode="all";renderSiteManager();};
-    $("siteManagerStaff").onchange=e=>{state.siteManagerStaff=e.target.value;if(state.siteManagerMode==="dashboard")state.siteManagerMode="all";renderSiteManager();};
-    $("siteManagerReset").onclick=()=>{state.siteManagerSearch="";state.siteManagerBank="";state.siteManagerStaff="";renderSiteManager();};
+    let searchTimer=null;$("siteManagerSearch").oninput=e=>{clearTimeout(searchTimer);state.siteManagerSearch=e.target.value;searchTimer=setTimeout(()=>{if(state.siteManagerMode==="overview")state.siteManagerMode="sites";renderSiteManager();},180);};
+    $("siteManagerBank").onchange=e=>{state.siteManagerBank=e.target.value;if(state.siteManagerMode==="overview")state.siteManagerMode="sites";renderSiteManager();};
+    $("siteManagerStaff").onchange=e=>{state.siteManagerStaff=e.target.value;if(state.siteManagerMode==="overview")state.siteManagerMode="sites";renderSiteManager();};
+    $("siteManagerReset").onclick=()=>{state.siteManagerSearch="";state.siteManagerBank="";state.siteManagerStaff="";state.siteManagerMode="overview";renderSiteManager();};
     el.querySelectorAll("[data-mode]").forEach(btn=>btn.onclick=()=>{state.siteManagerMode=btn.dataset.mode;renderSiteManager();});
-    el.querySelectorAll("[data-edit]").forEach(btn=>btn.onclick=()=>openSiteEdit(btn.dataset.edit));
-    el.querySelectorAll("[data-staff]").forEach(btn=>btn.onclick=()=>{state.siteManagerStaff=btn.dataset.staff;state.siteManagerMode="all";renderSiteManager();});
+    el.querySelectorAll("tr[data-bank]").forEach(row=>row.onclick=()=>{const v=row.dataset.bank;state.siteManagerBank=v==="고객사 미등록"?"":v;state.siteManagerMode="sites";renderSiteManager();});
+    el.querySelectorAll("tr[data-staff]").forEach(row=>row.onclick=()=>{state.siteManagerStaff=row.dataset.staff;state.siteManagerMode="sites";renderSiteManager();});
     bindSiteCards(el);
   }
 
