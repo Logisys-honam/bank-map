@@ -1886,7 +1886,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       alert("Firebase 연결이 완료된 뒤 다시 시도해주세요.");
       return;
     }
-    if(Notification.permission!=="granted" || !pushPreferenceEnabled()){
+    if(!("Notification" in window) || Notification.permission!=="granted" || !pushPreferenceEnabled()){
       alert("먼저 이 기기의 푸시 알림을 켜주세요.");
       return;
     }
@@ -4451,7 +4451,9 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       // 지난 알림의 실제 삭제는 서버의 자정 예약 함수가 담당한다.
 
       if($("pushEnableBtn"))$("pushEnableBtn").onclick=()=>enablePushNotifications(app);
-      if(Notification.permission==="granted" && pushPreferenceEnabled()){
+      // v2.47.17: Android WebView처럼 Web Notification API가 없는 환경에서도
+      // Firebase 초기화 자체가 중단되지 않도록 Notification 존재 여부를 먼저 확인한다.
+      if(("Notification" in window) && Notification.permission==="granted" && pushPreferenceEnabled()){
         registerPushToken(app).then(pushStatusText).catch(e=>console.warn("푸시 자동 등록 실패",e));
       }else{
         pushStatusText();
