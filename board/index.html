@@ -1526,7 +1526,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   }
 
   let db,storage,memoPath="bankMap/memos",historyPath="bankMap/memoHistory",officeMemoPath="bankMap/officeMemos",officeCalendarPath="bankMap/officeCalendar",sharedDocsPath="bankMap/sharedDocs",sharedDocVersionsPath="bankMap/sharedDocVersions",siteWatchAlertsPath="bankMap/siteWatchAlerts",siteWatchStatusPath="bankMap/siteWatchStatus",pushTokensPath="bankMap/pushTokens";
-  const state={memos:{},weekHistory:[],officeMemos:{},officeCalendar:{},sharedDocs:{},sharedDocVersions:{},siteWatchAlerts:{},siteWatchStatus:{},sharedDocReplaceKey:null,main:"office",sub:"active",staff:null,bankFilter:"",writerFilter:"",search:"",page:1,pageSize:20,selected:null,bulkSelected:new Set(),bulkSearch:"",detailSelected:new Set(),listSelected:new Set(),editMemo:null,calendarCursor:new Date(),calendarEditKey:null,officeDetailKey:null,calendarViewKey:null,officeEditKey:null,calendarDayKey:null,calendarDaySelected:new Set()};
+  const state={memos:{},weekHistory:[],officeMemos:{},officeCalendar:{},sharedDocs:{},sharedDocVersions:{},siteWatchAlerts:{},siteWatchStatus:{},sharedDocReplaceKey:null,main:"office",sub:"schedule",staff:null,bankFilter:"",writerFilter:"",search:"",page:1,pageSize:20,selected:null,bulkSelected:new Set(),bulkSearch:"",detailSelected:new Set(),listSelected:new Set(),editMemo:null,calendarCursor:new Date(),calendarEditKey:null,officeDetailKey:null,calendarViewKey:null,officeEditKey:null,calendarDayKey:null,calendarDaySelected:new Set()};
 
   // v2.47.14: 모바일에서 앱/브라우저를 벗어났다가 돌아와도 마지막 화면을 유지
   const UI_STATE_KEY="bankBoardLastUiV1";
@@ -1591,7 +1591,32 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       if($("detailModal")?.classList.contains("hidden"))openDetail(b);
     },120);
   }
-  loadUiState();
+  // v2.47.16: 브라우저 새로고침은 "처음 화면"으로 리셋한다.
+  // 홈 화면 바로가기/일반 재진입(navigate)은 기존 마지막 화면 복원을 유지한다.
+  function isHardReloadNavigation(){
+    try{
+      const nav=performance.getEntriesByType?.("navigation")?.[0];
+      if(nav)return nav.type==="reload";
+      return performance.navigation?.type===1;
+    }catch(e){return false;}
+  }
+  if(isHardReloadNavigation()){
+    try{localStorage.removeItem(UI_STATE_KEY);}catch(e){}
+    state.main="office";
+    state.sub="schedule";
+    state.staff=null;
+    state.bankFilter="";
+    state.writerFilter="";
+    state.search="";
+    state.page=1;
+    state.calendarCursor=new Date();
+    uiRestorePending=false;
+    uiRestoreDetailOpen=false;
+    uiRestoreDetailMemoId=null;
+    uiRestoreDetailDone=true;
+  }else{
+    loadUiState();
+  }
   try{history.scrollRestoration="manual";}catch(e){}
   document.addEventListener("visibilitychange",()=>{if(document.hidden)saveUiState();});
   window.addEventListener("pagehide",saveUiState);
@@ -3979,11 +4004,25 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   function isDesktop(){return window.matchMedia("(min-width:901px)").matches}
 
   function goOfficeHome(){
+    // 상단 제목 클릭 = 초기화면으로 돌아가기
     state.main="office";
-    state.listSelected.clear();
     state.sub=isDesktop()?"active":"schedule";
+    state.staff=null;
+    state.bankFilter="";
+    state.writerFilter="";
+    state.search="";
     state.page=1;
+    state.calendarCursor=new Date();
+    state.listSelected.clear();
+    state.detailSelected.clear();
+    state.bulkSelected.clear();
+    state.selected=null;
+    uiRestoreDetailOpen=false;
+    uiRestoreDetailMemoId=null;
+    uiRestoreDetailDone=true;
+    try{localStorage.removeItem(UI_STATE_KEY);}catch(e){}
     render();
+    saveUiState();
     window.scrollTo({top:0,behavior:"smooth"});
   }
 
