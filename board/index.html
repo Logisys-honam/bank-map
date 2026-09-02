@@ -954,6 +954,20 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
 .site-edit-overlay{position:fixed;inset:0;background:rgba(15,23,42,.48);display:flex;align-items:center;justify-content:center;padding:16px;z-index:10020}.site-edit-overlay.hidden{display:none}.site-edit-card{width:min(680px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:16px;box-shadow:0 24px 70px rgba(0,0,0,.25)}
 .site-edit-head{display:flex;align-items:center;justify-content:space-between;padding:17px 18px;border-bottom:1px solid #e5eaf1}.site-edit-head strong{font-size:19px}.site-edit-close{border:0;background:#f1f4f8;border-radius:9px;width:36px;height:36px;font-size:22px;cursor:pointer}.site-edit-body{padding:16px 18px}.site-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}.site-form-field.full{grid-column:1/-1}.site-form-field label{display:block;font-size:11px;font-weight:900;color:#475467;margin-bottom:5px}.site-form-field input,.site-form-field select{width:100%;box-sizing:border-box;border:1px solid #cfd7e4;border-radius:9px;padding:10px 11px;font:inherit}.site-form-help{font-size:10px;color:#98a2b3;margin-top:4px}.site-edit-actions{display:flex;justify-content:flex-end;gap:8px;padding:14px 18px;border-top:1px solid #e5eaf1}.site-edit-actions button{border:1px solid #ccd5e3;background:#fff;border-radius:9px;padding:9px 14px;font-weight:900;cursor:pointer}.site-edit-actions .save{background:#1769e0;color:#fff;border-color:#1769e0}
 @media(max-width:760px){.site-manager{padding:10px}.site-manager-head{align-items:center}.site-manager-title{font-size:18px}.site-manager-desc{display:none}.site-manager-add{padding:9px 11px}.site-stats{grid-template-columns:1fr 1fr;gap:7px}.site-stat{padding:10px 11px}.site-stat-value{font-size:19px}.site-manager-tools{grid-template-columns:1fr 1fr;padding:8px}.site-manager-tools .site-search-wrap{grid-column:1/-1}.site-manager-tools .site-reset-btn{grid-column:1/-1}.site-table{border:0;background:transparent;overflow:visible}.site-table-head{display:none}.site-table-row{display:block;background:#fff;border:1px solid #dfe5ee;border-radius:12px;margin-bottom:8px;padding:11px}.site-table-row>div{padding:0;border:0}.site-table-row>div:nth-child(2),.site-table-row>div:nth-child(3),.site-table-row>div:nth-child(4){display:inline-block;margin:6px 8px 0 0;font-size:11px;color:#475467}.site-address{margin-top:7px!important;font-size:11px;white-space:normal;display:block!important}.site-actions{margin-top:10px!important;display:flex!important}.site-actions button{flex:1;padding:8px}.site-form-grid{grid-template-columns:1fr}.site-form-field.full{grid-column:auto}.site-edit-card{max-height:92vh}}
+
+
+/* v2.49.0 사이트 운영센터 - Excel형 표 대신 운영 대시보드 */
+.site-ops{max-width:1420px}.site-ops-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:10px}
+.site-ops-kpi{position:relative;text-align:left;border:1px solid #dfe6ef;background:#fff;border-radius:14px;padding:13px 14px;cursor:pointer;min-height:91px}.site-ops-kpi:hover{border-color:#9eb8e2;box-shadow:0 4px 14px rgba(31,65,114,.08)}
+.site-ops-kpi span{display:block;font-size:11px;color:#667085;font-weight:900}.site-ops-kpi strong{display:block;font-size:25px;line-height:1.15;color:#172033;margin-top:5px}.site-ops-kpi em{display:block;font-style:normal;font-size:10px;color:#98a2b3;margin-top:5px}.site-ops-kpi.attention strong,.site-ops-kpi.unassigned strong{color:#b54708}.site-ops-kpi.managed strong{color:#175cd3}
+.site-mode-tabs{display:flex;gap:4px;background:#e9eef5;border-radius:11px;padding:4px;margin-bottom:9px;width:max-content;max-width:100%}.site-mode-tabs button{border:0;background:transparent;border-radius:8px;padding:8px 12px;font-weight:900;color:#667085;cursor:pointer}.site-mode-tabs button.active{background:#fff;color:#175cd3;box-shadow:0 1px 4px rgba(16,24,40,.12)}
+.site-commandbar{display:grid;grid-template-columns:minmax(250px,1fr) 150px 150px auto;gap:7px;margin-bottom:12px}.site-commandbar input,.site-commandbar select{width:100%;box-sizing:border-box;border:1px solid #d0d7e2;border-radius:10px;padding:10px 11px;background:#fff;font:inherit}.site-commandbar input:focus,.site-commandbar select:focus{outline:2px solid #dbeafe;border-color:#6ea8ef}
+.site-dashboard-grid{display:grid;grid-template-columns:1.2fr 1fr .9fr;gap:10px}.site-dash-panel{background:#fff;border:1px solid #dfe6ef;border-radius:14px;overflow:hidden;min-width:0}.site-dash-panel.attention{border-color:#f0d6b7}.site-dash-head{display:flex;justify-content:space-between;align-items:center;padding:12px 13px;border-bottom:1px solid #edf0f4;background:#fafbfd}.site-dash-head>div{display:flex;align-items:baseline;gap:7px}.site-dash-head strong{font-size:14px}.site-dash-head span{font-size:10px;color:#98a2b3;font-weight:800}.site-dash-head button{border:0;background:transparent;color:#175cd3;font-weight:900;font-size:11px;cursor:pointer}
+.site-attention-list,.site-recent-list{padding:5px}.site-attention-row,.site-recent-row{width:100%;border:0;background:#fff;border-radius:9px;padding:9px 8px;display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;cursor:pointer}.site-attention-row:hover,.site-recent-row:hover{background:#f6f9fd}.site-attention-row strong,.site-recent-row strong{display:block;font-size:12px;color:#1d2939}.site-attention-row span,.site-recent-row span{display:block;font-size:9px;color:#98a2b3;margin-top:2px}.site-recent-row time{font-size:9px;color:#667085;white-space:nowrap}.site-missing-tags{display:flex;gap:3px;justify-content:flex-end;flex-wrap:wrap}.site-missing-tags em{font-style:normal;font-size:8px;font-weight:900;color:#b54708;background:#fff3e8;border:1px solid #fedfbc;padding:2px 5px;border-radius:999px;white-space:nowrap}.site-dash-empty{padding:28px 12px;text-align:center;color:#98a2b3;font-size:11px}
+.site-staff-bars{padding:7px 10px 10px}.site-staff-bars button{display:grid;grid-template-columns:66px 1fr 28px;align-items:center;gap:7px;width:100%;border:0;background:transparent;padding:6px 2px;cursor:pointer}.site-staff-bars button:hover{background:#f7f9fc;border-radius:7px}.site-staff-bars span{font-size:10px;font-weight:850;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.site-staff-bars div{height:6px;background:#eef2f6;border-radius:999px;overflow:hidden}.site-staff-bars i{display:block;height:100%;background:#5b8def;border-radius:999px}.site-staff-bars strong{font-size:10px;text-align:right}
+.site-list-summary{display:flex;align-items:baseline;gap:7px;margin:3px 1px 8px}.site-list-summary strong{font-size:14px}.site-list-summary span{font-size:10px;color:#98a2b3}.site-card-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.site-card{background:#fff;border:1px solid #dfe6ef;border-radius:14px;padding:12px;min-width:0}.site-card.needs-attention{border-left:4px solid #f2a65a}.site-card-top{display:flex;justify-content:space-between;gap:9px}.site-card-bank{font-size:9px;color:#175cd3;font-weight:950}.site-card-name{font-size:15px;font-weight:950;color:#172033;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.site-card-sub{font-size:9px;color:#98a2b3;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.site-health{flex:0 0 auto;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:950}.site-health.good{background:#ecfdf3;color:#067647}.site-health.warn{background:#fff3e8;color:#b54708}.site-card-chips{display:flex;gap:4px;flex-wrap:wrap;margin:9px 0}.site-chip{font-size:8px;font-weight:900;padding:3px 6px;border-radius:999px}.site-chip.good{background:#ecfdf3;color:#067647}.site-chip.warn{background:#fff3e8;color:#b54708}.site-chip.managed{background:#eff8ff;color:#175cd3}.site-card-info{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:8px;background:#f8fafc;border-radius:9px}.site-card-info .wide{grid-column:1/-1}.site-card-info span{display:block;font-size:8px;color:#98a2b3}.site-card-info strong{display:block;font-size:10px;color:#344054;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.site-card-actions{display:flex;gap:6px;margin-top:9px}.site-card-actions button{flex:1;border:1px solid #d0d7e2;background:#fff;border-radius:8px;padding:7px;font-size:10px;font-weight:900;cursor:pointer}.site-card-actions .site-card-edit{color:#175cd3}.site-card-actions .site-card-hide{color:#b42318;flex:.55}
+@media(max-width:1050px){.site-dashboard-grid{grid-template-columns:1fr 1fr}.site-dash-panel.staff{grid-column:1/-1}.site-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){.site-ops-kpis{grid-template-columns:1fr 1fr;gap:7px}.site-ops-kpi{min-height:78px;padding:10px 11px}.site-ops-kpi strong{font-size:21px}.site-mode-tabs{width:100%;display:grid;grid-template-columns:repeat(3,1fr)}.site-mode-tabs button{padding:8px 4px;font-size:11px}.site-commandbar{grid-template-columns:1fr 1fr}.site-commandbar .site-search-wrap{grid-column:1/-1}.site-commandbar .site-reset-btn{grid-column:1/-1}.site-dashboard-grid{grid-template-columns:1fr}.site-dash-panel.staff{grid-column:auto}.site-card-grid{grid-template-columns:1fr}.site-card{padding:11px}.site-manager-desc{display:block!important;font-size:10px!important}.site-manager-head{align-items:flex-start!important}}
 </style>
 
 <style id="v2446-mobile-office-additions">
@@ -1548,7 +1562,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   }
 
   let db,storage,memoPath="bankMap/memos",historyPath="bankMap/memoHistory",officeMemoPath="bankMap/officeMemos",officeCalendarPath="bankMap/officeCalendar",sharedDocsPath="bankMap/sharedDocs",sharedDocVersionsPath="bankMap/sharedDocVersions",siteWatchAlertsPath="bankMap/siteWatchAlerts",siteWatchStatusPath="bankMap/siteWatchStatus",pushTokensPath="bankMap/pushTokens",siteMasterPath="bankMap/siteMaster";
-  const state={memos:{},weekHistory:[],officeMemos:{},officeCalendar:{},sharedDocs:{},sharedDocVersions:{},siteWatchAlerts:{},siteWatchStatus:{},siteMaster:{},siteManagerSearch:"",siteManagerBank:"",siteManagerStaff:"",siteEditMemoId:null,sharedDocReplaceKey:null,main:"office",sub:"schedule",staff:null,bankFilter:"",writerFilter:"",search:"",page:1,pageSize:20,selected:null,bulkSelected:new Set(),bulkSearch:"",detailSelected:new Set(),listSelected:new Set(),editMemo:null,calendarCursor:new Date(),calendarEditKey:null,officeDetailKey:null,calendarViewKey:null,officeEditKey:null,calendarDayKey:null,calendarDaySelected:new Set()};
+  const state={memos:{},weekHistory:[],officeMemos:{},officeCalendar:{},sharedDocs:{},sharedDocVersions:{},siteWatchAlerts:{},siteWatchStatus:{},siteMaster:{},siteManagerSearch:"",siteManagerBank:"",siteManagerStaff:"",siteManagerMode:"dashboard",siteEditMemoId:null,sharedDocReplaceKey:null,main:"office",sub:"schedule",staff:null,bankFilter:"",writerFilter:"",search:"",page:1,pageSize:20,selected:null,bulkSelected:new Set(),bulkSearch:"",detailSelected:new Set(),listSelected:new Set(),editMemo:null,calendarCursor:new Date(),calendarEditKey:null,officeDetailKey:null,calendarViewKey:null,officeEditKey:null,calendarDayKey:null,calendarDaySelected:new Set()};
 
   // v2.47.14: 모바일에서 앱/브라우저를 벗어났다가 돌아와도 마지막 화면을 유지
   const UI_STATE_KEY="bankBoardLastUiV1";
@@ -2525,43 +2539,111 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     await db.ref(`${siteMasterPath}/${memoId}`).update({active:false,updatedAt:firebase.database.ServerValue.TIMESTAMP});
   }
 
+  function siteHealthInfo(b){
+    const missing=[];
+    if(!String(b.staff||"").trim()||b.staff==="미지정")missing.push("담당자");
+    if(!String(b.address||"").trim())missing.push("주소");
+    if(!String(b.phone||"").trim())missing.push("전화");
+    if(!String(b.bank||"").trim())missing.push("고객사");
+    const score=Math.max(0,100-missing.length*25);
+    return {missing,score,ok:missing.length===0};
+  }
+
+  function siteManagedAt(b){
+    const v=(state.siteMaster||{})[b.memoId];
+    return Number(v?.updatedAt)||0;
+  }
+
+  function siteStatusChips(b){
+    const h=siteHealthInfo(b);
+    const chips=[];
+    if(h.ok)chips.push('<span class="site-chip good">정보완료</span>');
+    else h.missing.forEach(x=>chips.push(`<span class="site-chip warn">${esc(x)} 미등록</span>`));
+    if((state.siteMaster||{})[b.memoId])chips.push('<span class="site-chip managed">Firebase 관리</span>');
+    return chips.join("");
+  }
+
+  function siteCardHtml(b){
+    const h=siteHealthInfo(b);
+    const sub=[b.branchNo?`점번 ${b.branchNo}`:"",b.center,b.quarter].filter(Boolean).join(" · ");
+    return `<article class="site-card${h.ok?"":" needs-attention"}" data-site="${esc(b.memoId)}">
+      <div class="site-card-top"><div><div class="site-card-bank">${esc(b.bank||"고객사 미등록")}</div><div class="site-card-name">${esc(b.name||"이름 없음")}</div><div class="site-card-sub">${esc(sub||"추가 식별정보 없음")}</div></div><div class="site-health ${h.ok?"good":"warn"}">${h.score}</div></div>
+      <div class="site-card-chips">${siteStatusChips(b)}</div>
+      <div class="site-card-info"><div><span>담당</span><strong>${esc(b.staff||"미지정")}</strong></div><div><span>전화</span><strong>${esc(b.phone||"-")}</strong></div><div class="wide"><span>주소</span><strong>${esc(b.address||"주소 미등록")}</strong></div></div>
+      <div class="site-card-actions"><button class="site-card-edit" type="button">정보 수정</button><button class="site-card-hide" type="button">숨김</button></div>
+    </article>`;
+  }
+
+  function bindSiteCards(root){
+    root.querySelectorAll(".site-card").forEach(card=>{
+      const id=card.dataset.site;
+      card.querySelector(".site-card-edit")?.addEventListener("click",()=>openSiteEdit(id));
+      card.querySelector(".site-card-hide")?.addEventListener("click",()=>archiveManagedSite(id));
+    });
+  }
+
   function renderSiteManager(){
     const el=$("list");
-    const rows=siteManagerFiltered();
-    const banks=[...new Set(branches.map(b=>b.bank).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ko"));
-    const staffs=[...new Set(branches.map(b=>b.staff).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ko"));
-    const assigned=branches.filter(b=>b.staff&&b.staff!=="미지정").length;
-    const missingAddr=branches.filter(b=>!String(b.address||"").trim()).length;
-    $("viewTitle").textContent="사이트 관리";$("viewCount").textContent=`${branches.length}개`;
-    el.innerHTML=`<div class="site-manager">
-      <div class="site-manager-head"><div><div class="site-manager-title">사이트 마스터</div><div class="site-manager-desc">엑셀 대신 Firebase에서 사이트 기본정보를 관리합니다. 수정 내용은 업무보드에 즉시 반영됩니다.</div></div><button id="siteManagerAdd" class="site-manager-add" type="button">+ 사이트 추가</button></div>
-      <div class="site-stats">
-        <div class="site-stat"><div class="site-stat-label">전체 사이트</div><div class="site-stat-value">${branches.length}</div></div>
-        <div class="site-stat"><div class="site-stat-label">고객사/은행</div><div class="site-stat-value">${banks.length}</div></div>
-        <div class="site-stat"><div class="site-stat-label">담당 지정</div><div class="site-stat-value">${assigned}</div></div>
-        <div class="site-stat"><div class="site-stat-label">주소 미등록</div><div class="site-stat-value">${missingAddr}</div></div>
-      </div>
-      <div class="site-manager-tools">
-        <div class="site-search-wrap"><input id="siteManagerSearch" value="${esc(state.siteManagerSearch||"")}" placeholder="사이트명 · 점번 · 주소 · 담당자 검색"></div>
-        <select id="siteManagerBank"><option value="">고객사 전체</option>${banks.map(x=>`<option value="${esc(x)}"${state.siteManagerBank===x?" selected":""}>${esc(x)}</option>`).join("")}</select>
-        <select id="siteManagerStaff"><option value="">담당 전체</option>${staffs.map(x=>`<option value="${esc(x)}"${state.siteManagerStaff===x?" selected":""}>${esc(x)}</option>`).join("")}</select>
-        <button id="siteManagerReset" class="site-reset-btn" type="button">필터 초기화</button>
-      </div>
-      <div class="site-table"><div class="site-table-head"><div>사이트</div><div>고객사</div><div>점번</div><div>담당</div><div>주소</div><div>관리</div></div><div id="siteManagerRows"></div></div>
-      <div class="site-manager-foot">사이트 삭제는 이력 보호를 위해 “목록에서 숨김” 방식으로 처리합니다. 기존 branches.js 데이터는 기준자료로 유지되고, 여기서 수정한 값은 Firebase가 우선 적용됩니다.</div>
+    const all=branches.slice();
+    const filtered=siteManagerFiltered();
+    const banks=[...new Set(all.map(b=>b.bank).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ko"));
+    const staffs=[...new Set(all.map(b=>b.staff).filter(x=>x&&x!=="미지정"))].sort((a,b)=>a.localeCompare(b,"ko"));
+    const attention=all.filter(b=>!siteHealthInfo(b).ok);
+    const unassigned=all.filter(b=>!b.staff||b.staff==="미지정");
+    const managed=all.filter(b=>(state.siteMaster||{})[b.memoId]);
+    const mode=state.siteManagerMode||"dashboard";
+    $("viewTitle").textContent="사이트 운영센터";$("viewCount").textContent=`${all.length}개`;
+
+    const controls=`<div class="site-commandbar">
+      <div class="site-search-wrap"><input id="siteManagerSearch" value="${esc(state.siteManagerSearch||"")}" placeholder="사이트명 · 점번 · 주소 · 담당자 통합검색"></div>
+      <select id="siteManagerBank"><option value="">고객사 전체</option>${banks.map(x=>`<option value="${esc(x)}"${state.siteManagerBank===x?" selected":""}>${esc(x)}</option>`).join("")}</select>
+      <select id="siteManagerStaff"><option value="">담당 전체</option>${staffs.map(x=>`<option value="${esc(x)}"${state.siteManagerStaff===x?" selected":""}>${esc(x)}</option>`).join("")}</select>
+      <button id="siteManagerReset" class="site-reset-btn" type="button">초기화</button>
     </div>`;
-    const box=$("siteManagerRows");
-    if(!rows.length)box.innerHTML='<div class="site-empty">조건에 맞는 사이트가 없습니다.</div>';
-    else rows.forEach(b=>{
-      const r=document.createElement("div");r.className="site-table-row";
-      r.innerHTML=`<div><div class="site-name">${esc(b.name)}</div><div class="site-subline">${esc([b.center,b.quarter,b.phone].filter(Boolean).join(" · ")||"추가 정보 없음")}</div></div><div>${esc(b.bank||"-")}</div><div>${esc(b.branchNo||"-")}</div><div>${esc(b.staff||"-")}</div><div class="site-address" title="${esc(b.address||"")}">${esc(b.address||"주소 미등록")}</div><div class="site-actions"><button class="edit" type="button">수정</button><button class="danger" type="button">숨김</button></div>`;
-      r.querySelector(".edit").onclick=()=>openSiteEdit(b.memoId);r.querySelector(".danger").onclick=()=>archiveManagedSite(b.memoId);box.appendChild(r);
-    });
+
+    let body="";
+    if(mode==="dashboard"){
+      const attentionRows=attention.slice().sort((a,b)=>siteHealthInfo(b).missing.length-siteHealthInfo(a).missing.length||(a.name||"").localeCompare(b.name||"","ko")).slice(0,8);
+      const recent=managed.slice().sort((a,b)=>siteManagedAt(b)-siteManagedAt(a)).slice(0,8);
+      const staffMap={};all.forEach(b=>{const k=b.staff||"미지정";staffMap[k]=(staffMap[k]||0)+1;});
+      const staffRows=Object.entries(staffMap).sort((a,b)=>b[1]-a[1]).slice(0,10);
+      body=`<div class="site-dashboard-grid">
+        <section class="site-dash-panel attention"><div class="site-dash-head"><div><strong>정리 필요한 사이트</strong><span>${attention.length}개</span></div><button data-mode="attention">전체 보기</button></div>
+          <div class="site-attention-list">${attentionRows.length?attentionRows.map(b=>{const h=siteHealthInfo(b);return `<button class="site-attention-row" data-edit="${esc(b.memoId)}"><div><strong>${esc(b.name)}</strong><span>${esc(b.bank||"고객사 미등록")} · ${esc(b.staff||"미지정")}</span></div><div class="site-missing-tags">${h.missing.map(x=>`<em>${esc(x)}</em>`).join("")}</div></button>`}).join(""):'<div class="site-dash-empty">정리할 사이트가 없습니다.</div>'}</div>
+        </section>
+        <section class="site-dash-panel"><div class="site-dash-head"><div><strong>최근 수정</strong><span>Firebase 기준</span></div><button data-mode="all">전체 목록</button></div>
+          <div class="site-recent-list">${recent.length?recent.map(b=>`<button class="site-recent-row" data-edit="${esc(b.memoId)}"><div><strong>${esc(b.name)}</strong><span>${esc(b.bank||"-")} · ${esc(b.staff||"미지정")}</span></div><time>${siteManagedAt(b)?fmtTime(siteManagedAt(b)):"-"}</time></button>`).join(""):'<div class="site-dash-empty">아직 웹에서 수정한 사이트가 없습니다.</div>'}</div>
+        </section>
+        <section class="site-dash-panel staff"><div class="site-dash-head"><div><strong>담당자별 사이트</strong><span>업무 분포</span></div></div><div class="site-staff-bars">${staffRows.map(([name,count])=>`<button data-staff="${esc(name)}"><span>${esc(name)}</span><div><i style="width:${Math.max(8,Math.round(count/Math.max(1,all.length)*100))}%"></i></div><strong>${count}</strong></button>`).join("")}</div></section>
+      </div>`;
+    }else{
+      let rows=filtered;
+      if(mode==="attention")rows=rows.filter(b=>!siteHealthInfo(b).ok);
+      body=`<div class="site-list-summary"><strong>${mode==="attention"?"정리 필요":"전체 사이트"}</strong><span>${rows.length}개 표시</span></div><div class="site-card-grid">${rows.length?rows.map(siteCardHtml).join(""):'<div class="site-empty">조건에 맞는 사이트가 없습니다.</div>'}</div>`;
+    }
+
+    el.innerHTML=`<div class="site-manager site-ops">
+      <div class="site-manager-head"><div><div class="site-manager-title">사이트 운영센터</div><div class="site-manager-desc">표를 채우는 방식보다, “지금 손볼 곳 → 최근 변경 → 담당 분포 → 사이트 상세” 순서로 관리하도록 구성했습니다.</div></div><button id="siteManagerAdd" class="site-manager-add" type="button">+ 새 사이트</button></div>
+      <div class="site-ops-kpis">
+        <button class="site-ops-kpi total" data-mode="all"><span>운영 사이트</span><strong>${all.length}</strong><em>전체 목록 보기</em></button>
+        <button class="site-ops-kpi attention" data-mode="attention"><span>정리 필요</span><strong>${attention.length}</strong><em>정보 누락 확인</em></button>
+        <button class="site-ops-kpi managed" data-mode="dashboard"><span>웹에서 관리</span><strong>${managed.length}</strong><em>Firebase 수정 이력</em></button>
+        <button class="site-ops-kpi unassigned" data-mode="attention"><span>담당 미지정</span><strong>${unassigned.length}</strong><em>담당 배정 필요</em></button>
+      </div>
+      <div class="site-mode-tabs"><button data-mode="dashboard" class="${mode==="dashboard"?"active":""}">운영 대시보드</button><button data-mode="all" class="${mode==="all"?"active":""}">사이트 찾기</button><button data-mode="attention" class="${mode==="attention"?"active":""}">정리 필요</button></div>
+      ${controls}${body}
+      <div class="site-manager-foot">기존 branches.js는 초기 기준자료로 두고, 앞으로 수정·신규 등록은 Firebase 사이트 마스터를 우선 사용합니다. 삭제 대신 숨김 처리하여 과거 업무 이력은 보존합니다.</div>
+    </div>`;
+
     $("siteManagerAdd").onclick=()=>openSiteEdit(null);
-    let searchTimer=null;$("siteManagerSearch").oninput=e=>{clearTimeout(searchTimer);state.siteManagerSearch=e.target.value;searchTimer=setTimeout(renderSiteManager,180);};
-    $("siteManagerBank").onchange=e=>{state.siteManagerBank=e.target.value;renderSiteManager();};
-    $("siteManagerStaff").onchange=e=>{state.siteManagerStaff=e.target.value;renderSiteManager();};
+    let searchTimer=null;$("siteManagerSearch").oninput=e=>{clearTimeout(searchTimer);state.siteManagerSearch=e.target.value;searchTimer=setTimeout(()=>{if(state.siteManagerMode==="dashboard")state.siteManagerMode="all";renderSiteManager();},180);};
+    $("siteManagerBank").onchange=e=>{state.siteManagerBank=e.target.value;if(state.siteManagerMode==="dashboard")state.siteManagerMode="all";renderSiteManager();};
+    $("siteManagerStaff").onchange=e=>{state.siteManagerStaff=e.target.value;if(state.siteManagerMode==="dashboard")state.siteManagerMode="all";renderSiteManager();};
     $("siteManagerReset").onclick=()=>{state.siteManagerSearch="";state.siteManagerBank="";state.siteManagerStaff="";renderSiteManager();};
+    el.querySelectorAll("[data-mode]").forEach(btn=>btn.onclick=()=>{state.siteManagerMode=btn.dataset.mode;renderSiteManager();});
+    el.querySelectorAll("[data-edit]").forEach(btn=>btn.onclick=()=>openSiteEdit(btn.dataset.edit));
+    el.querySelectorAll("[data-staff]").forEach(btn=>btn.onclick=()=>{state.siteManagerStaff=btn.dataset.staff;state.siteManagerMode="all";renderSiteManager();});
+    bindSiteCards(el);
   }
 
   function renderOfficeMemos(){
