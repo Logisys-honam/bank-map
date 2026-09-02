@@ -4227,7 +4227,23 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     btn.addEventListener("click",()=>handleWatchTabClick(btn.dataset.main));
   });
   if($("siteWatchToastClose"))$("siteWatchToastClose").onclick=()=>$("siteWatchToast").classList.add("hidden");
-  if($("siteWatchOpenCompany"))$("siteWatchOpenCompany").onclick=goCompanySite;
+  // 신규업무 작은 팝업은 실제 링크를 사용한다.
+  // 확장프로그램이 있으면 content script가 이 클릭을 가로채 기존 /m/ 탭으로 이동하고,
+  // 확장프로그램이 없으면 브라우저가 링크를 새 탭으로 연다.
+  if($("siteWatchOpenCompany")){
+    const b=$("siteWatchOpenCompany");
+    b.onclick=()=>{
+      const a=document.createElement("a");
+      a.href=COMPANY_SITE_URL;
+      a.target="_blank";
+      a.rel="noopener";
+      a.dataset.logisysOpen="1";
+      a.style.display="none";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    };
+  }
   if($("companySiteBtn"))$("companySiteBtn").onclick=goCompanySite;
   if($("alertCenterBtn"))$("alertCenterBtn").onclick=()=>openWatchAlertCenter();
   if($("watchAlertClose"))$("watchAlertClose").onclick=closeWatchAlertCenter;
