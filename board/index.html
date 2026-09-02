@@ -1528,6 +1528,58 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   let db,storage,memoPath="bankMap/memos",historyPath="bankMap/memoHistory",officeMemoPath="bankMap/officeMemos",officeCalendarPath="bankMap/officeCalendar",sharedDocsPath="bankMap/sharedDocs",sharedDocVersionsPath="bankMap/sharedDocVersions",siteWatchAlertsPath="bankMap/siteWatchAlerts",siteWatchStatusPath="bankMap/siteWatchStatus",pushTokensPath="bankMap/pushTokens";
   const state={memos:{},weekHistory:[],officeMemos:{},officeCalendar:{},sharedDocs:{},sharedDocVersions:{},siteWatchAlerts:{},siteWatchStatus:{},sharedDocReplaceKey:null,main:"office",sub:"active",staff:null,bankFilter:"",writerFilter:"",search:"",page:1,pageSize:20,selected:null,bulkSelected:new Set(),bulkSearch:"",detailSelected:new Set(),listSelected:new Set(),editMemo:null,calendarCursor:new Date(),calendarEditKey:null,officeDetailKey:null,calendarViewKey:null,officeEditKey:null,calendarDayKey:null,calendarDaySelected:new Set()};
 
+  // v2.47.14: 모바일에서 앱/브라우저를 벗어났다가 돌아와도 마지막 화면을 유지
+  const UI_STATE_KEY="bankBoardLastUiV1";
+  let uiRestorePending=false;
+  let uiRestoreScrollY=0;
+  function loadUiState(){
+    try{
+      const raw=localStorage.getItem(UI_STATE_KEY);
+      if(!raw)return;
+      const s=JSON.parse(raw)||{};
+      if(["office","issue","install","regular"].includes(s.main))state.main=s.main;
+      if(typeof s.sub==="string")state.sub=s.sub;
+      if(typeof s.staff==="string"&&s.staff)state.staff=s.staff;
+      else if(s.staff===null)state.staff=null;
+      if(typeof s.bankFilter==="string")state.bankFilter=s.bankFilter;
+      if(typeof s.writerFilter==="string")state.writerFilter=s.writerFilter;
+      if(typeof s.search==="string")state.search=s.search;
+      if(Number.isFinite(Number(s.page))&&Number(s.page)>0)state.page=Number(s.page);
+      if(Number.isFinite(Number(s.pageSize))&&Number(s.pageSize)>0)state.pageSize=Number(s.pageSize);
+      if(s.calendarCursor){
+        const d=new Date(s.calendarCursor);
+        if(!Number.isNaN(d.getTime()))state.calendarCursor=d;
+      }
+      uiRestoreScrollY=Math.max(0,Number(s.scrollY)||0);
+      uiRestorePending=true;
+    }catch(e){console.warn("마지막 화면 복원 실패",e);}
+  }
+  function saveUiState(){
+    try{
+      localStorage.setItem(UI_STATE_KEY,JSON.stringify({
+        main:state.main,sub:state.sub,staff:state.staff,bankFilter:state.bankFilter,
+        writerFilter:state.writerFilter,search:state.search,page:state.page,pageSize:state.pageSize,
+        calendarCursor:state.calendarCursor instanceof Date?state.calendarCursor.toISOString():null,
+        scrollY:Math.max(0,window.scrollY||document.documentElement.scrollTop||0),savedAt:Date.now()
+      }));
+    }catch(e){}
+  }
+  function restoreSavedScrollSoon(){
+    if(!uiRestorePending)return;
+    const y=uiRestoreScrollY;
+    setTimeout(()=>{
+      requestAnimationFrame(()=>{
+        window.scrollTo(0,y);
+        uiRestorePending=false;
+      });
+    },80);
+  }
+  loadUiState();
+  try{history.scrollRestoration="manual";}catch(e){}
+  document.addEventListener("visibilitychange",()=>{if(document.hidden)saveUiState();});
+  window.addEventListener("pagehide",saveUiState);
+  window.addEventListener("beforeunload",saveUiState);
+
   const esc=s=>String(s??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
   const linkifyText=s=>{
     const safe=esc(s||"");
@@ -3031,7 +3083,9 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   function setActiveNav(){}
 
   function render(){
+    if(!uiRestorePending)saveUiState();
     document.body.classList.toggle("office-wide",state.main==="office");
+    restoreSavedScrollSoon();
 
     if($("pageSizeFilter"))$("pageSizeFilter").value=String(state.pageSize);
     renderTopTabs();
