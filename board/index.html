@@ -933,6 +933,27 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
 .shared-version-actions .restore{color:#1557a8;background:#eef6ff}
 
 /* v2.44.3: 지사Home 명칭, 헤더 홈 이동, 햄버거 메뉴 제거 */
+
+
+/* v2.48.0: Firebase 기반 사이트 마스터 관리 */
+.site-manager{padding:14px;max-width:1500px;margin:0 auto}
+.site-manager-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:14px}
+.site-manager-title{font-size:22px;font-weight:950;color:#172033}.site-manager-desc{font-size:12px;color:#667085;margin-top:4px;line-height:1.45}
+.site-manager-add{border:0;border-radius:10px;background:#1769e0;color:#fff;font-weight:900;padding:11px 16px;cursor:pointer;white-space:nowrap}
+.site-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px}
+.site-stat{background:#fff;border:1px solid #dfe5ee;border-radius:12px;padding:13px 14px}.site-stat-label{font-size:11px;color:#667085;font-weight:800}.site-stat-value{font-size:22px;color:#172033;font-weight:950;margin-top:3px}
+.site-manager-tools{display:grid;grid-template-columns:minmax(220px,1fr) 160px 160px auto;gap:8px;background:#fff;border:1px solid #dfe5ee;border-radius:12px;padding:10px;margin-bottom:10px}
+.site-manager-tools input,.site-manager-tools select{width:100%;box-sizing:border-box;border:1px solid #cfd7e4;border-radius:9px;padding:10px 11px;background:#fff;font:inherit}
+.site-reset-btn{border:1px solid #cfd7e4;background:#fff;border-radius:9px;padding:9px 12px;font-weight:800;cursor:pointer}
+.site-table{background:#fff;border:1px solid #dfe5ee;border-radius:12px;overflow:hidden}.site-table-head,.site-table-row{display:grid;grid-template-columns:minmax(180px,1.25fr) 100px 90px 95px minmax(220px,1.4fr) 104px;align-items:center}
+.site-table-head{background:#eef3fa;color:#344054;font-size:12px;font-weight:900}.site-table-head>div,.site-table-row>div{padding:10px 11px;border-right:1px solid #e4e9f1;min-width:0}.site-table-head>div:last-child,.site-table-row>div:last-child{border-right:0}
+.site-table-row{border-top:1px solid #e4e9f1;font-size:13px}.site-table-row:hover{background:#f8fbff}.site-name{font-weight:950;color:#172033}.site-subline{font-size:10px;color:#7a8495;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.site-address{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#475467}
+.site-actions{display:flex;gap:5px}.site-actions button{border:1px solid #ccd5e3;background:#fff;border-radius:7px;padding:6px 8px;font-weight:850;cursor:pointer;font-size:11px}.site-actions .danger{color:#b42318;border-color:#f2c8c4;background:#fff8f7}
+.site-empty{padding:42px;text-align:center;color:#98a2b3;font-weight:800}
+.site-manager-foot{font-size:11px;color:#7a8495;margin-top:9px;line-height:1.45}
+.site-edit-overlay{position:fixed;inset:0;background:rgba(15,23,42,.48);display:flex;align-items:center;justify-content:center;padding:16px;z-index:10020}.site-edit-overlay.hidden{display:none}.site-edit-card{width:min(680px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:16px;box-shadow:0 24px 70px rgba(0,0,0,.25)}
+.site-edit-head{display:flex;align-items:center;justify-content:space-between;padding:17px 18px;border-bottom:1px solid #e5eaf1}.site-edit-head strong{font-size:19px}.site-edit-close{border:0;background:#f1f4f8;border-radius:9px;width:36px;height:36px;font-size:22px;cursor:pointer}.site-edit-body{padding:16px 18px}.site-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}.site-form-field.full{grid-column:1/-1}.site-form-field label{display:block;font-size:11px;font-weight:900;color:#475467;margin-bottom:5px}.site-form-field input,.site-form-field select{width:100%;box-sizing:border-box;border:1px solid #cfd7e4;border-radius:9px;padding:10px 11px;font:inherit}.site-form-help{font-size:10px;color:#98a2b3;margin-top:4px}.site-edit-actions{display:flex;justify-content:flex-end;gap:8px;padding:14px 18px;border-top:1px solid #e5eaf1}.site-edit-actions button{border:1px solid #ccd5e3;background:#fff;border-radius:9px;padding:9px 14px;font-weight:900;cursor:pointer}.site-edit-actions .save{background:#1769e0;color:#fff;border-color:#1769e0}
+@media(max-width:760px){.site-manager{padding:10px}.site-manager-head{align-items:center}.site-manager-title{font-size:18px}.site-manager-desc{display:none}.site-manager-add{padding:9px 11px}.site-stats{grid-template-columns:1fr 1fr;gap:7px}.site-stat{padding:10px 11px}.site-stat-value{font-size:19px}.site-manager-tools{grid-template-columns:1fr 1fr;padding:8px}.site-manager-tools .site-search-wrap{grid-column:1/-1}.site-manager-tools .site-reset-btn{grid-column:1/-1}.site-table{border:0;background:transparent;overflow:visible}.site-table-head{display:none}.site-table-row{display:block;background:#fff;border:1px solid #dfe5ee;border-radius:12px;margin-bottom:8px;padding:11px}.site-table-row>div{padding:0;border:0}.site-table-row>div:nth-child(2),.site-table-row>div:nth-child(3),.site-table-row>div:nth-child(4){display:inline-block;margin:6px 8px 0 0;font-size:11px;color:#475467}.site-address{margin-top:7px!important;font-size:11px;white-space:normal;display:block!important}.site-actions{margin-top:10px!important;display:flex!important}.site-actions button{flex:1;padding:8px}.site-form-grid{grid-template-columns:1fr}.site-form-field.full{grid-column:auto}.site-edit-card{max-height:92vh}}
 </style>
 
 <style id="v2446-mobile-office-additions">
@@ -1478,7 +1499,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   }
 
   const staffMap = window.BANK_STAFF_MAP || {};
-  const branches=rawData.map((x,i)=>{
+  const baseBranches=rawData.map((x,i)=>{
     const bank=x.bank||"";
     const name=x.name||"(지점명 없음)";
     const staffKey=`${bank}|${name}`;
@@ -1489,9 +1510,10 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       staff:x.staff||x.manager||x.assignee||x.담당직원||x.staffName||staffMap[staffKey]||staffMap[name]||"미지정",
       bank,center:x.center||"",quarter:x.quarter||"",
       branchNo:x.branchNo||x.점번||"",
-      address:x.address||"",phone:x.phone||""
+      address:x.address||"",phone:x.phone||"",_base:true
     };
   });
+  let branches=baseBranches.map(x=>({...x}));
 
   async function loadFirebaseFromRoot(){
     // config.js에 직접 Firebase 설정이 있으면 우선 사용
@@ -1525,8 +1547,8 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     return {cfg,memoPath};
   }
 
-  let db,storage,memoPath="bankMap/memos",historyPath="bankMap/memoHistory",officeMemoPath="bankMap/officeMemos",officeCalendarPath="bankMap/officeCalendar",sharedDocsPath="bankMap/sharedDocs",sharedDocVersionsPath="bankMap/sharedDocVersions",siteWatchAlertsPath="bankMap/siteWatchAlerts",siteWatchStatusPath="bankMap/siteWatchStatus",pushTokensPath="bankMap/pushTokens";
-  const state={memos:{},weekHistory:[],officeMemos:{},officeCalendar:{},sharedDocs:{},sharedDocVersions:{},siteWatchAlerts:{},siteWatchStatus:{},sharedDocReplaceKey:null,main:"office",sub:"schedule",staff:null,bankFilter:"",writerFilter:"",search:"",page:1,pageSize:20,selected:null,bulkSelected:new Set(),bulkSearch:"",detailSelected:new Set(),listSelected:new Set(),editMemo:null,calendarCursor:new Date(),calendarEditKey:null,officeDetailKey:null,calendarViewKey:null,officeEditKey:null,calendarDayKey:null,calendarDaySelected:new Set()};
+  let db,storage,memoPath="bankMap/memos",historyPath="bankMap/memoHistory",officeMemoPath="bankMap/officeMemos",officeCalendarPath="bankMap/officeCalendar",sharedDocsPath="bankMap/sharedDocs",sharedDocVersionsPath="bankMap/sharedDocVersions",siteWatchAlertsPath="bankMap/siteWatchAlerts",siteWatchStatusPath="bankMap/siteWatchStatus",pushTokensPath="bankMap/pushTokens",siteMasterPath="bankMap/siteMaster";
+  const state={memos:{},weekHistory:[],officeMemos:{},officeCalendar:{},sharedDocs:{},sharedDocVersions:{},siteWatchAlerts:{},siteWatchStatus:{},siteMaster:{},siteManagerSearch:"",siteManagerBank:"",siteManagerStaff:"",siteEditMemoId:null,sharedDocReplaceKey:null,main:"office",sub:"schedule",staff:null,bankFilter:"",writerFilter:"",search:"",page:1,pageSize:20,selected:null,bulkSelected:new Set(),bulkSearch:"",detailSelected:new Set(),listSelected:new Set(),editMemo:null,calendarCursor:new Date(),calendarEditKey:null,officeDetailKey:null,calendarViewKey:null,officeEditKey:null,calendarDayKey:null,calendarDaySelected:new Set()};
 
   // v2.47.14: 모바일에서 앱/브라우저를 벗어났다가 돌아와도 마지막 화면을 유지
   const UI_STATE_KEY="bankBoardLastUiV1";
@@ -2396,7 +2418,154 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
 
   }
 
+
+  function normalizedSitePayload(v){
+    return {
+      name:String(v.name||"").trim(), bank:String(v.bank||"").trim(), center:String(v.center||"").trim(),
+      branchNo:String(v.branchNo||"").trim(), address:String(v.address||"").trim(), phone:String(v.phone||"").trim(),
+      staff:String(v.staff||"").trim()||"미지정", quarter:String(v.quarter||"").trim(), active:v.active!==false
+    };
+  }
+
+  function applySiteMaster(){
+    const master=state.siteMaster||{};
+    const merged=[];
+    baseBranches.forEach(base=>{
+      const ov=master[base.memoId];
+      if(ov&&ov.active===false)return;
+      const p=ov?normalizedSitePayload({...base,...ov}):base;
+      merged.push({...base,...p,memoId:base.memoId,id:base.id,_base:true,_managed:!!ov});
+    });
+    Object.entries(master).forEach(([key,v])=>{
+      if(!v||v.active===false)return;
+      if(baseBranches.some(b=>b.memoId===key))return;
+      const p=normalizedSitePayload(v);
+      if(!p.name)return;
+      merged.push({id:v.id||key,memoId:key,...p,_base:false,_managed:true});
+    });
+    branches=merged;
+    if(state.branchId&&!branches.some(b=>String(b.id)===String(state.branchId)))state.branchId="";
+  }
+
+  function siteManagerFiltered(){
+    const q=(state.siteManagerSearch||"").trim().toLowerCase();
+    return branches.filter(b=>{
+      if(state.siteManagerBank&&b.bank!==state.siteManagerBank)return false;
+      if(state.siteManagerStaff&&b.staff!==state.siteManagerStaff)return false;
+      if(q){
+        const hay=[b.name,b.bank,b.center,b.branchNo,b.address,b.phone,b.staff,b.quarter].join(" ").toLowerCase();
+        if(!hay.includes(q))return false;
+      }
+      return true;
+    }).sort((a,b)=>(a.bank||"").localeCompare(b.bank||"","ko")||(a.name||"").localeCompare(b.name||"","ko"));
+  }
+
+  function ensureSiteEditModal(){
+    let overlay=$("siteEditOverlay");
+    if(overlay)return overlay;
+    overlay=document.createElement("div");
+    overlay.id="siteEditOverlay";overlay.className="site-edit-overlay hidden";
+    overlay.innerHTML=`<div class="site-edit-card" role="dialog" aria-modal="true">
+      <div class="site-edit-head"><strong id="siteEditTitle">사이트 수정</strong><button id="siteEditClose" class="site-edit-close" type="button">×</button></div>
+      <div class="site-edit-body"><div class="site-form-grid">
+        <div class="site-form-field full"><label>사이트명 *</label><input id="siteFormName" autocomplete="off"><div class="site-form-help">업무보드에서 표시할 공식 사이트명</div></div>
+        <div class="site-form-field"><label>은행/고객사</label><input id="siteFormBank" list="siteBankSuggestions" autocomplete="off"></div>
+        <div class="site-form-field"><label>점번</label><input id="siteFormBranchNo" autocomplete="off"></div>
+        <div class="site-form-field"><label>센터/구역</label><input id="siteFormCenter" autocomplete="off"></div>
+        <div class="site-form-field"><label>담당직원</label><input id="siteFormStaff" list="siteStaffSuggestions" autocomplete="off"></div>
+        <div class="site-form-field"><label>점검주기</label><input id="siteFormQuarter" autocomplete="off" placeholder="예: 분기, 반기"></div>
+        <div class="site-form-field"><label>전화번호</label><input id="siteFormPhone" autocomplete="off" inputmode="tel"></div>
+        <div class="site-form-field full"><label>주소</label><input id="siteFormAddress" autocomplete="off"></div>
+      </div><datalist id="siteBankSuggestions"></datalist><datalist id="siteStaffSuggestions"></datalist></div>
+      <div class="site-edit-actions"><button id="siteEditCancel" type="button">취소</button><button id="siteEditSave" class="save" type="button">저장</button></div>
+    </div>`;
+    document.body.appendChild(overlay);
+    $("siteEditClose").onclick=closeSiteEdit;$("siteEditCancel").onclick=closeSiteEdit;
+    overlay.onclick=e=>{if(e.target===overlay)closeSiteEdit();};
+    $("siteEditSave").onclick=saveSiteEdit;
+    return overlay;
+  }
+
+  function openSiteEdit(memoId){
+    ensureSiteEditModal();
+    state.siteEditMemoId=memoId||null;
+    const b=memoId?branches.find(x=>x.memoId===memoId):null;
+    $("siteEditTitle").textContent=b?"사이트 정보 수정":"새 사이트 추가";
+    $("siteFormName").value=b?.name||"";$("siteFormBank").value=b?.bank||"";$("siteFormBranchNo").value=b?.branchNo||"";
+    $("siteFormCenter").value=b?.center||"";$("siteFormStaff").value=b?.staff==="미지정"?"":(b?.staff||"");
+    $("siteFormQuarter").value=b?.quarter||"";$("siteFormPhone").value=b?.phone||"";$("siteFormAddress").value=b?.address||"";
+    const banks=[...new Set(branches.map(x=>x.bank).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ko"));
+    const staffs=[...new Set(branches.map(x=>x.staff).filter(x=>x&&x!=="미지정"))].sort((a,b)=>a.localeCompare(b,"ko"));
+    $("siteBankSuggestions").innerHTML=banks.map(x=>`<option value="${esc(x)}"></option>`).join("");
+    $("siteStaffSuggestions").innerHTML=staffs.map(x=>`<option value="${esc(x)}"></option>`).join("");
+    $("siteEditOverlay").classList.remove("hidden");setTimeout(()=>$("siteFormName").focus(),50);
+  }
+  function closeSiteEdit(){const el=$("siteEditOverlay");if(el)el.classList.add("hidden");state.siteEditMemoId=null;}
+
+  async function saveSiteEdit(){
+    if(!db)return alert("Firebase 연결 후 저장할 수 있습니다.");
+    const payload=normalizedSitePayload({
+      name:$("siteFormName").value,bank:$("siteFormBank").value,branchNo:$("siteFormBranchNo").value,
+      center:$("siteFormCenter").value,staff:$("siteFormStaff").value,quarter:$("siteFormQuarter").value,
+      phone:$("siteFormPhone").value,address:$("siteFormAddress").value,active:true
+    });
+    if(!payload.name)return alert("사이트명을 입력해 주세요.");
+    let key=state.siteEditMemoId;
+    if(!key)key="site_"+Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,7);
+    const existing=branches.find(x=>x.memoId===key);
+    const data={...payload,id:existing?.id||key,updatedAt:firebase.database.ServerValue.TIMESTAMP};
+    if(!existing)data.createdAt=firebase.database.ServerValue.TIMESTAMP;
+    await db.ref(`${siteMasterPath}/${key}`).update(data);
+    closeSiteEdit();
+  }
+
+  async function archiveManagedSite(memoId){
+    const b=branches.find(x=>x.memoId===memoId);if(!b)return;
+    if(!confirm(`“${b.name}” 사이트를 목록에서 숨길까요?\n\n기존 업무/완료 이력은 삭제하지 않습니다.`))return;
+    await db.ref(`${siteMasterPath}/${memoId}`).update({active:false,updatedAt:firebase.database.ServerValue.TIMESTAMP});
+  }
+
+  function renderSiteManager(){
+    const el=$("list");
+    const rows=siteManagerFiltered();
+    const banks=[...new Set(branches.map(b=>b.bank).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ko"));
+    const staffs=[...new Set(branches.map(b=>b.staff).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ko"));
+    const assigned=branches.filter(b=>b.staff&&b.staff!=="미지정").length;
+    const missingAddr=branches.filter(b=>!String(b.address||"").trim()).length;
+    $("viewTitle").textContent="사이트 관리";$("viewCount").textContent=`${branches.length}개`;
+    el.innerHTML=`<div class="site-manager">
+      <div class="site-manager-head"><div><div class="site-manager-title">사이트 마스터</div><div class="site-manager-desc">엑셀 대신 Firebase에서 사이트 기본정보를 관리합니다. 수정 내용은 업무보드에 즉시 반영됩니다.</div></div><button id="siteManagerAdd" class="site-manager-add" type="button">+ 사이트 추가</button></div>
+      <div class="site-stats">
+        <div class="site-stat"><div class="site-stat-label">전체 사이트</div><div class="site-stat-value">${branches.length}</div></div>
+        <div class="site-stat"><div class="site-stat-label">고객사/은행</div><div class="site-stat-value">${banks.length}</div></div>
+        <div class="site-stat"><div class="site-stat-label">담당 지정</div><div class="site-stat-value">${assigned}</div></div>
+        <div class="site-stat"><div class="site-stat-label">주소 미등록</div><div class="site-stat-value">${missingAddr}</div></div>
+      </div>
+      <div class="site-manager-tools">
+        <div class="site-search-wrap"><input id="siteManagerSearch" value="${esc(state.siteManagerSearch||"")}" placeholder="사이트명 · 점번 · 주소 · 담당자 검색"></div>
+        <select id="siteManagerBank"><option value="">고객사 전체</option>${banks.map(x=>`<option value="${esc(x)}"${state.siteManagerBank===x?" selected":""}>${esc(x)}</option>`).join("")}</select>
+        <select id="siteManagerStaff"><option value="">담당 전체</option>${staffs.map(x=>`<option value="${esc(x)}"${state.siteManagerStaff===x?" selected":""}>${esc(x)}</option>`).join("")}</select>
+        <button id="siteManagerReset" class="site-reset-btn" type="button">필터 초기화</button>
+      </div>
+      <div class="site-table"><div class="site-table-head"><div>사이트</div><div>고객사</div><div>점번</div><div>담당</div><div>주소</div><div>관리</div></div><div id="siteManagerRows"></div></div>
+      <div class="site-manager-foot">사이트 삭제는 이력 보호를 위해 “목록에서 숨김” 방식으로 처리합니다. 기존 branches.js 데이터는 기준자료로 유지되고, 여기서 수정한 값은 Firebase가 우선 적용됩니다.</div>
+    </div>`;
+    const box=$("siteManagerRows");
+    if(!rows.length)box.innerHTML='<div class="site-empty">조건에 맞는 사이트가 없습니다.</div>';
+    else rows.forEach(b=>{
+      const r=document.createElement("div");r.className="site-table-row";
+      r.innerHTML=`<div><div class="site-name">${esc(b.name)}</div><div class="site-subline">${esc([b.center,b.quarter,b.phone].filter(Boolean).join(" · ")||"추가 정보 없음")}</div></div><div>${esc(b.bank||"-")}</div><div>${esc(b.branchNo||"-")}</div><div>${esc(b.staff||"-")}</div><div class="site-address" title="${esc(b.address||"")}">${esc(b.address||"주소 미등록")}</div><div class="site-actions"><button class="edit" type="button">수정</button><button class="danger" type="button">숨김</button></div>`;
+      r.querySelector(".edit").onclick=()=>openSiteEdit(b.memoId);r.querySelector(".danger").onclick=()=>archiveManagedSite(b.memoId);box.appendChild(r);
+    });
+    $("siteManagerAdd").onclick=()=>openSiteEdit(null);
+    let searchTimer=null;$("siteManagerSearch").oninput=e=>{clearTimeout(searchTimer);state.siteManagerSearch=e.target.value;searchTimer=setTimeout(renderSiteManager,180);};
+    $("siteManagerBank").onchange=e=>{state.siteManagerBank=e.target.value;renderSiteManager();};
+    $("siteManagerStaff").onchange=e=>{state.siteManagerStaff=e.target.value;renderSiteManager();};
+    $("siteManagerReset").onclick=()=>{state.siteManagerSearch="";state.siteManagerBank="";state.siteManagerStaff="";renderSiteManager();};
+  }
+
   function renderOfficeMemos(){
+    if(state.sub==="sites"){renderSiteManager();return;}
     const items=officeVisibleItems();
     const el=$("list");
     $("viewTitle").textContent="순천지사메모";
@@ -2887,8 +3056,8 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     const el=$("subTabs");el.innerHTML="";
     let defs=[];
     if(state.main==="office")defs=isDesktop()
-      ? [["active","현황"],["done","완료"],["add","추가"]]
-      : [["schedule","일정현황"],["active","메모현황"],["done","완료"],["add","추가"],["docs","공용문서"]];
+      ? [["active","현황"],["done","완료"],["sites","사이트관리"],["add","추가"]]
+      : [["schedule","일정현황"],["active","메모현황"],["done","완료"],["add","추가"],["docs","공용문서"],["sites","사이트관리"]];
     if(state.main==="issue")defs=[["active","현황"],["done","완료"],["add","추가"]];
     if(state.main==="install")defs=[["active","일정"],["done","완료"],["add","추가"]];
     if(!defs.length)return;
@@ -3137,9 +3306,9 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     if(state.main==="office"){
       $("filterBar").style.display="none";
       if(isDesktop()){
-        if(state.sub!=="active"&&state.sub!=="done")state.sub="active";
+        if(!["active","done","sites"].includes(state.sub))state.sub="active";
       }else{
-        if(!["schedule","active","done","docs"].includes(state.sub))state.sub="schedule";
+        if(!["schedule","active","done","docs","sites"].includes(state.sub))state.sub="schedule";
       }
       renderOfficeMemos();
       return;
@@ -4525,6 +4694,13 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       db.ref(siteWatchStatusPath).on("value",snap=>{
         state.siteWatchStatus=snap.val()||{};
         renderSiteWatchStatus();
+      });
+
+      db.ref(siteMasterPath).on("value",snap=>{
+        state.siteMaster=snap.val()||{};
+        applySiteMaster();
+        render();
+        if($("detailModal")&&!$("detailModal").classList.contains("hidden"))renderDetail();
       });
 
 db.ref(officeMemoPath).on("value",snap=>{
