@@ -1532,6 +1532,9 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   const UI_STATE_KEY="bankBoardLastUiV1";
   let uiRestorePending=false;
   let uiRestoreScrollY=0;
+  let uiRestoreDetailMemoId=null;
+  let uiRestoreDetailOpen=false;
+  let uiRestoreDetailDone=false;
   function loadUiState(){
     try{
       const raw=localStorage.getItem(UI_STATE_KEY);
@@ -1551,6 +1554,8 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
         if(!Number.isNaN(d.getTime()))state.calendarCursor=d;
       }
       uiRestoreScrollY=Math.max(0,Number(s.scrollY)||0);
+      uiRestoreDetailOpen=s.detailModalOpen===true;
+      uiRestoreDetailMemoId=typeof s.detailMemoId==="string"?s.detailMemoId:null;
       uiRestorePending=true;
     }catch(e){console.warn("마지막 화면 복원 실패",e);}
   }
@@ -1560,7 +1565,10 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
         main:state.main,sub:state.sub,staff:state.staff,bankFilter:state.bankFilter,
         writerFilter:state.writerFilter,search:state.search,page:state.page,pageSize:state.pageSize,
         calendarCursor:state.calendarCursor instanceof Date?state.calendarCursor.toISOString():null,
-        scrollY:Math.max(0,window.scrollY||document.documentElement.scrollTop||0),savedAt:Date.now()
+        scrollY:Math.max(0,window.scrollY||document.documentElement.scrollTop||0),
+        detailModalOpen:!$("detailModal")?.classList.contains("hidden"),
+        detailMemoId:state.selected?.memoId||null,
+        savedAt:Date.now()
       }));
     }catch(e){}
   }
@@ -1573,6 +1581,15 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
         uiRestorePending=false;
       });
     },80);
+  }
+  function restoreSavedDetailSoon(){
+    if(uiRestoreDetailDone||!uiRestoreDetailOpen||!uiRestoreDetailMemoId)return;
+    const b=branches.find(x=>x.memoId===uiRestoreDetailMemoId);
+    if(!b)return;
+    uiRestoreDetailDone=true;
+    setTimeout(()=>{
+      if($("detailModal")?.classList.contains("hidden"))openDetail(b);
+    },120);
   }
   loadUiState();
   try{history.scrollRestoration="manual";}catch(e){}
@@ -3086,6 +3103,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     if(!uiRestorePending)saveUiState();
     document.body.classList.toggle("office-wide",state.main==="office");
     restoreSavedScrollSoon();
+    restoreSavedDetailSoon();
 
     if($("pageSizeFilter"))$("pageSizeFilter").value=String(state.pageSize);
     renderTopTabs();
@@ -3245,6 +3263,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   function afterModalHidden(id){
     if(id==="detailModal"){
       state.detailSelected.clear();
+      markSavedDetailClosed();
     }else if(id==="memoModal"){
       state.editMemo=null;
       if($("memoSave"))$("memoSave").textContent="추가";
@@ -3590,10 +3609,24 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
     $("detailSummary").textContent=latest?.text||"-";
 
     showBoardModal("detailModal");
+    saveUiState();
     renderDetail();
     renderRecentCompletedHistory(b);
   }
+  function markSavedDetailClosed(){
+    try{
+      const saved=JSON.parse(localStorage.getItem(UI_STATE_KEY)||"{}");
+      saved.detailModalOpen=false;
+      saved.detailMemoId=null;
+      saved.savedAt=Date.now();
+      localStorage.setItem(UI_STATE_KEY,JSON.stringify(saved));
+    }catch(e){}
+    uiRestoreDetailOpen=false;
+    uiRestoreDetailMemoId=null;
+    uiRestoreDetailDone=true;
+  }
   function closeDetail(){
+    markSavedDetailClosed();
     requestCloseBoardModal("detailModal");
   }
 
