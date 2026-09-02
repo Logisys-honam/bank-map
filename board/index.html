@@ -4260,9 +4260,36 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
   // Firebase 연결 전에도 탭/필터 UI는 즉시 동작
   render();
 
+  // 모바일 브라우저가 백그라운드에서 페이지를 폐기했다가 복원하면
+  // Firebase가 다시 연결되는 몇 초 동안 "연결 중" 문구가 보일 수 있다.
+  // 마지막 정상 연결 시각이 최근 5분 이내라면 그 값을 즉시 복원해
+  // 사용자가 홈 화면에서 돌아왔을 때 불필요한 연결 대기 표시를 없앤다.
+  const SYNC_CACHE_KEY="bankBoardLastFirebaseConnectedAt";
+  function setLiveSync(ts){
+    const t=Number(ts||Date.now());
+    try{localStorage.setItem(SYNC_CACHE_KEY,String(t));}catch(_){}
+    const el=$("sync");
+    if(el)el.textContent="실시간 연결 · "+new Date(t).toLocaleTimeString("ko-KR");
+  }
+  function restoreLiveSync(){
+    let t=0;
+    try{t=Number(localStorage.getItem(SYNC_CACHE_KEY)||0);}catch(_){}
+    const el=$("sync");
+    if(!el)return;
+    if(t && Date.now()-t<5*60*1000){
+      el.textContent="실시간 연결 · "+new Date(t).toLocaleTimeString("ko-KR");
+    }else{
+      el.textContent="Firebase 연결 중...";
+    }
+  }
+  restoreLiveSync();
+  window.addEventListener("pageshow",restoreLiveSync);
+  document.addEventListener("visibilitychange",()=>{
+    if(document.visibilityState==="visible")restoreLiveSync();
+  });
+
   (async()=>{
     try{
-      $("sync").textContent="Firebase 연결 중...";
       const loaded=await loadFirebaseFromRoot();
       memoPath=loaded.memoPath;
       historyPath=memoPath.replace(/\/memos\/?$/,"/memoHistory");
@@ -4288,6 +4315,12 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
       storage=app.storage();
       await app.auth().signInAnonymously();
 
+      // 실제 Firebase 연결 상태를 감지한다. 백그라운드에서 복귀해 재연결되면
+      // 데이터 변경이 없어도 즉시 정상 연결 시각을 갱신한다.
+      db.ref(".info/connected").on("value",snap=>{
+        if(snap.val()===true)setLiveSync(Date.now());
+      });
+
       // 업무 알림 화면에는 오늘 알림만 표시한다.
       // 지난 알림의 실제 삭제는 서버의 자정 예약 함수가 담당한다.
 
@@ -4304,7 +4337,7 @@ body.modal-locked{position:fixed;left:0;right:0;width:100%}
 
       db.ref(memoPath).on("value",snap=>{
         state.memos=snap.val()||{};
-        $("sync").textContent="실시간 연결 · "+new Date().toLocaleTimeString("ko-KR");
+        setLiveSync(Date.now());
         render();
         if(!$("detailModal").classList.contains("hidden"))renderDetail();
         if(!$("bulkMemoModal").classList.contains("hidden"))renderBulkMemoList();
