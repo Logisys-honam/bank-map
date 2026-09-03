@@ -4,67 +4,24 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>LOGISYS 사이트 지도</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+ integrity="sha256-p4NxAoJBhIINfQ3ynhAt3mMIGMZb63qK2I5b3jHqfek=" crossorigin="">
 <style>
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#eef3f6;font-family:Arial,"Malgun Gothic",sans-serif}
 #boot{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;color:#5d6b7c;font-size:14px}
 </style>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+ integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
-(() => {
-  const clean=s=>String(s||'').trim();
-  let loading=false, loaded=false;
-
-  function show(msg){
-    const el=document.getElementById('boot');
-    if(el) el.textContent=msg;
+window.addEventListener('DOMContentLoaded',()=>{
+  const boot=document.getElementById('boot');
+  if(window.L){
+    if(boot)boot.textContent='지도 엔진 준비 완료';
+    document.dispatchEvent(new Event('lm-logisys-leaflet-ready'));
+  }else{
+    if(boot)boot.textContent='Leaflet 지도 엔진 로딩 실패';
   }
-
-  window.navermap_authFailure=function(){
-    show('NAVER 지도 인증 실패 · NAVER Cloud의 Web 서비스 URL과 Client ID를 확인하세요.');
-  };
-
-  function tryLoad(){
-    if(loaded || window.naver?.maps?.Map){
-      loaded=true;
-      show('NAVER 지도 엔진 준비 완료');
-      return;
-    }
-    const carrier=document.getElementById('lmSiteMapCarrier');
-    const cid=clean(carrier?.dataset?.mapsClientId);
-    if(!cid){
-      show('확장프로그램에서 NAVER 지도 인증정보를 받는 중…');
-      return;
-    }
-    if(loading)return;
-    loading=true;
-    show('NAVER 지도 엔진 불러오는 중…');
-
-    const sc=document.createElement('script');
-    sc.id='logisysNaverMapsSdk';
-    sc.src='https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId='+encodeURIComponent(cid);
-    sc.async=true;
-    sc.onload=()=>{
-      loading=false;
-      loaded=!!window.naver?.maps?.Map;
-      show(loaded?'NAVER 지도 엔진 준비 완료':'NAVER 지도 엔진 초기화 실패');
-      document.dispatchEvent(new Event('lm-logisys-map-sdk-ready'));
-    };
-    sc.onerror=()=>{
-      loading=false;
-      show('NAVER 지도 SDK 다운로드 실패');
-    };
-    document.head.appendChild(sc);
-  }
-
-  document.addEventListener('lm-naver-maps-config',tryLoad);
-  document.addEventListener('DOMContentLoaded',()=>{
-    tryLoad();
-    let n=0;
-    const t=setInterval(()=>{
-      tryLoad();
-      if(loaded || ++n>120)clearInterval(t);
-    },250);
-  });
-})();
+});
 </script>
 </head>
 <body>
