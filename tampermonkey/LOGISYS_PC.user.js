@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         LOGISYS PC 확장 - Tampermonkey 이식판
 // @namespace    https://logisys-honam.github.io/
-// @version      2.15.3-tm8
-// @description  LOGISYS PC 확장 v2.15.3 Tampermonkey 8차 배포본 - 일정버튼 분리 · 버전표시 · 새로고침 복구
+// @version      2.15.3-tm9
+// @description  LOGISYS PC 확장 v2.15.3 Tampermonkey 9차 배포본 - 일정버튼 분리 · 버전표시 · 새로고침 복구
 // @author       LOGISYS Honam
 // @match        http://main.logisys.co.kr/Enterprise.View/m/*
 // @match        https://main.logisys.co.kr/Enterprise.View/m/*
@@ -169,19 +169,7 @@ function renderInternal(){
  return true;
 }
 
-function injectVersionBadge(win){
-  try{
-    const doc=win.document;if(!doc)return;
-    const put=()=>{
-      if(doc.getElementById('lmTmVersionBadge')||!doc.body)return;
-      const b=doc.createElement('span');b.id='lmTmVersionBadge';b.textContent='v2.15.3-tm8';
-      b.title='LOGISYS PC 확장 Tampermonkey 버전';
-      b.style.cssText='position:fixed;left:92px;top:6px;z-index:2147483647;font:600 10px/1.2 Arial,sans-serif;color:#64748b;background:rgba(255,255,255,.96);padding:2px 5px;border-radius:4px;pointer-events:none;white-space:nowrap';
-      doc.body.appendChild(b);
-    };
-    if(doc.readyState==='loading')doc.addEventListener('DOMContentLoaded',put,{once:true});else put();
-  }catch(e){}
-}
+
 try{injectVersionBadge(window)}catch(e){}
 
 // background message handler: Tampermonkey 컨텍스트에서 실행
@@ -203,7 +191,7 @@ function bootFrame(win){
         if(!win.__lmTmHomeWait){win.__lmTmHomeWait=1;win.document.addEventListener('DOMContentLoaded',()=>{try{win.__lmTmHomeWait=0;bootFrame(win)}catch(e){}},{once:true});}
         return;
       }
-      injectVersionBadge(win);
+
       runIn(win,'user-scope.js');addCssTo(win.document,'home.css');runIn(win,'home.js');
     }
     if(/\/Enterprise\.View\/m\/PopSearchSiteInfo\.aspx$/i.test(p))runIn(win,'site-picker.js');
