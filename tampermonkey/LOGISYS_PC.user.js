@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         LOGISYS PC 확장 - Tampermonkey 이식판
 // @namespace    https://logisys-honam.github.io/
-// @version      2.15.3-tm5
-// @description  LOGISYS PC 확장 v2.15.3 Tampermonkey 5차 배포본 - GitHub 자동 업데이트 지원
+// @version      2.15.3-tm6
+// @description  LOGISYS PC 확장 v2.15.3 Tampermonkey 6차 배포본 - bank-map GitHub 자동 업데이트 검증판
 // @author       LOGISYS Honam
 // @match        http://main.logisys.co.kr/Enterprise.View/m/*
 // @match        https://main.logisys.co.kr/Enterprise.View/m/*
@@ -25,8 +25,8 @@
 // @connect      naveropenapi.apigw.ntruss.com
 // @connect      naverapihub.apigw.ntruss.com
 // @connect      127.0.0.1
-// @updateURL    https://raw.githubusercontent.com/logisys-honam/logisys-tampermonkey/main/LOGISYS_PC.user.js
-// @downloadURL  https://raw.githubusercontent.com/logisys-honam/logisys-tampermonkey/main/LOGISYS_PC.user.js
+// @updateURL    https://raw.githubusercontent.com/Logisys-honam/bank-map/refs/heads/main/tampermonkey/LOGISYS_PC.user.js
+// @downloadURL  https://raw.githubusercontent.com/Logisys-honam/bank-map/refs/heads/main/tampermonkey/LOGISYS_PC.user.js
 // ==/UserScript==
 
 (function(){'use strict';
