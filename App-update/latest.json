@@ -1,1 +1,8 @@
-
+{
+  "versionCode": 46,
+  "versionName": "1.0.46",
+  "title": "새 버전이 있습니다",
+  "message": "개인/공용 일정과 알림 읽음 처리 기능이 업데이트되었습니다.",
+  "apkUrl": "https://logisys-honam.github.io/bank-map/app-update/LOGISYS_Mobile_v1.0.46.apk",
+  "required": false
+}
