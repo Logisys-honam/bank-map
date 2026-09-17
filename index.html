@@ -17,7 +17,7 @@
   <div id="map"></div><div id="boot">LOGISYS 최신 사이트 지도 준비 중…</div>
   <script src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=7qlkzlucix"></script>
   <script>
-    var map=new naver.maps.Map('map',{center:new naver.maps.LatLng(34.9,127.25),zoom:8,minZoom:6,zoomControl:true,zoomControlOptions:{position:naver.maps.Position.RIGHT_CENTER}});
+    var map=new naver.maps.Map('map',{center:new naver.maps.LatLng(34.9,127.25),zoom:8,minZoom:6,zoomControl:!matchMedia('(max-width:700px)').matches,zoomControlOptions:{position:naver.maps.Position.RIGHT_CENTER}});
     document.getElementById('boot').remove();
   </script>
   <script src="site-map-live-main.js?v=2"></script>
