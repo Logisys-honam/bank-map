@@ -1,8 +1,8 @@
 {
-  "versionCode": 111,
-  "versionName": "1.0.111",
+  "versionCode": 112,
+  "versionName": "1.0.112",
   "title": "새 버전이 있습니다",
-  "message": "지도사이트",
-  "apkUrl": "https://logisys-honam.github.io/bank-map/app-update/LOGISYS_Mobile_v1.0.111.apk",
+  "message": "비정상 종료 확인",
+  "apkUrl": "https://logisys-honam.github.io/bank-map/app-update/LOGISYS_Mobile_v1.0.112.apk",
   "required": false
 }
