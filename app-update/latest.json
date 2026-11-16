@@ -1,8 +1,8 @@
 {
-  "versionCode": 121,
-  "versionName": "1.0.121",
+  "versionCode": 124,
+  "versionName": "1.0.124",
   "title": "새 버전이 있습니다",
-  "message": "백그라운드 스크롤",
-  "apkUrl": "https://logisys-honam.github.io/bank-map/app-update/LOGISYS_Mobile_v1.0.121.apk",
+  "message": "Camera 허용",
+  "apkUrl": "https://logisys-honam.github.io/bank-map/app-update/LOGISYS_Mobile_v1.0.124.apk",
   "required": false
 }
